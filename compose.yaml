@@ -1,0 +1,30 @@
+﻿services:
+  api-gateway:
+    image: api-gateway
+    build:
+      context: .
+      dockerfile: Eventiq.ApiGateway/Dockerfile
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+    depends_on:
+      - user-service
+    ports:
+      - "5001:8080"
+    networks:
+      - eventiq-net
+    volumes:
+      - ./keys:/app/keys:ro
+  user-service:
+    image: user-service
+    build:
+      context: .
+      dockerfile: Eventiq.UserService/Dockerfile
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+    networks:
+      - eventiq-net
+    volumes:
+      - ./keys:/app/keys:ro
+networks:
+  eventiq-net:
+    driver: bridge
