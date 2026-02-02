@@ -1,15 +1,27 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
 
     <PropertyGroup>
-        <TargetFramework>net9.0</TargetFramework>
+        <TargetFramework>net8.0</TargetFramework>
         <Nullable>enable</Nullable>
         <ImplicitUsings>enable</ImplicitUsings>
         <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.11"/>
+        <PackageReference Include="AutoMapper" Version="16.0.0" />
+        <PackageReference Include="AutoMapper.Extensions.Microsoft.DependencyInjection" Version="12.0.1" />
+        <PackageReference Include="FluentValidation" Version="11.12.0" />
+        <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="8.0.23" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.23" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.23">
+          <PrivateAssets>all</PrivateAssets>
+          <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
         <PackageReference Include="Microsoft.IdentityModel.Tokens" Version="8.15.0" />
+        <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="8.0.11" />
+        <PackageReference Include="OpenAI" Version="2.2.0" />
+        <PackageReference Include="Swashbuckle.AspNetCore.SwaggerGen" Version="10.1.1" />
+        <PackageReference Include="Swashbuckle.AspNetCore.SwaggerUI" Version="10.1.1" />
         <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.15.0" />
     </ItemGroup>
 
@@ -21,12 +33,6 @@
 
     <ItemGroup>
       <ProjectReference Include="..\Eventiq.Logging\Eventiq.Logging.csproj" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <Folder Include="Domain\Entity\" />
-      <Folder Include="Domain\Repositories\EFCoreRepositories\" />
-      <Folder Include="Domain\Repositories\Interface\" />
     </ItemGroup>
 
 </Project>
