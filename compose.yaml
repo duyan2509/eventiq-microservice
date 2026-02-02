@@ -1,4 +1,39 @@
 ﻿services:
+  postgres:
+    image: postgres:15
+    container_name: eventiq-postgres
+    environment:
+      POSTGRES_DB: eventiq_user
+      POSTGRES_USER: eventiq
+      POSTGRES_PASSWORD: eventiq123
+    ports:
+      - "5432:5432" 
+    volumes:
+      - postgres-user-data:/var/lib/postgresql/data
+    networks:
+      - eventiq-net
+
+  user-service:
+    image: user-service
+    build:
+      context: .
+      dockerfile: Eventiq.UserService/Dockerfile
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__Postgres: >
+        Host=postgres;
+        Port=5432;
+        Database=eventiq_user;
+        Username=eventiq;
+        Password=eventiq123;
+        Ssl Mode=Disable;
+    depends_on:
+      - postgres
+    volumes:
+      - ./keys:/app/keys:ro
+    networks:
+      - eventiq-net
+
   api-gateway:
     image: api-gateway
     build:
@@ -10,21 +45,14 @@
       - user-service
     ports:
       - "5001:8080"
-    networks:
-      - eventiq-net
     volumes:
       - ./keys:/app/keys:ro
-  user-service:
-    image: user-service
-    build:
-      context: .
-      dockerfile: Eventiq.UserService/Dockerfile
-    environment:
-      ASPNETCORE_ENVIRONMENT: Development
     networks:
       - eventiq-net
-    volumes:
-      - ./keys:/app/keys:ro
+
+volumes:
+  postgres-user-data:
+
 networks:
   eventiq-net:
     driver: bridge
