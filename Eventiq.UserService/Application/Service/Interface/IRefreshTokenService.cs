@@ -1,15 +1,16 @@
-﻿namespace Eventiq.UserService.Application.Service;
+﻿using Eventiq.UserService.Model;
+
+namespace Eventiq.UserService.Application.Service;
 
 public interface IRefreshTokenService
 {
-    string GenerateRefreshToken(
+    Task<string> GenerateRefreshToken(
         string userId
     );
 
-    bool ValidateRefreshToken(
-        string refreshToken,
-        out string userId
-    );
+    bool ValidateRefreshToken(RefreshTokenModel? refreshToken);
+    Task<RefreshTokenModel?> GetRefreshTokenModel(string refreshToken);
+
 
     void RevokeRefreshToken(string refreshToken);
 }
