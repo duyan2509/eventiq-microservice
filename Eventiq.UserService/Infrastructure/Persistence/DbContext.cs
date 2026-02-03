@@ -12,7 +12,7 @@ public sealed class EvtUserDbContext : DbContext
     //--output-dir Infrastructure/Persistence/Migrations
     public DbSet<User> Users => Set<User>();
     public DbSet<UserRole> UserRoles => Set<UserRole>();
-    public DbSet<Role> Roles => Set<Role>();
+    public DbSet<Role?> Roles => Set<Role>();
     public DbSet<BanHistory> BanHistories => Set<BanHistory>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
     public DbSet<PasswordResetToken> PasswordResetTokens => Set<PasswordResetToken>();

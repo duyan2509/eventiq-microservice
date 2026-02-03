@@ -29,7 +29,7 @@ public class RefreshRepository:IRefreshTokenRepository
         };
     }
 
-    public async  void RemoveRefreshToken(string refreshToken)
+    public async  Task  RemoveRefreshToken(string refreshToken)
     {
         var token = await _refreshTokens.SingleOrDefaultAsync(t => t.Token == refreshToken);
         if (token == null) return;

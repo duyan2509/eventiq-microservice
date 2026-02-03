@@ -17,6 +17,9 @@ public static class DependencyInjection
         });
         services.AddScoped<IUserRepository, UserRepository>();
         services.AddScoped<IRefreshTokenRepository, RefreshRepository>();
+        services.AddScoped<IBanHistoryRepository, BanHistoryRepository>();
+        services.AddScoped<IUserRoleRepository, UserRoleRepository>();
+        services.AddScoped<IRoleRepository, RoleRepository>();
         return services;
     }
     

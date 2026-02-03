@@ -13,7 +13,7 @@ public interface IUserRepository
     Task AddUser(User user);
     Task UpdateUser(User user);
     Task<User?> GetTrackingUserById(Guid userId);
-    Task<PaginatedResult<User>> GetAllUsers(int page, int size, string enail);
+    Task<PaginatedResult<UserResponse>> GetAllUsers(int page, int size, string? enail);
 
 }
 

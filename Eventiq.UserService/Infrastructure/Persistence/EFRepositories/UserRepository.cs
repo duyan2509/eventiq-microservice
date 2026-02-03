@@ -13,11 +13,11 @@ public class UserRepository:IUserRepository
     private readonly ILogger<UserRepository> _logger;
     private DbSet<User> _users;
 
-    public UserRepository(ILogger<UserRepository> logger, DbSet<User> users, EvtUserDbContext context)
+    public UserRepository(ILogger<UserRepository> logger, EvtUserDbContext context)
     {
         _logger = logger;
-        _users = users;
         Context = context;
+        _users = Context.Set<User>();
     }
 
     public async Task<LoginUserModel> GetUserByEmail(string email)
@@ -73,18 +73,27 @@ public class UserRepository:IUserRepository
         return await _users.FirstOrDefaultAsync(u => u.Id == userId);
     }
 
-    public async Task<PaginatedResult<User>> GetAllUsers(int page, int size, string enail="")
+    public async Task<PaginatedResult<UserResponse>> GetAllUsers(int page, int size, string? email)
     {
         if (page < 1) page = 1;
         if (size < 1) size = 1;
-        
-        var query = _users.AsNoTracking()
-            .Where(u => u.Email.Contains(enail));
+
+        var query = _users.AsNoTracking();
+        if (!string.IsNullOrEmpty(email))
+            query = query.Where(u => u.Email.Contains(email));
         int total = query.Count();
-        var data =new List<User>();
-        if(page*size<=total) 
-            data = await  query.Skip((page - 1) * size).Take(size).ToListAsync();
-        return new PaginatedResult<User>
+        var data =new List<UserResponse>();
+        if ((page-1) * size < total)
+            data = await  query.Skip((page - 1) * size).Take(size)
+                .Select(u=>new UserResponse
+                {
+                    Id = u.Id.ToString(),
+                    Email = u.Email,
+                    IsBanned = u.IsBanned,
+                    Roles = u.UserRoles.Select(ur=>ur.Role.Name).ToList(),
+                })
+                .ToListAsync();
+        return new PaginatedResult<UserResponse>
         {
             Data = data,
             Total = total,
@@ -92,4 +101,6 @@ public class UserRepository:IUserRepository
             Size = size
         };
     }
+
+
 }

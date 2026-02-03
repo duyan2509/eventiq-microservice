@@ -34,7 +34,8 @@ namespace Eventiq.UserService.Infrastructure.Persistence
                 Id = Guid.NewGuid(),
                 Email = admin.Email,
                 PasswordHash = PasswordHash.SHA256Hash(admin.Password),
-                Avatar = ""
+                Avatar = "",
+                Username = admin.Email
             };
 
             context.Users.Add(adminUser);

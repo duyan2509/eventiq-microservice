@@ -6,7 +6,7 @@ namespace Eventiq.UserService.Domain.Repositories;
 public interface IRefreshTokenRepository
 {
     Task<RefreshTokenModel> AddRefreshToken(RefreshToken refreshToken);
-    void RemoveRefreshToken(string  refreshToken);
+    Task  RemoveRefreshToken(string  refreshToken);
     Task<RefreshTokenModel?> GetRefreshToken(string refreshToken);
 }
 
