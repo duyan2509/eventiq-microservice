@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 using Eventiq.UserService.Domain.Enums;
 
 namespace Eventiq.UserService.Application.Dto;
@@ -7,8 +7,8 @@ public class UserDto
     public string Id { get; set; }
     public string Email { get; set; } = string.Empty;
     
-    public string CurrentRole { get; set; } = AppRoles.User.ToString();
-    public ICollection<string> Roles { get; set; } = new List<string>();
+    public string? CurrentRole { get; set; } 
+    public ICollection<string>? Roles { get; set; } = new List<string>();
     public bool IsBanned { get; set; } = false;
 }
 
@@ -20,12 +20,14 @@ public class RegisterDto
     public string Password { get; set; }
 }
 
+
 public class UserResponse
 {
-    public string Email { get; set; }
-    public string? UserName { get; set; }
+    public string Id { get; set; }
+    public string Email  { get; set; }
+    public bool IsBanned { get; set; }
+    public IReadOnlyList<string> Roles { get; init; } = [];
 }
-
 public class LoginDto
 {
     
@@ -58,6 +60,11 @@ public class RefreshResponse:LoginResponse
     public RefreshResponse(string accessToken, string refreshToken) : base(accessToken, refreshToken)
     {
     }
+}
+
+public class RefreshRequest
+{
+    public string RefreshToken { get; set; } = string.Empty;
 }
 public class CreateUserDto
 {

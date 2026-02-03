@@ -7,4 +7,5 @@ public class BanHistoryModel
     public string Reason { get; set; }
     public Guid AdminId { get; set; }
     public string AdminEmail { get; set; }
+    public DateTime Date { get; set; }
 }
