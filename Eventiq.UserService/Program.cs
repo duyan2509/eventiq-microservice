@@ -21,12 +21,11 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseHttpsRedirection();
-// log request HTTP
-app.UseSerilogRequestLogging();
-app.UseAuthorization();
 app.UseMiddleware<GlobalExceptionMiddleware>();
-
+app.UseHttpsRedirection();
+app.UseSerilogRequestLogging();
+app.UseAuthentication();
+app.UseAuthorization();
 app.MapControllers();
 using (var scope = app.Services.CreateScope())
 {

@@ -1,112 +1,86 @@
+using System.Security.Claims;
 using Eventiq.UserService.Application.Dto;
 using Eventiq.UserService.Application.Service;
-using Microsoft.AspNetCore.Http.HttpResults;
-using Microsoft.AspNetCore.Identity.Data;
+using Eventiq.UserService.Domain.Enums;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.IdentityModel.Tokens;
 
 namespace Eventiq.UserService.Controllers;
 
-[ApiController][Route("api/auth")]
+[ApiController]
+[Route("api/auth")]
 public class AuthController : ControllerBase
 {
-    
     private readonly ILogger<AuthController> _logger;
     private readonly IUserService _userService;
 
-    public AuthController(ILogger<AuthController> logger,  IUserService userService)
+    public AuthController(ILogger<AuthController> logger, IUserService userService)
     {
         _logger = logger;
         _userService = userService;
     }
+    [Authorize]
     [HttpGet("me")]
-    public ActionResult<UserResponse> GetMe()
+    public async Task<ActionResult<UserDto>> GetMe()
     {
-        try
-        {
-            var userId = GetUserId();
-            return Ok(userId); 
-            if (userId == null)
-                return Unauthorized();
-            return Ok(new UserResponse
-            {
-                Email = "tmp@gmail.com",
-                UserName = "temp user name"
-            });
-        }
-        catch (KeyNotFoundException ex)
-        {
-            return Unauthorized(ex.Message);
-        }
-        catch (Exception ex)
-        {
-            return BadRequest(ex.Message);
-        }
+
+        var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var role = User.FindFirstValue(ClaimTypes.Role);
+        if (string.IsNullOrEmpty(userIdStr) || !Guid.TryParse(userIdStr, out var parsedUserId))
+            throw new UnauthorizedException("User id is required");
+
+        var user = await _userService.GetMe(parsedUserId, role);
+        return Ok(user);
     }
+
     [HttpPost("login")]
     public async Task<ActionResult<LoginResponse>> Login([FromBody] LoginDto dto)
     {
-        try
-        {
-            var rs = await _userService.Login(dto);
-            return Ok(rs);
-        }
-        catch (Exception ex)
-        {
-            return BadRequest(ex.Message);
-        }
+        var rs = await _userService.Login(dto);
+        return Ok(rs);
     }
-    [HttpPost("register")]
-    public ActionResult<bool> Register([FromBody] RegisterDto dto)
+    [Authorize]
+    [HttpPost("role")]
+    public async Task<ActionResult<SwitchRoleRepsponse>> Login([FromBody] AppRoles role)
     {
-        try
-        {
-            return Ok(true);
-        }
-        catch (Exception ex)
-        {
-            return BadRequest(ex.Message);
-        }
+        var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (string.IsNullOrEmpty(userIdStr) || !Guid.TryParse(userIdStr, out var parsedUserId))
+            throw new UnauthorizedException("User id is required");
+        var rs = await _userService.SwitchRole(parsedUserId, role );
+        return Ok(rs);
+    }
+
+    [HttpPost("register")]
+    public async Task<ActionResult<bool>> Register([FromBody] RegisterDto dto)
+    {
+        var rs = await _userService.Register(dto);
+        return Ok(rs);
     }
 
     [HttpPost("refresh")]
     public async Task<ActionResult<RefreshResponse>> Refresh([FromBody] RefreshRequest dto)
     {
-        try
-        {
-            var rs = await _userService.Refresh(dto.RefreshToken);
-            return Ok(rs);
-        }
-        catch (SecurityTokenException ex)
-        {
-            return Unauthorized(ex.Message);
-        }
-        catch (Exception ex)
-        {
-            return BadRequest(ex.Message);
-        }
+        var rs = await _userService.Refresh(dto.RefreshToken);
+        return Ok(rs);
     }
+
     [HttpPost("logout")]
-    public ActionResult Logout([FromBody] RefreshRequest dto)
+    public async Task<ActionResult> Logout([FromBody] RefreshRequest dto)
     {
-        try
-        {
-            _userService.Logout(dto.RefreshToken);
-            return Ok();
-        }
-        catch (SecurityTokenException ex)
-        {
-            return Unauthorized(ex.Message);
-        }
-        catch (Exception ex)
-        {
-            return BadRequest(ex.Message);
-        }
+        _userService.Logout(dto.RefreshToken);
+        return Ok();
     }
-    public string? GetUserId()
+
+    [HttpPatch("change-password")]
+    public async Task<ActionResult<UserDto>> ChangePassword([FromBody] ChangePasswordRequest dto)
     {
-        return Request.Headers["X-User-Id"].ToString();
+        var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (string.IsNullOrEmpty(userIdStr) || !Guid.TryParse(userIdStr, out var parsedUserId))
+            throw new UnauthorizedException("User id is required");
+        var rs = await _userService.ChangePassword(parsedUserId,dto);
+        return Ok(rs);
     }
+    
 }
 
 

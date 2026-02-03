@@ -1,4 +1,4 @@
-﻿using System.Net;
+using System.Net;
 using System.Security.Authentication;
 using System.Text.Json;
 using Microsoft.IdentityModel.Tokens;
@@ -49,6 +49,7 @@ public class GlobalExceptionMiddleware
                 statusCode = HttpStatusCode.Forbidden;
                 break;
 
+            case UnauthorizedException:
             case InvalidCredentialException:
             case SecurityTokenException:
                 statusCode = HttpStatusCode.Unauthorized;
