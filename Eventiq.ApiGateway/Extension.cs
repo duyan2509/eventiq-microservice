@@ -40,6 +40,7 @@ public static class Extension
                     .AllowAnyMethod()
                     .AllowCredentials());
         });
+        JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
 
         builder.Services
             .AddAuthentication("Bearer")

@@ -1,17 +1,35 @@
 ﻿{
   "Routes": [
     {
-      "DownstreamPathTemplate": "/api/auth/{everything}",
+      "DownstreamPathTemplate": "/api/auth/login",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
-        {
-          "Host": "user-service",
-          "Port": 8080
-        }
+        { "Host": "user-service", "Port": 8080 }
       ],
-      "UpstreamPathTemplate": "/gateway/auth/{everything}",
+      "UpstreamPathTemplate": "/gateway/auth/login",
       "UpstreamHttpMethod": ["POST"]
     },
+    {
+      "DownstreamPathTemplate": "/api/auth/register",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        { "Host": "user-service", "Port": 8080 }
+      ],
+      "UpstreamPathTemplate": "/gateway/auth/register",
+      "UpstreamHttpMethod": ["POST"]
+    },
+    {
+      "DownstreamPathTemplate": "/api/auth/refresh",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        { "Host": "user-service", "Port": 8080 }
+      ],
+      "UpstreamPathTemplate": "/gateway/auth/refresh",
+      "UpstreamHttpMethod": ["POST"]
+    },
+    
+    
+    
     {
       "DownstreamPathTemplate": "/api/auth/{everything}",
       "DownstreamScheme": "http",
@@ -21,11 +39,29 @@
           "Port": 8080
         }
       ],
-      "UpstreamHttpMethod": ["GET"],
+      "UpstreamHttpMethod": ["GET", "POST", "PATCH"],
       "UpstreamPathTemplate": "/gateway/auth/{everything}",
       "AddHeadersToRequest": {
-        "X-User-Id": "Claim[sub]",
-        "X-Role" : "Claim[role]"
+        "Authorization": "{Authorization}"
+      },
+      "AuthenticationOptions": {
+        "AuthenticationProviderKey": "Bearer",
+        "AllowedScopes": []
+      }
+    },
+    {
+      "DownstreamPathTemplate": "/api/users/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "user-service",
+          "Port": 8080
+        }
+      ],
+      "UpstreamHttpMethod": ["GET", "PATCH"],
+      "UpstreamPathTemplate": "/gateway/users/{everything}",
+      "AddHeadersToRequest": {
+        "Authorization": "{Authorization}"
       },
       "AuthenticationOptions": {
         "AuthenticationProviderKey": "Bearer",
