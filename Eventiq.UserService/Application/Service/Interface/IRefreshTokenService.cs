@@ -12,5 +12,5 @@ public interface IRefreshTokenService
     Task<RefreshTokenModel?> GetRefreshTokenModel(string refreshToken);
 
 
-    void RevokeRefreshToken(string refreshToken);
+    Task RevokeRefreshToken(string refreshToken);
 }

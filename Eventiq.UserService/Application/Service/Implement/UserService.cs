@@ -18,18 +18,23 @@ public class UserService:IUserService
     private readonly IUserRepository _userRepository;
     private readonly IBanHistoryRepository _banHistoryRepository;
     private readonly IMapper _mapper;
-
+    private readonly IUserRoleRepository _userRoleRepository;
+    private readonly IRoleRepository _roleRepository;
     public UserService(
         IJwtService jwt,
         IRefreshTokenService refresh,
         IUserRepository userRepository,
         IBanHistoryRepository banHistoryRepository,
+        IUserRoleRepository userRoleRepository,
+        IRoleRepository roleRepository,
         IMapper mapper)
     {
         _jwt = jwt;
         _refresh = refresh;
         _userRepository = userRepository;
         _banHistoryRepository = banHistoryRepository;
+        _userRoleRepository = userRoleRepository;
+        _roleRepository = roleRepository;
         _mapper = mapper;
     }
     public async Task<LoginResponse> Login(LoginDto dto)
@@ -83,7 +88,7 @@ public class UserService:IUserService
         var token = await  _refresh.GetRefreshTokenModel(refreshToken);
         if (! _refresh.ValidateRefreshToken(token))
         {
-            _refresh.RevokeRefreshToken(refreshToken);
+            await  _refresh.RevokeRefreshToken(refreshToken);
             throw new SecurityTokenException(
                 "Invalid refresh token"
             );
@@ -98,7 +103,7 @@ public class UserService:IUserService
                 ["email"]=user.Email,
             }
         );
-        _refresh.RevokeRefreshToken(refreshToken);
+        await _refresh.RevokeRefreshToken(refreshToken);
         var newRefreshToken = await  _refresh.GenerateRefreshToken(user.Id);
         return new RefreshResponse(
             accessToken,
@@ -106,33 +111,43 @@ public class UserService:IUserService
         );
     }
 
-    public void Logout(string refreshToken)
+    public async Task Logout(string refreshToken)
     {
-        _refresh.RevokeRefreshToken(refreshToken);
+        await _refresh.RevokeRefreshToken(refreshToken);
     }
 
-    public async Task<RegisterDto> Register(RegisterDto dto)
+    public async Task<bool> Register(RegisterDto dto)
     {
+        var isExist = await _userRepository.GetUserByEmail(dto.Email);
+        if (isExist!=null)
+            throw new BadRequestException($"User with email {dto.Email} already exist");
         var user = _mapper.Map<User>(dto);
         await _userRepository.AddUser(user);
-        return _mapper.Map<RegisterDto>(user);
+        var userRole = await _roleRepository.GetRoleByName(AppRoles.User.ToString());
+        await _userRoleRepository.AddUserRole(new UserRole
+        {
+            UserId = user.Id,
+            RoleId = userRole.Id,
+        });
+        return true;
     }
 
-    public async Task<UserDto> GetMe(Guid userId)
+    public async Task<UserDto> GetMe(Guid userId, string role)
     {
         var model = await _userRepository.GetUserById(userId);
         if (model == null)
             throw new NotFoundException($"User not found with id {userId}");
-        return _mapper.Map<UserDto>(model);
+        var rs = _mapper.Map<UserDto>(model);
+        rs.CurrentRole = role;
+        return rs;
     }
 
-    public async Task<PaginatedResult<UserDto>> GetAllUsers(int page, int size, string email)
+    public async Task<PaginatedResult<UserResponse>> GetAllUsers(int page, int size, string? email)
     {
         var result = await _userRepository.GetAllUsers(page, size, email);
-        var users = _mapper.Map<List<UserDto>>(result);
-        return new PaginatedResult<UserDto>()
+        return new PaginatedResult<UserResponse>()
         {
-            Data = users,
+            Data = result.Data,
             Page = result.Page,
             Size = result.Size,
             Total = result.Total
@@ -164,8 +179,7 @@ public class UserService:IUserService
         var user = await _userRepository.GetTrackingUserById(userId);
         if(user==null)
             throw new NotFoundException($"User not found with id {userId}");
-        if(user.IsBanned)
-            throw new Exception("User is banned");
+ 
         var admin = await _userRepository.GetUserById(adminId);
         UserGuards.EnsureAdmin(admin);
         user.IsBanned = false;

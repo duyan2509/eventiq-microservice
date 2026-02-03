@@ -23,7 +23,7 @@ public class RefreshTokenService:IRefreshTokenService
         {
             UserId = Guid.Parse(userId),
             Token = token,
-            Expires = DateTime.Now.AddMinutes(5),
+            Expires = DateTime.UtcNow.AddDays(5),
         };
         await _refreshTokenRepository.AddRefreshToken(refresToken);
         return token;
@@ -43,8 +43,8 @@ public class RefreshTokenService:IRefreshTokenService
         return await _refreshTokenRepository.GetRefreshToken(refreshToken);
     }
 
-    public void RevokeRefreshToken(string refreshToken)
+    public async Task RevokeRefreshToken(string refreshToken)
     {
-        _refreshTokenRepository.RemoveRefreshToken(refreshToken);
+         await _refreshTokenRepository.RemoveRefreshToken(refreshToken);
     }
 }

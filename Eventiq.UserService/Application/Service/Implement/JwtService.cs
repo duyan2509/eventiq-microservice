@@ -39,7 +39,7 @@ public class JwtService : IJwtService
             issuer: "eventiq-auth",
             audience: "eventiq",
             claims: claims,
-            expires: DateTime.UtcNow.AddHours(1),
+            expires: DateTime.UtcNow.AddMinutes(5),
             signingCredentials: creds
         );
 
