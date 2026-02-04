@@ -1,0 +1,5 @@
+### Health / list organizations
+GET http://localhost:5230/api/organizations
+
+### Get by id
+GET http://localhost:5230/api/organizations/00000000-0000-0000-0000-000000000000
