@@ -52,7 +52,7 @@ services:
       image: org-service
       build:
         context: .
-        dockerfile: Eventiq.OrgService/Dockerfile
+        dockerfile: Eventiq.OrganizationService/Dockerfile
       environment:
         ASPNETCORE_ENVIRONMENT: Development
         ConnectionStrings__Postgres: >
