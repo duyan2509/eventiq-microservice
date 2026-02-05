@@ -11,6 +11,10 @@ public sealed class EvtOrganizationDbContext : DbContext
     }
 
     public DbSet<Organization> Organizations => Set<Organization>();
+    public DbSet<Invitation> Invitations => Set<Invitation>();
+    public DbSet<Member> Members => Set<Member>();
+    public DbSet<Permission> Permissions => Set<Permission>();
+
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -19,9 +23,38 @@ public sealed class EvtOrganizationDbContext : DbContext
         modelBuilder.Entity<Organization>(e =>
         {
             e.HasKey(x => x.Id);
+            e.HasIndex(e => new 
+                {
+                    e.OwnerEmail,
+                    e.Name
+                })
+                .IsUnique();
             e.Property(x => x.Name).IsRequired();
         });
-
+        modelBuilder.Entity<Invitation>(e =>
+        {
+            e.HasKey(x => x.Id);
+            e.HasIndex(e => new
+            {
+                e.Status,
+                e.OrganizationId,
+                e.UserId,
+                e.UserEmail
+            }).IsUnique();
+        });
+        modelBuilder.Entity<Permission>(e =>
+        {
+            e.HasKey(x => x.Id);
+            e.HasIndex(e => new
+            {
+                e.Name,
+                e.OrganizationId,
+            }).IsUnique();
+        });
+        modelBuilder.Entity<Member>(e =>
+        {
+            e.HasKey(x => x.Id);
+        });
         foreach (var entityType in modelBuilder.Model.GetEntityTypes())
         {
             if (typeof(BaseEntity).IsAssignableFrom(entityType.ClrType))
