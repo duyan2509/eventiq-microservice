@@ -15,6 +15,9 @@ public static class DependencyInjection
                 npgsql => npgsql.EnableRetryOnFailure(5));
         });
         services.AddScoped<IOrganizationRepository, OrganizationRepository>();
+        services.AddScoped<IMemberRepository, MemberRepository>();
+        services.AddScoped<IInvitationRepository, InvitationRepository>();
+        services.AddScoped<IPermissionRepository, PermissionRepository>();
         return services;
     }
 }
