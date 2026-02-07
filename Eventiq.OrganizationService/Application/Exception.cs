@@ -13,6 +13,11 @@ abstract class AppException : Exception
     }
 }
 
+class ConflictException : AppException
+{
+    public ConflictException(string message, string errorCode = "CONFLICT")
+        : base(message, 409, errorCode) { }
+}
 class NotFoundException : AppException
 {
     public NotFoundException(string message)
