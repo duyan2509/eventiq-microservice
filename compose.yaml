@@ -36,7 +36,7 @@ services:
     environment:
       ASPNETCORE_ENVIRONMENT: Development
       ConnectionStrings__Postgres: >
-        Host=postgres;
+        Host=postgres-user;
         Port=5432;
         Database=eventiq_user;
         Username=eventiq;
@@ -84,6 +84,17 @@ services:
       - ./keys:/app/keys:ro
     networks:
       - eventiq-net
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    networks:
+      - eventiq-net
 
 volumes:
   postgres-user-data:
@@ -92,3 +103,9 @@ volumes:
 networks:
   eventiq-net:
     driver: bridge
+  eventiq.contracts:
+    image: eventiq.contracts
+    build:
+      context: .
+      dockerfile: Eventiq.Contracts/Dockerfile
+
