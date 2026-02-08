@@ -15,16 +15,15 @@ public class OrganizationService : IOrganizationService
     private readonly IMapper _mapper;
     private readonly ILogger<OrganizationService> _logger;
     private readonly IPublishEndpoint _publishEndpoint;
-    public OrganizationService(
-        IOrganizationRepository organizationRepository,
-        IMapper mapper,
-        IPublishEndpoint publishEndpoint,
-        ILogger<OrganizationService> logger)
+    private readonly IMemberRepository _memberRepository;
+
+    public OrganizationService(IOrganizationRepository organizationRepository, IMapper mapper, ILogger<OrganizationService> logger, IPublishEndpoint publishEndpoint, IMemberRepository memberRepository)
     {
         _organizationRepository = organizationRepository;
         _mapper = mapper;
-        _publishEndpoint = publishEndpoint;
         _logger = logger;
+        _publishEndpoint = publishEndpoint;
+        _memberRepository = memberRepository;
     }
 
 
@@ -44,17 +43,29 @@ public class OrganizationService : IOrganizationService
         return await _organizationRepository.GetAllMyOrgAsync(userId, page, pageSize, cancellationToken);
     }
 
-    public async Task<OrganizationResponse> AddAsync(Guid userId, OrganizationDto dto, CancellationToken cancellationToken = default)
+    public async Task<OrganizationResponse> AddAsync(Guid userId, string email, OrganizationDto dto, CancellationToken cancellationToken = default)
     {
         try
         {
             var organization = _mapper.Map<Organization>(dto);
-            await _organizationRepository.AddAsync(organization, cancellationToken);
-                       
-            _ = _publishEndpoint.Publish(new OrganizationCreated
+            organization.Permissions = new List<Permission>();
+            organization.Permissions.Add(new Permission()
             {
+                Name = "Owner",
+                IsDesigner = true
+            });
+            await _organizationRepository.AddAsync(organization, cancellationToken);
+            await _memberRepository.AddAsync(new Member()
+            {
+                UserId = userId,
+                Email = email,
                 OrganizationId = organization.Id,
-                OwnerId = userId
+                PermissionId = organization.Permissions.First().Id
+            });
+            await _publishEndpoint.Publish(new OrganizationCreated
+            {
+                OwnerId = userId,
+                OrganizationId = organization.Id,
             });
 
             return _mapper.Map<OrganizationResponse>(organization);
