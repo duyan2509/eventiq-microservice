@@ -3,6 +3,7 @@ using System;
 using Eventiq.UserService.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Eventiq.UserService.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(EvtUserDbContext))]
-    partial class EvtUserDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260208151548_AddOrgIdToUserRole")]
+    partial class AddOrgIdToUserRole
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
