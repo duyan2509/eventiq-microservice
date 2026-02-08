@@ -95,6 +95,11 @@ services:
       RABBITMQ_DEFAULT_PASS: guest
     networks:
       - eventiq-net
+  eventiq.contracts:
+    image: eventiq.contracts
+    build:
+      context: .
+      dockerfile: Eventiq.Contracts/Dockerfile
 
 volumes:
   postgres-user-data:
@@ -103,9 +108,4 @@ volumes:
 networks:
   eventiq-net:
     driver: bridge
-  eventiq.contracts:
-    image: eventiq.contracts
-    build:
-      context: .
-      dockerfile: Eventiq.Contracts/Dockerfile
 
