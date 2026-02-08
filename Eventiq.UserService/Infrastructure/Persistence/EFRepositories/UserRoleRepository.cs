@@ -21,4 +21,11 @@ public class UserRoleRepository: IUserRoleRepository
         await _userRoles.AddAsync(userRole);
         await _context.SaveChangesAsync();
     }
+
+    public async Task<UserRole?> GetUserRoleByRoleIdNOrgId(Guid roleId, Guid orgId)
+    {
+        return await  _userRoles.AsNoTracking()
+            .Where(ur=> ur.OrganizationId == orgId && ur.RoleId == roleId )
+            .FirstOrDefaultAsync();
+    }
 }
