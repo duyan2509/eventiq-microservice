@@ -2,8 +2,10 @@
 using System.Security.Claims;
 using Eventiq.Logging;
 using Eventiq.UserService.Application.Service;
+using Eventiq.UserService.Consumers;
 using Eventiq.UserService.Helper;
 using Eventiq.UserService.Infrastructure;
+using MassTransit;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 
@@ -42,6 +44,27 @@ public static class Extensions
                 };
             });
 
+        builder.Services.AddMassTransit(x =>
+        {
+            x.AddConsumer<OrganizationCreatedConsumer>();
+
+            if (builder.Environment.IsDevelopment())
+            {
+                x.UsingRabbitMq((context, cfg) =>
+                {
+                    cfg.Host(builder.Configuration["RabbitMq:ConnectionString"]);
+                    cfg.ConfigureEndpoints(context);
+                });
+            }
+            else
+            {
+                x.UsingAzureServiceBus((context, cfg) =>
+                {
+                    cfg.Host(builder.Configuration["AzureServiceBus:ConnectionString"]);
+                    cfg.ConfigureEndpoints(context);
+                });
+            }
+        });
 
     }
 }

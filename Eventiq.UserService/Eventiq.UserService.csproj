@@ -10,6 +10,9 @@
     <ItemGroup>
         <PackageReference Include="AutoMapper" Version="13.0.1" />
         <PackageReference Include="FluentValidation" Version="11.12.0" />
+        <PackageReference Include="MassTransit" Version="9.0.1" />
+        <PackageReference Include="MassTransit.Azure.ServiceBus.Core" Version="9.0.1" />
+        <PackageReference Include="MassTransit.RabbitMQ" Version="9.0.1" />
         <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.23" />
         <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="8.0.23" />
         <PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.23" />
@@ -32,6 +35,7 @@
     </ItemGroup>
 
     <ItemGroup>
+      <ProjectReference Include="..\Eventiq.Contracts\Eventiq.Contracts.csproj" />
       <ProjectReference Include="..\Eventiq.Logging\Eventiq.Logging.csproj" />
     </ItemGroup>
 
