@@ -1,10 +1,10 @@
-﻿{
+{
   "Routes": [
     {
       "DownstreamPathTemplate": "/api/auth/login",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
-        { "Host": "user-service", "Port": 8080 }
+        { "Host": "user-service", "Port": 8081 }
       ],
       "UpstreamPathTemplate": "/gateway/auth/login",
       "UpstreamHttpMethod": ["POST"]
@@ -13,7 +13,7 @@
       "DownstreamPathTemplate": "/api/auth/register",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
-        { "Host": "user-service", "Port": 8080 }
+        { "Host": "user-service", "Port": 8081 }
       ],
       "UpstreamPathTemplate": "/gateway/auth/register",
       "UpstreamHttpMethod": ["POST"]
@@ -22,7 +22,7 @@
       "DownstreamPathTemplate": "/api/auth/refresh",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
-        { "Host": "user-service", "Port": 8080 }
+        { "Host": "user-service", "Port": 8081 }
       ],
       "UpstreamPathTemplate": "/gateway/auth/refresh",
       "UpstreamHttpMethod": ["POST"]
@@ -36,7 +36,7 @@
       "DownstreamHostAndPorts": [
         {
           "Host": "user-service",
-          "Port": 8080
+          "Port": 8081
         }
       ],
       "UpstreamHttpMethod": ["GET", "POST", "PATCH"],
@@ -55,7 +55,7 @@
       "DownstreamHostAndPorts": [
         {
           "Host": "user-service",
-          "Port": 8080
+          "Port": 8081
         }
       ],
       "UpstreamHttpMethod": ["GET", "PATCH"],
@@ -67,6 +67,17 @@
         "AuthenticationProviderKey": "Bearer",
         "AllowedScopes": []
       }
+    },
+    {
+      "DownstreamPathTemplate": "/api/organizations/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [{ "Host": "org-service", "Port": 8082 }],
+      "UpstreamPathTemplate": "/gateway/organizations/{everything}",
+      "UpstreamHttpMethod": ["GET", "POST", "PATCH"],
+      "AddHeadersToRequest": { "Authorization": "{Authorization}" },
+      "AuthenticationOptions": { "AuthenticationProviderKey": "Bearer", "AllowedScopes": [] },
+      "RouteIsCaseSensitive": false
+
     }
   ],
   "GlobalConfiguration": {

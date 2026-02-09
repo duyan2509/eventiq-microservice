@@ -1,8 +1,10 @@
 using System.Security.Claims;
+using Eventiq.Contracts;
 using Eventiq.OrganizationService.Application.Service;
 using Eventiq.OrganizationService.Dtos;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.CodeAnalysis.Operations;
 
 namespace Eventiq.OrganizationService.Controllers;
 
@@ -20,7 +22,7 @@ public class OrganizationController : ControllerBase
         _organizationService = organizationService;
         _logger = logger;
     }
-
+    [Authorize(Roles = nameof(AppRoles.Admin))]
     [HttpGet]
     public async Task<ActionResult<PaginatedResult<OrganizationDetail>>> GetAll(
         [FromQuery] int page = 1,
@@ -44,8 +46,7 @@ public class OrganizationController : ControllerBase
             throw new NotFoundException($"Organization with id {id} does not exist");
         return Ok(item);
     }
-
-    [Authorize]
+    [Authorize(Roles = $"{nameof(AppRoles.Organization)},{nameof(AppRoles.Staff)}")]
     [HttpGet("me")]
     public async Task<ActionResult<PaginatedResult<OrganizationDetail>>> GetMyOrganizations(
         [FromQuery] int page = 1,
@@ -64,7 +65,7 @@ public class OrganizationController : ControllerBase
     }
 
     [Authorize]
-    [HttpPost]
+    [HttpPost("create")]
     public async Task<ActionResult<OrganizationResponse>> Create(
         [FromBody] OrganizationDto dto,
         CancellationToken cancellationToken = default)
@@ -81,8 +82,8 @@ public class OrganizationController : ControllerBase
         return Ok(result);
     }
 
-    [Authorize]
-    [HttpPut("{id:guid}")]
+    [Authorize(Roles = nameof(AppRoles.Organization))]
+    [HttpPatch("{id:guid}")]
     public async Task<ActionResult<OrganizationResponse>> Update(
         Guid id,
         [FromBody] UpdateOrganizationDto dto,
