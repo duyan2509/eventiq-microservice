@@ -17,7 +17,7 @@ public class JwtService : IJwtService
 
     public string GenerateAccessToken(string userId, string role, IDictionary<string, string>? extraClaims = null)
     {
-        var claims = new[]
+        var claims = new List<Claim>
         {
             new Claim(JwtRegisteredClaimNames.Sub, userId),
             new Claim(ClaimTypes.Role, role),
@@ -26,7 +26,7 @@ public class JwtService : IJwtService
         {
             foreach (var keyValuePair in extraClaims)
             {
-                claims.Append(new Claim(keyValuePair.Key, keyValuePair.Value));
+                claims.Add(new Claim(keyValuePair.Key, keyValuePair.Value));
             }
         }
         
