@@ -41,12 +41,12 @@ public class AuthController : ControllerBase
     }
     [Authorize]
     [HttpPost("role")]
-    public async Task<ActionResult<SwitchRoleRepsponse>> Login([FromBody] AppRoles role)
+    public async Task<ActionResult<SwitchRoleRepsponse>> Login([FromBody] SwitchRoleRequest dto )
     {
         var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
         if (string.IsNullOrEmpty(userIdStr) || !Guid.TryParse(userIdStr, out var parsedUserId))
             throw new UnauthorizedException("User id is required");
-        var rs = await _userService.SwitchRole(parsedUserId, role );
+        var rs = await _userService.SwitchRole(parsedUserId, dto.Role );
         return Ok(rs);
     }
 

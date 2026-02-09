@@ -70,7 +70,7 @@ public class UserService:IUserService
         
         
         var accessToken = _jwt.GenerateAccessToken(
-            user.Id, RoleGuards.ResolveActiveRole(user), new Dictionary<string, string>
+            user.Id, role.ToString(), new Dictionary<string, string>
             {
                 ["email"]=user.Email,
             }
