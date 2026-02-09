@@ -35,6 +35,7 @@ services:
       dockerfile: Eventiq.UserService/Dockerfile
     environment:
       ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://+:8081
       ConnectionStrings__Postgres: >
         Host=postgres-user;
         Port=5432;
@@ -43,7 +44,10 @@ services:
         Password=eventiq123;
         Ssl Mode=Disable;
     depends_on:
-      - postgres-user
+      postgres-user:
+        condition: service_started
+      rabbitmq:
+        condition: service_healthy
     volumes:
       - ./keys:/app/keys:ro
     networks:
@@ -55,6 +59,7 @@ services:
         dockerfile: Eventiq.OrganizationService/Dockerfile
       environment:
         ASPNETCORE_ENVIRONMENT: Development
+        ASPNETCORE_URLS: http://+:8082
         ConnectionStrings__Postgres: >
           Host=postgres-org;
           Port=5432;
@@ -63,7 +68,10 @@ services:
           Password=eventiq123;
           Ssl Mode=Disable;
       depends_on:
-        - postgres-org
+        postgres-org:
+          condition: service_started
+        rabbitmq:
+          condition: service_healthy
       volumes:
         - ./keys:/app/keys:ro
       networks:
@@ -78,6 +86,7 @@ services:
       ASPNETCORE_ENVIRONMENT: Development
     depends_on:
       - user-service
+      - org-service
     ports:
       - "5001:8080"
     volumes:
@@ -91,8 +100,13 @@ services:
       - "5672:5672"
       - "15672:15672"
     environment:
-      RABBITMQ_DEFAULT_USER: guest
-      RABBITMQ_DEFAULT_PASS: guest
+      RABBITMQ_DEFAULT_USER: eventiq
+      RABBITMQ_DEFAULT_PASS: eventiq123
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     networks:
       - eventiq-net
   eventiq.contracts:
