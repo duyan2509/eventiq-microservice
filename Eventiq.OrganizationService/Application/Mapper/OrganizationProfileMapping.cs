@@ -10,5 +10,6 @@ public class OrganizationProfileMapping:Profile
     {
         CreateMap<Organization, OrganizationDto>();
         CreateMap<OrganizationDto, Organization>();
+        CreateMap<Organization, OrganizationResponse>();
     }
 }
