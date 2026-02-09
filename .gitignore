@@ -46,6 +46,8 @@ CodeCoverage/
 
 # MSBuild Binary and Structured Log
 *.binlog
+*.http
+**/*.http
 
 # MSTest test Results
 [Tt]est[Rr]esult*/
