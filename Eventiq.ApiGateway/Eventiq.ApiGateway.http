@@ -1,6 +1,0 @@
-@Eventiq.ApiGateway_HostAddress = http://localhost:5244
-
-GET {{Eventiq.ApiGateway_HostAddress}}/weatherforecast/
-Accept: application/json
-
-###
