@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using Eventiq.UserService;
 using Eventiq.UserService.Application.Dto;
 using Eventiq.UserService.Extensions;
@@ -8,7 +9,9 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(opt =>
+        opt.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.AddApplicationServices();
