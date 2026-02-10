@@ -33,10 +33,10 @@ public class OrganizationRepository : IOrganizationRepository
                 Size = o.Members.Count,
                 Id = o.Id,
             });
-        int count = query.Count();
+        int count = await query.CountAsync(cancellationToken: cancellationToken);
         var data = new List<OrganizationDetail>();
         if((page-1)*size<count)
-            data = await query.Skip((page-1)*size).Take(count).ToListAsync(cancellationToken);
+            data = await query.Skip((page-1)*size).Take(size).ToListAsync(cancellationToken);
         return new PaginatedResult<OrganizationDetail>()
         {
             Data = data,
@@ -57,10 +57,10 @@ public class OrganizationRepository : IOrganizationRepository
                 Id = o.Id,
                 isOwner = userId.Equals(o.OwnerId),
             });
-        int count = query.Count();
+        int count = await query.CountAsync(cancellationToken: cancellationToken);
         var data = new List<OrganizationDetail>();
         if((page-1)*size<count)
-            data = await query.Skip((page-1)*size).Take(count).ToListAsync(cancellationToken);
+            data = await query.Skip((page-1)*size).Take(size).ToListAsync(cancellationToken);
         return new PaginatedResult<OrganizationDetail>()
         {
             Data = data,
