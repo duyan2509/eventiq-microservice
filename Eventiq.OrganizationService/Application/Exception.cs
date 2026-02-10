@@ -13,6 +13,11 @@ abstract class AppException : Exception
     }
 }
 
+class BusinessException : AppException
+{
+    public BusinessException(string message, string errorCode = "CONFLICT")
+        : base(message, 400, errorCode) { }
+}
 class ConflictException : AppException
 {
     public ConflictException(string message, string errorCode = "CONFLICT")
