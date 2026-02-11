@@ -4,6 +4,7 @@ using Eventiq.OrganizationService.Application.Service;
 using Eventiq.OrganizationService.Infrastructure;
 using Eventiq.Logging;
 using Eventiq.OrganizationService.Helper;
+using Eventiq.OrganizationService.Infrastructure.Persistence;
 using MassTransit;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
@@ -30,14 +31,14 @@ public static class Extensions
                 {
                     ValidateIssuer = true,
                     ValidIssuer = "eventiq-auth",
-
+        
                     ValidateAudience = true,
                     ValidAudience = "eventiq",
-
+        
                     ValidateLifetime = true,
                     ValidateIssuerSigningKey = true,
                     IssuerSigningKey = publicKey,
-
+        
                     NameClaimType = "sub",
                     RoleClaimType = ClaimTypes.Role
                 };
@@ -45,9 +46,15 @@ public static class Extensions
 
         builder.Services.AddMassTransit(x =>
         {
+            x.AddEntityFrameworkOutbox<EvtOrganizationDbContext>(o =>
+            {
+                o.UsePostgres();     
+                o.UseBusOutbox();    
+            });
             if(builder.Environment.IsDevelopment())
                 x.UsingRabbitMq((context, cfg) =>
                 {
+                    
                     cfg.Host(
                         new Uri(builder.Configuration["MessageBus:RabbitMq:ConnectionString"] ?? string.Empty)
                     );
