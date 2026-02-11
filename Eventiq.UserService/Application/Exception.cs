@@ -12,6 +12,11 @@ abstract class AppException : Exception
         ErrorCode = errorCode;
     }
 }
+class BusinessException : AppException
+{
+    public BusinessException(string message, string errorCode = "CONFLICT")
+        : base(message, 400, errorCode) { }
+}
 class NotFoundException : AppException
 {
     public NotFoundException(string message)

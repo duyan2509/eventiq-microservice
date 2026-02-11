@@ -39,26 +39,26 @@ public class GlobalExceptionMiddleware
         var statusCode = HttpStatusCode.InternalServerError;
         var message = exception.Message;
 
-        switch (exception)
+        if (exception is AppException appEx)
         {
-            case NotFoundException:
-                statusCode = HttpStatusCode.NotFound;
-                break;
+            statusCode = (HttpStatusCode)appEx.StatusCode;
+            message = appEx.Message;
+        }
+        else
+        {
+            switch (exception)
+            {
+                case SecurityTokenException:
+                case InvalidCredentialException:
+                    statusCode = HttpStatusCode.Unauthorized;
+                    message = "Unauthorized";
+                    break;
 
-            case ForbiddenException:
-                statusCode = HttpStatusCode.Forbidden;
-                break;
-
-            case UnauthorizedException:
-            case InvalidCredentialException:
-            case SecurityTokenException:
-                statusCode = HttpStatusCode.Unauthorized;
-                break;
-
-            case ArgumentException:
-            case BadRequestException:
-                statusCode = HttpStatusCode.BadRequest;
-                break;
+                case ArgumentException:
+                    statusCode = HttpStatusCode.BadRequest;
+                    message = exception.Message;
+                    break;
+            }
         }
 
         var response = new ErrorResponse
