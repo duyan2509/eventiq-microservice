@@ -12,7 +12,7 @@ public static class PermissionGuards
     public static void EnsureNotOwnerPermission(Permission? permission)
     {
         if (permission.Name=="Owner")
-            throw new BusinessException("Cannot modify Owner permission.");
+            throw new BusinessException("Cannot interact Owner permission.");
     }
 
     public static void EnsureNotDuplicatePermission(Permission permission, Guid permissionId)

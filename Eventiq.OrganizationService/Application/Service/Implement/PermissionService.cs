@@ -1,4 +1,5 @@
 using AutoMapper;
+using Eventiq.OrganizationService.Domain;
 using Eventiq.OrganizationService.Domain.Entity;
 using Eventiq.OrganizationService.Domain.Repositories;
 using Eventiq.OrganizationService.Dtos;
@@ -12,13 +13,15 @@ public class PermissionService : IPermissionService
     private readonly ILogger<PermissionService> _logger;
     private readonly IMapper _mapper;
     private readonly IOrganizationRepository _organizationRepository;
+    private readonly IUnitOfWork _unitOfWork;
 
-    public PermissionService(IPermissionRepository permissionRepository, ILogger<PermissionService> logger, IMapper mapper, IOrganizationRepository organizationRepository)
+    public PermissionService(IPermissionRepository permissionRepository, ILogger<PermissionService> logger, IMapper mapper, IOrganizationRepository organizationRepository, IUnitOfWork unitOfWork)
     {
         _permissionRepository = permissionRepository;
         _logger = logger;
         _mapper = mapper;
         _organizationRepository = organizationRepository;
+        _unitOfWork = unitOfWork;
     }
 
     public async Task<PaginatedResult<PermissionResponse>> GetPermissionsAsync(Guid userId, Guid orgId, int page = 1 , int size = 10, CancellationToken cancellationToken = default)
@@ -34,6 +37,7 @@ public class PermissionService : IPermissionService
         var permission = _mapper.Map<PermissionDto, Permission>(dto);
         permission.OrganizationId = orgId;
         await _permissionRepository.AddAsync(permission, cancellationToken);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
         return _mapper.Map<PermissionResponse>(permission);
         
     }
@@ -51,6 +55,7 @@ public class PermissionService : IPermissionService
         if(dto.IsDesigner!=null)
             permission.IsDesigner = dto.IsDesigner.Value ;
         await _permissionRepository.UpdateAsync(permission, cancellationToken);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
         return _mapper.Map<PermissionResponse>(permission);
     }
 
@@ -63,6 +68,7 @@ public class PermissionService : IPermissionService
         PermissionGuards.EnsureExists(permission);
         PermissionGuards.EnsureNotOwnerPermission(permission);
         await _permissionRepository.DeleteAsync(permission, cancellationToken);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
         return true;
     }
 }

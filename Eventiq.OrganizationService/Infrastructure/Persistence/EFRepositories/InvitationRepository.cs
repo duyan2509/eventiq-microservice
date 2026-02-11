@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using Eventiq.OrganizationService.Domain.Entity;
 using Eventiq.OrganizationService.Domain.Repositories;
 using Eventiq.OrganizationService.Dtos;
@@ -62,14 +62,13 @@ public class InvitationRepository:IInvitationRepository
         return await  _invitations.SingleOrDefaultAsync(i => i.Id == invitationId, cancellationToken);
     }
 
-    public async Task UpdateAsync(Invitation? invitation, CancellationToken cancellationToken = default)
+    public Task UpdateAsync(Invitation? invitation, CancellationToken cancellationToken = default)
     {
         _invitations.Update(invitation);
-        await _context.SaveChangesAsync(cancellationToken);
+        return Task.CompletedTask;
     }
-    public async Task AddAsync(Invitation? invitation, CancellationToken cancellationToken = default)
+    public Task AddAsync(Invitation? invitation, CancellationToken cancellationToken = default)
     {
-        await _invitations.AddAsync(invitation, cancellationToken);
-        await _context.SaveChangesAsync(cancellationToken);
+        return _invitations.AddAsync(invitation, cancellationToken).AsTask();
     }
 }

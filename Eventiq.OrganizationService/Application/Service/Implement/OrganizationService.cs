@@ -1,5 +1,6 @@
 using AutoMapper;
 using Eventiq.Contracts;
+using Eventiq.OrganizationService.Domain;
 using Eventiq.OrganizationService.Domain.Entity;
 using Eventiq.OrganizationService.Domain.Repositories;
 using Eventiq.OrganizationService.Dtos;
@@ -16,14 +17,16 @@ public class OrganizationService : IOrganizationService
     private readonly ILogger<OrganizationService> _logger;
     private readonly IPublishEndpoint _publishEndpoint;
     private readonly IMemberRepository _memberRepository;
+    private readonly IUnitOfWork _unitOfWork;
 
-    public OrganizationService(IOrganizationRepository organizationRepository, IMapper mapper, ILogger<OrganizationService> logger, IPublishEndpoint publishEndpoint, IMemberRepository memberRepository)
+    public OrganizationService(IOrganizationRepository organizationRepository, IMapper mapper, ILogger<OrganizationService> logger, IPublishEndpoint publishEndpoint, IMemberRepository memberRepository, IUnitOfWork unitOfWork)
     {
         _organizationRepository = organizationRepository;
         _mapper = mapper;
         _logger = logger;
         _publishEndpoint = publishEndpoint;
         _memberRepository = memberRepository;
+        _unitOfWork = unitOfWork;
     }
 
 
@@ -61,12 +64,13 @@ public class OrganizationService : IOrganizationService
                 Email = email,
                 OrganizationId = organization.Id,
                 PermissionId = organization.Permissions.First().Id
-            });
+            }, cancellationToken);
             await _publishEndpoint.Publish(new OrganizationCreated
             {
                 OwnerId = userId,
                 OrganizationId = organization.Id,
             });
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
 
             return _mapper.Map<OrganizationResponse>(organization);
         }
@@ -89,9 +93,10 @@ public class OrganizationService : IOrganizationService
             throw new ForbiddenException($"You are not the owner of this organization");
         if(dto.Name!=null)
             organization.Name = dto.Name;
-        if(organization.Description!=null)
+        if(dto.Description!=null)
             organization.Description = dto.Description;
         await _organizationRepository.UpdateAsync(organization, cancellationToken);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
         return _mapper.Map<OrganizationResponse>(organization);
     }
 }

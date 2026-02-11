@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using Eventiq.OrganizationService.Domain.Entity;
 using Eventiq.OrganizationService.Domain.Repositories;
 using Eventiq.OrganizationService.Dtos;
@@ -19,10 +19,9 @@ public class PermissionRepository:IPermissionRepository
         _mapper = mapper;
     }
 
-    public async Task AddAsync(Permission? permission, CancellationToken cancellationToken = default)
+    public Task AddAsync(Permission? permission, CancellationToken cancellationToken = default)
     {
-        await _permissions.AddAsync(permission, cancellationToken);
-        await _context.SaveChangesAsync(cancellationToken);
+        return _permissions.AddAsync(permission, cancellationToken).AsTask();
     }
 
     public async Task<PaginatedResult<PermissionResponse>> GetByOrgIdUserId(Guid userId, Guid orgId, int page, int size, CancellationToken cancellationToken = default)
@@ -46,10 +45,10 @@ public class PermissionRepository:IPermissionRepository
         };
     }
 
-    public async Task DeleteAsync(Permission? permission, CancellationToken cancellationToken = default)
+    public Task DeleteAsync(Permission? permission, CancellationToken cancellationToken = default)
     {
         _permissions.Remove(permission);
-        await _context.SaveChangesAsync(cancellationToken);
+        return Task.CompletedTask;
     }
 
     public async Task<Permission?> GetByIdAsync(Guid permissionId, CancellationToken cancellationToken = default)
@@ -57,9 +56,9 @@ public class PermissionRepository:IPermissionRepository
         return await _permissions.Where(p=>p.Id == permissionId).FirstOrDefaultAsync(cancellationToken);
     }
 
-    public async Task UpdateAsync(Permission? permission, CancellationToken cancellationToken = default)
+    public Task UpdateAsync(Permission? permission, CancellationToken cancellationToken = default)
     {
         _permissions.Update(permission);
-        await _context.SaveChangesAsync(cancellationToken);
+        return Task.CompletedTask;
     }
 }

@@ -19,6 +19,12 @@ public static class InvitationGuards
             throw new BusinessException("Invitation has already been accepted");
     }
 
+    public static void EnsureOrgInvitation(Invitation invitation, Guid orgId)
+    {
+        if(invitation.OrganizationId != orgId)
+            throw new BusinessException("Invitation is not in org");
+    }
+
     public static DateTime GetExpiresAfter7Day()
     {
         return DateTime.UtcNow.AddDays(7);

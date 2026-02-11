@@ -70,15 +70,15 @@ public class OrganizationRepository : IOrganizationRepository
         };
     }
 
-    public async Task AddAsync(Organization organization, CancellationToken cancellationToken = default)
+    public Task AddAsync(Organization organization, CancellationToken cancellationToken = default)
     {
         _organizations.Add(organization);
-        await _context.SaveChangesAsync(cancellationToken);
+        return Task.CompletedTask;
     }
 
-    public async Task UpdateAsync(Organization organization, CancellationToken cancellationToken = default)
+    public Task UpdateAsync(Organization organization, CancellationToken cancellationToken = default)
     {
         _organizations.Update(organization);
-        await _context.SaveChangesAsync(cancellationToken);
+        return Task.CompletedTask;
     }
 }

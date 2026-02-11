@@ -1,9 +1,12 @@
 using AutoMapper;
+using Eventiq.Contracts;
+using Eventiq.OrganizationService.Domain;
 using Eventiq.OrganizationService.Domain.Entity;
 using Eventiq.OrganizationService.Domain.Enum;
 using Eventiq.OrganizationService.Domain.Repositories;
 using Eventiq.OrganizationService.Dtos;
 using Eventiq.OrganizationService.Guards;
+using MassTransit;
 
 namespace Eventiq.OrganizationService.Application.Service;
 
@@ -13,13 +16,22 @@ public class InvitationService : IInvitationService
     private readonly IInvitationRepository _invitationRepository;
     private readonly IOrganizationRepository _organizationRepository;
     private readonly IMemberRepository _memberRepository;
+    private readonly IPublishEndpoint _publishEndpoint;
+    private readonly IUnitOfWork _unitOfWork;
 
-    public InvitationService(IMapper mapper, IInvitationRepository invitationRepository, IOrganizationRepository organizationRepository, IMemberRepository memberRepository)
+    public InvitationService(IMapper mapper,
+        IInvitationRepository invitationRepository,
+        IOrganizationRepository organizationRepository,
+        IMemberRepository memberRepository,
+        IPublishEndpoint publishEndpoint,
+        IUnitOfWork unitOfWork)
     {
         _mapper = mapper;
         _invitationRepository = invitationRepository;
         _organizationRepository = organizationRepository;
         _memberRepository = memberRepository;
+        _publishEndpoint = publishEndpoint;
+        _unitOfWork = unitOfWork;
     }
 
 
@@ -47,6 +59,7 @@ public class InvitationService : IInvitationService
         var invitation = await _invitationRepository.GetInvitatioByIDAsync(invitationId, cancellationToken);
         InvitationGuards.EnsureExist(invitation);
         InvitationGuards.EnsureCanResponse(invitation);
+        InvitationGuards.EnsureOrgInvitation(invitation, orgId);
         invitation.Status = InvitationStatus.ACCEPTED;
         invitation.UserId =  userId;
         await _invitationRepository.UpdateAsync(invitation, cancellationToken);
@@ -56,9 +69,14 @@ public class InvitationService : IInvitationService
             Email = invitation.UserEmail,
             OrganizationId = orgId,
             PermissionId = invitation.PermissionId
-        });
+        }, cancellationToken);
         // send message
-
+        await _publishEndpoint.Publish(new StaffAccepted
+        {
+            UserId = userId,
+            OrganizationId = orgId,
+        });
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
         return _mapper.Map<InviationResponse>(invitation);
     }
 
@@ -70,6 +88,7 @@ public class InvitationService : IInvitationService
         invitation.Status = InvitationStatus.REJECTED;
         invitation.UserId =  userId;
         await _invitationRepository.UpdateAsync(invitation, cancellationToken);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
         return _mapper.Map<InviationResponse>(invitation);
     }
 
@@ -82,7 +101,8 @@ public class InvitationService : IInvitationService
         InvitationGuards.EnsureExist(invitation);
         InvitationGuards.EnsureCanResponse(invitation);
         invitation.Status = InvitationStatus.CANCELED;
-        await  _invitationRepository.UpdateAsync(invitation, cancellationToken);
+        await _invitationRepository.UpdateAsync(invitation, cancellationToken);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
         return _mapper.Map<InviationResponse>(invitation);
     }
 }

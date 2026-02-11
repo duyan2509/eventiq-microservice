@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using Eventiq.OrganizationService.Domain.Entity;
 using Eventiq.OrganizationService.Domain.Repositories;
 using Eventiq.OrganizationService.Dtos;
@@ -19,22 +19,21 @@ public class MemberRepository:IMemberRepository
         _members = _context.Members;
     }
 
-    public async Task AddAsync(Member? member, CancellationToken cancellationToken = default)
+    public Task AddAsync(Member? member, CancellationToken cancellationToken = default)
     {
-        await  _members.AddAsync(member, cancellationToken);
-        await _context.SaveChangesAsync(cancellationToken);
+        return _members.AddAsync(member, cancellationToken).AsTask();
     }
 
-    public async Task UpdateAsync(Member? member, CancellationToken cancellationToken = default)
+    public Task UpdateAsync(Member? member, CancellationToken cancellationToken = default)
     {
         _members.Update(member);
-        await _context.SaveChangesAsync(cancellationToken);
+        return Task.CompletedTask;
     }
 
-    public async Task RemoveAsync(Member? member, CancellationToken cancellationToken = default)
+    public Task RemoveAsync(Member? member, CancellationToken cancellationToken = default)
     {
         _members.Remove(member);
-        await _context.SaveChangesAsync(cancellationToken);
+        return Task.CompletedTask;
     }
 
     public async Task<Member?> GetAsync(Guid memberId, CancellationToken cancellationToken = default)
