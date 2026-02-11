@@ -1,3 +1,4 @@
+using Eventiq.OrganizationService.Domain;
 using Eventiq.OrganizationService.Domain.Repositories;
 using Eventiq.OrganizationService.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -14,6 +15,7 @@ public static class DependencyInjection
                 config.GetConnectionString("Postgres"),
                 npgsql => npgsql.EnableRetryOnFailure(5));
         });
+        services.AddScoped<IUnitOfWork, UnitOfWork>();
         services.AddScoped<IOrganizationRepository, OrganizationRepository>();
         services.AddScoped<IMemberRepository, MemberRepository>();
         services.AddScoped<IInvitationRepository, InvitationRepository>();
