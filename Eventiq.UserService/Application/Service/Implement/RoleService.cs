@@ -1,6 +1,7 @@
 ﻿using Eventiq.UserService.Domain.Entity;
 using Eventiq.UserService.Domain.Enums;
 using Eventiq.UserService.Domain.Repositories;
+using Eventiq.UserService.Guards;
 
 namespace Eventiq.UserService.Application.Service;
 
@@ -22,21 +23,43 @@ public class RoleService:IRoleService
     public async Task EnsureOrgRoleAsync(Guid userId, Guid organizationId)
     {
         var user = await _userRepository.GetUserById(userId);
-        if (user == null)
-            throw new NotFoundException($"User with id {userId} not found");
-        if (!user.Roles.Contains(nameof(AppRoles.Organization)))
+        UserGuards.EnsureExist(user);
+        var orgRole = await _roleRepository.GetRoleByName(nameof(AppRoles.Organization));
+        RoleGuards.EnsureExist(orgRole);
+        var useRole = await _userRoleRepository.GetUserRoleByRoleIdNOrgId(orgRole.Id,  organizationId);
+        RoleGuards.EnsureUserRoleNotFound(useRole);
+        await _userRoleRepository.AddUserRole(new UserRole()
         {
-            var orgRole = await _roleRepository.GetRoleByName(nameof(AppRoles.Organization));
-            if (orgRole == null)
-                throw new NotFoundException($"Organization role is not found");
-            var useRole = await _userRoleRepository.GetUserRoleByRoleIdNOrgId(orgRole.Id,  organizationId);
-            if (useRole == null)
-                await _userRoleRepository.AddUserRole(new UserRole()
-                {
-                    UserId = userId,
-                    RoleId = orgRole.Id,
-                    OrganizationId = organizationId
-                });
-        }
+            UserId = userId,
+            RoleId = orgRole.Id,
+            OrganizationId = organizationId
+        });
+    }
+
+    public async Task AssignOrgStaffRoleAsync(Guid userId, Guid organizationId)
+    {
+        var user = await _userRepository.GetUserById(userId);
+        UserGuards.EnsureExist(user);
+        var orgRole = await _roleRepository.GetRoleByName(nameof(AppRoles.Staff));
+        RoleGuards.EnsureExist(orgRole);
+        var useRole = await _userRoleRepository.GetUserRoleByOrgIdUserIdRoleIdAsync(organizationId,userId,orgRole.Id);
+        RoleGuards.EnsureUserRoleNotFound(useRole);
+        await _userRoleRepository.AddUserRole(new UserRole()
+        {
+            UserId = userId,
+            RoleId = orgRole.Id,
+            OrganizationId = organizationId
+        });
+    }
+
+    public async Task InvokeOrgStaffRoleAsync(Guid userId, Guid organizationId)
+    {
+        var user = await _userRepository.GetUserById(userId);
+        UserGuards.EnsureExist(user);
+        var orgRole = await _roleRepository.GetRoleByName(nameof(AppRoles.Staff));
+        RoleGuards.EnsureExist(orgRole);
+        var useRole = await _userRoleRepository.GetUserRoleByOrgIdUserIdRoleIdAsync(organizationId,userId,orgRole.Id);
+        RoleGuards.EnsureUserRoleExist(useRole);
+        await _userRoleRepository.RemoveUserRole(useRole);
     }
 }

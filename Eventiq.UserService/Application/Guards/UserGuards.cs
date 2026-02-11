@@ -1,10 +1,16 @@
-﻿using Eventiq.UserService.Domain.Enums;
+﻿using Eventiq.UserService.Domain.Entity;
+using Eventiq.UserService.Domain.Enums;
 using Eventiq.UserService.Model;
 
 namespace Eventiq.UserService.Guards;
 
 public static class UserGuards
 {
+    public static void EnsureExist(LoginUserModel user)
+    {
+        if(user == null)
+            throw new NotFoundException("User not found");
+    }
     public static void EnsureActive(LoginUserModel user)
     {
         if (user.IsBanned)

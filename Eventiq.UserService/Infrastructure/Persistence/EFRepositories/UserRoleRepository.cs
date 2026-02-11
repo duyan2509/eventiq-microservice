@@ -28,4 +28,17 @@ public class UserRoleRepository: IUserRoleRepository
             .Where(ur=> ur.OrganizationId == orgId && ur.RoleId == roleId )
             .FirstOrDefaultAsync();
     }
+
+    public async Task<UserRole?> GetUserRoleByOrgIdUserIdRoleIdAsync(Guid orgId, Guid userId, Guid roleId)
+    {
+        return await  _userRoles.AsNoTracking()
+            .Where(ur=> ur.OrganizationId == orgId && ur.RoleId == roleId && ur.UserId==userId)
+            .FirstOrDefaultAsync();
+    }
+
+    public async Task RemoveUserRole(UserRole userRole)
+    {
+        _userRoles.Remove(userRole);
+        await  _context.SaveChangesAsync();
+    }
 }
