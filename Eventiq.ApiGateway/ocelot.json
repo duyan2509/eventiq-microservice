@@ -73,7 +73,18 @@
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [{ "Host": "org-service", "Port": 8082 }],
       "UpstreamPathTemplate": "/gateway/organizations/{everything}",
-      "UpstreamHttpMethod": ["GET", "POST", "PATCH"],
+      "UpstreamHttpMethod": ["GET", "POST", "PATCH", "DELETE"],
+      "AddHeadersToRequest": { "Authorization": "{Authorization}" },
+      "AuthenticationOptions": { "AuthenticationProviderKey": "Bearer", "AllowedScopes": [] },
+      "RouteIsCaseSensitive": false
+
+    },
+    {
+      "DownstreamPathTemplate": "/api/invitations/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [{ "Host": "org-service", "Port": 8082 }],
+      "UpstreamPathTemplate": "/gateway/invitations/{everything}",
+      "UpstreamHttpMethod": ["GET", "POST"],
       "AddHeadersToRequest": { "Authorization": "{Authorization}" },
       "AuthenticationOptions": { "AuthenticationProviderKey": "Bearer", "AllowedScopes": [] },
       "RouteIsCaseSensitive": false
