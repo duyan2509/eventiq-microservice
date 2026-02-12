@@ -47,7 +47,8 @@ public static class Extensions
         builder.Services.AddMassTransit(x =>
         {
             x.AddConsumer<OrganizationCreatedConsumer>();
-
+            x.AddConsumer<StaffAcceptedConsumer>();
+            x.AddConsumer<StaffRemovedConsumer>();
             if (builder.Environment.IsDevelopment())
             {
                 x.UsingRabbitMq((context, cfg) =>
