@@ -1,13 +1,17 @@
-﻿using Eventiq.OrganizationService.Domain.Enum;
+using Eventiq.OrganizationService.Domain.Enum;
 
 namespace Eventiq.OrganizationService.Dtos;
 
 
 public class InvitationDto
 {
-    public Guid OrganizationId { get; set; }
+    public Guid PermissionId { get; set; }
+}
+
+public class CreateInvitationDto
+{
     public string UserEmail { get; set; } = string.Empty;
-    public Guid PermissionId { get; set; }   
+    public Guid PermissionId { get; set; }
 }
 public class InviationResponse
 {

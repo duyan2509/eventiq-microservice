@@ -7,6 +7,7 @@ using Eventiq.OrganizationService.Domain.Repositories;
 using Eventiq.OrganizationService.Dtos;
 using Eventiq.OrganizationService.Guards;
 using MassTransit;
+using Microsoft.AspNetCore.Components.Forms;
 
 namespace Eventiq.OrganizationService.Application.Service;
 
@@ -18,12 +19,13 @@ public class InvitationService : IInvitationService
     private readonly IMemberRepository _memberRepository;
     private readonly IPublishEndpoint _publishEndpoint;
     private readonly IUnitOfWork _unitOfWork;
-
+    private readonly IPermissionRepository _permissionRepository;
     public InvitationService(IMapper mapper,
         IInvitationRepository invitationRepository,
         IOrganizationRepository organizationRepository,
         IMemberRepository memberRepository,
         IPublishEndpoint publishEndpoint,
+        IPermissionRepository permissionRepository,
         IUnitOfWork unitOfWork)
     {
         _mapper = mapper;
@@ -31,13 +33,39 @@ public class InvitationService : IInvitationService
         _organizationRepository = organizationRepository;
         _memberRepository = memberRepository;
         _publishEndpoint = publishEndpoint;
+        _permissionRepository = permissionRepository;
         _unitOfWork = unitOfWork;
     }
 
 
-    public Task<InviationResponse> AddInvitationAsync(string userEmail, Guid orgId, InvitationDto dto, CancellationToken cancellationToken = default)
+    public async Task<InviationResponse> AddInvitationAsync(string userEmail, Guid userId, Guid orgId, InvitationDto dto, CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        var org = await _organizationRepository.GetByIdAsync(orgId, cancellationToken);
+        OrgGuards.EnsureExists(org);
+        OwnerGuards.EnsureOwner(org, userId);
+        var permission = await _permissionRepository.GetByIdAsync(dto.PermissionId, cancellationToken);
+        PermissionGuards.EnsureExists(permission);
+        PermissionGuards.EnsureNotOwnerPermission(permission);
+        var invitation = await _invitationRepository.GetInvitationByEmailAndOrgId(userEmail,  org.Id, cancellationToken); 
+        InvitationGuards.EnsureExist(invitation);
+        InvitationGuards.EnsureNotActive(invitation);
+        invitation = new Invitation()
+        {
+            OrganizationId = org.Id,
+            UserEmail = userEmail,
+            PermissionId = dto.PermissionId,
+            ExpiresAt = InvitationGuards.GetExpiresAfter7Day()
+        };
+        await _invitationRepository.AddAsync(invitation, cancellationToken);
+        _publishEndpoint.Publish(new InvitationCreated()
+        {
+            EmailAddress = userEmail,
+            ExpireAt = invitation.ExpiresAt,
+            OrganizationName = org.Name,
+            PermissionName = permission.Name,
+        });
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
+        return _mapper.Map<InviationResponse>(invitation);
     }
 
     public async  Task<PaginatedResult<InviationResponse>> GetOrgInvitationsAsync(Guid ownerId, Guid orgId, int page=1, int size =10, CancellationToken cancellationToken = default)

@@ -71,4 +71,9 @@ public class InvitationRepository:IInvitationRepository
     {
         return _invitations.AddAsync(invitation, cancellationToken).AsTask();
     }
+
+    public async Task<Invitation?> GetInvitationByEmailAndOrgId(string userEmail, Guid orgId, CancellationToken cancellationToken)
+    {
+        return await _invitations.AsNoTracking().Where(i=>i.UserEmail == userEmail && i.OrganizationId == orgId).FirstOrDefaultAsync(cancellationToken);
+    }
 }

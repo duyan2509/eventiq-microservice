@@ -11,4 +11,5 @@ public interface IInvitationRepository
     Task UpdateAsync(Invitation? invitation, CancellationToken cancellationToken = default);
     Task AddAsync(Invitation invitation, CancellationToken cancellationToken = default);
 
+    Task<Invitation?> GetInvitationByEmailAndOrgId(string userEmail, Guid orgId, CancellationToken cancellationToken);
 }
