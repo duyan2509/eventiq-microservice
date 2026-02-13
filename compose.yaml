@@ -93,6 +93,22 @@ services:
       - ./keys:/app/keys:ro
     networks:
       - eventiq-net
+
+  email-service:
+    image: email-service
+    build:
+      context: .
+      dockerfile: Eventiq.EmailService/Dockerfile
+    environment:
+      DOTNET_ENVIRONMENT: Development
+      ASPNETCORE_ENVIRONMENT: Development
+      RabbitMq__ConnectionString: amqp://eventiq:eventiq123@rabbitmq:5672
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - eventiq-net
+
   rabbitmq:
     image: rabbitmq:3-management
     container_name: rabbitmq
@@ -109,8 +125,8 @@ services:
       retries: 5
     networks:
       - eventiq-net
-  eventiq.contracts:
-    image: eventiq.contracts
+  contracts:
+    image:  contracts
     build:
       context: .
       dockerfile: Eventiq.Contracts/Dockerfile
