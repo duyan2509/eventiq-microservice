@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk.Worker">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UserSecretsId>dotnet-Eventiq.EmailService-4f12f162-5d1c-4079-9e1c-704d372c8140</UserSecretsId>
+    <PreserveCompilationContext>true</PreserveCompilationContext>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="MassTransit" Version="8.5.8" />
+    <PackageReference Include="MassTransit.RabbitMQ" Version="8.5.8" />
+    <PackageReference Include="MassTransit.Azure.ServiceBus.Core" Version="8.5.8" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.1" />
+    <PackageReference Include="RazorLight" Version="2.3.1" />
+  </ItemGroup>
+  <ItemGroup>
+      <Content Include="Templates\**\*.*">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </Content>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Eventiq.Contracts\Eventiq.Contracts.csproj" />
+  </ItemGroup>
+
+</Project>

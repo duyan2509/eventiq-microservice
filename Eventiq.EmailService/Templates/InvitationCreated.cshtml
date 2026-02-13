@@ -1,0 +1,30 @@
+@model Eventiq.EmailService.Templates.Models.InvitationCreatedTemplateModel
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <title>Eventiq Invitation</title>
+</head>
+<body>
+    <h2>You have been invited to join @Model.OrganizationName</h2>
+    <p>
+        Hello,
+    </p>
+    <p>
+        You have been granted the permission <strong>@Model.PermissionName</strong> in the organization
+        <strong>@Model.OrganizationName</strong> using this email: <strong>@Model.EmailAddress</strong>.
+    </p>
+    <p>
+        This invitation will expire at <strong>@Model.ExpireAt.ToString("yyyy-MM-dd HH:mm")</strong>.
+    </p>
+    <p>
+        If you did not expect this email, you can safely ignore it.
+    </p>
+    <p>
+        Thanks,<br />
+        <strong>Eventiq</strong>
+    </p>
+</body>
+</html>
+
