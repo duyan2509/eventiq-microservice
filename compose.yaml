@@ -27,6 +27,19 @@ services:
     networks:
       - eventiq-net
 
+  postgres-event:
+    image: postgres:15
+    container_name: eventiq-postgres-event
+    environment:
+      POSTGRES_DB: eventiq_event
+      POSTGRES_USER: eventiq
+      POSTGRES_PASSWORD: eventiq123
+    ports:
+      - "5434:5432"
+    volumes:
+      - postgres-event-data:/var/lib/postgresql/data
+    networks:
+      - eventiq-net
 
   user-service:
     image: user-service
@@ -77,6 +90,31 @@ services:
       networks:
         - eventiq-net
 
+  event-service:
+    image: event-service
+    build:
+      context: .
+      dockerfile: Eventiq.EventService/Dockerfile
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://+:8083
+      ConnectionStrings__Postgres: >
+        Host=postgres-event;
+        Port=5432;
+        Database=eventiq_event;
+        Username=eventiq;
+        Password=eventiq123;
+        Ssl Mode=Disable;
+    depends_on:
+      postgres-event:
+        condition: service_started
+      rabbitmq:
+        condition: service_healthy
+    volumes:
+      - ./keys:/app/keys:ro
+    networks:
+      - eventiq-net
+
   api-gateway:
     image: api-gateway
     build:
@@ -87,6 +125,7 @@ services:
     depends_on:
       - user-service
       - org-service
+      - event-service
     ports:
       - "5001:8080"
     volumes:
@@ -134,6 +173,7 @@ services:
 volumes:
   postgres-user-data:
   postgres-org-data:
+  postgres-event-data:
 
 networks:
   eventiq-net:
