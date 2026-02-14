@@ -26,7 +26,6 @@ public static class DependencyInjection
         });
 
         services.AddScoped<IEventRepository, EventRepository>();
-        services.AddScoped<IBankInfoRepository, BankInfoRepository>();
         services.AddScoped<ISubmissionRepository, SubmissionRepository>();
         services.AddScoped<ILegendRepository, LegendRepository>();
         services.AddScoped<ISessionRepository, SessionRepository>();

@@ -11,7 +11,6 @@ public sealed class EvtEventDbContext : DbContext
     }
 
     public DbSet<Event> Events => Set<Event>();
-    public DbSet<BankInfo> BankInfos => Set<BankInfo>();
     public DbSet<Submission> Submissions => Set<Submission>();
     public DbSet<Legend> Legends => Set<Legend>();
     public DbSet<Session> Sessions => Set<Session>();
@@ -22,7 +21,6 @@ public sealed class EvtEventDbContext : DbContext
         base.OnModelCreating(modelBuilder);
 
         modelBuilder.Entity<Event>(e => e.HasKey(x => x.Id));
-        modelBuilder.Entity<BankInfo>(e => e.HasKey(x => x.Id));
         modelBuilder.Entity<Submission>(e => e.HasKey(x => x.Id));
         modelBuilder.Entity<Legend>(e => e.HasKey(x => x.Id));
         modelBuilder.Entity<Session>(e => e.HasKey(x => x.Id));
