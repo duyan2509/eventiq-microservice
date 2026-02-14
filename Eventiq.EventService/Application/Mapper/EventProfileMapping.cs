@@ -8,7 +8,6 @@ public class EventProfileMapping : Profile
     public EventProfileMapping()
     {
         CreateMap<Event, Event>();
-        CreateMap<BankInfo, BankInfo>();
         CreateMap<Submission, Submission>();
         CreateMap<Legend, Legend>();
         CreateMap<Session, Session>();

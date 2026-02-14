@@ -1,6 +1,13 @@
 ﻿namespace Eventiq.EventService.Dtos;
 
-public class Session
+public class UpdateSessionDto
 {
-    
+}
+
+public class CreateSessionDto
+{
+}
+
+public class SessionResponse
+{
 }

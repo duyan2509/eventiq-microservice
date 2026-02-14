@@ -1,6 +1,18 @@
 ﻿namespace Eventiq.EventService.Dtos;
 
-public class EventDto
+public class UpdateEventDto
+{
+}
+
+public class CreateEventDto
+{
+}
+
+public class EventQuickViewData
+{
+}
+
+public class EventDetail
 {
     
 }

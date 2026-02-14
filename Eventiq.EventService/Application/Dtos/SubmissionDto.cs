@@ -1,6 +1,13 @@
 ﻿namespace Eventiq.EventService.Dtos;
 
-public class SubmissionDto
+public class UpdateSubmissioDto
 {
-    
+}
+
+public class CreateSubmissionDto
+{
+}
+
+public class SubmissionResponse
+{
 }

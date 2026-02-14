@@ -1,6 +1,13 @@
 ﻿namespace Eventiq.EventService.Dtos;
 
-public class ChartDto
+public class UpdateLChartDto
 {
-    
+}
+
+public class CreateChartDto
+{
+}
+
+public class ChartResponse
+{
 }

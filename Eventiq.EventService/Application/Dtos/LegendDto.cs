@@ -1,6 +1,13 @@
 ﻿namespace Eventiq.EventService.Dtos;
 
-public class LegendDto
+public class UpdateLegendDto
 {
-    
+}
+
+public class CreateLegendDto
+{
+}
+
+public class LegendResponse
+{
 }
