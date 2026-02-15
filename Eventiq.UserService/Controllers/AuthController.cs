@@ -46,7 +46,7 @@ public class AuthController : ControllerBase
         var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
         if (string.IsNullOrEmpty(userIdStr) || !Guid.TryParse(userIdStr, out var parsedUserId))
             throw new UnauthorizedException("User id is required");
-        var rs = await _userService.SwitchRole(parsedUserId, dto.Role );
+        var rs = await _userService.SwitchRole(parsedUserId, dto.Role, dto.OrganizationId );
         return Ok(rs);
     }
 

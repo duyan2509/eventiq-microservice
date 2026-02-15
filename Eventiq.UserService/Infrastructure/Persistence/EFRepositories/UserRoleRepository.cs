@@ -29,6 +29,14 @@ public class UserRoleRepository: IUserRoleRepository
             .FirstOrDefaultAsync();
     }
 
+    public async Task<UserRole?> GetUserRoleByUserIdNOrgId(Guid userId, Guid orgId)
+    {
+        return await  _userRoles.AsNoTracking()
+            .Include(ur => ur.Role)
+            .Where(ur=> ur.OrganizationId == orgId && ur.UserId == userId )
+            .FirstOrDefaultAsync();
+    }
+
     public async Task<UserRole?> GetUserRoleByOrgIdUserIdRoleIdAsync(Guid orgId, Guid userId, Guid roleId)
     {
         return await  _userRoles.AsNoTracking()

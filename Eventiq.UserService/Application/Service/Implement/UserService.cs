@@ -60,21 +60,38 @@ public class UserService:IUserService
         );
     }
 
-    public async Task<SwitchRoleRepsponse> SwitchRole(Guid userId, AppRoles role)
+    public async Task<SwitchRoleRepsponse> SwitchRole(Guid userId, AppRoles role, Guid? organizationId)
     {
         var user = await _userRepository.GetUserById(userId);
         if (user == null)
             throw new NotFoundException($"User not found with email {user.Id}");
         UserGuards.EnsureActive(user);
-        UserGuards.EnsureHasRole(user, role);
-        
-        
-        var accessToken = _jwt.GenerateAccessToken(
-            user.Id, role.ToString(), new Dictionary<string, string>
-            {
-                ["email"]=user.Email,
-            }
-        );
+        var claims = new Dictionary<string, string>
+        {
+            ["email"] = user.Email
+        };
+
+        if (role == AppRoles.Admin || role == AppRoles.User)
+        {
+            UserGuards.EnsureHasRole(user, role);
+        }
+        else
+        {
+            if (!organizationId.HasValue)
+                throw new BadRequestException("OrganizationId is required");
+
+            var userRole =
+                await _userRoleRepository.GetUserRoleByUserIdNOrgId(userId, organizationId.Value);
+
+            RoleGuards.EnsureUserRoleExist(userRole);
+
+            if (userRole.Role.Name != role.ToString())
+                throw new ForbiddenException($"You don't have {role} in selected organization");
+
+            claims["orgId"] = organizationId.Value.ToString();
+        }
+
+        var accessToken = _jwt.GenerateAccessToken(user.Id, role.ToString(), claims);;
         var refreshToken = await _refresh.GenerateRefreshToken(user.Id);
         
         return new SwitchRoleRepsponse(
