@@ -11,17 +11,17 @@ public class SubmissionService : ISubmissionService
         throw new NotImplementedException();
     }
 
-    public Task<SubmissionResponse> SubmitEventAsync(Guid userId, Guid eventId, CreateSubmissionDto dto)
+    public Task<SubmissionResponse> SubmitEventAsync(Guid userId, Guid orgId, Guid eventId)
     {
         throw new NotImplementedException();
     }
 
-    public Task<SubmissionResponse> AcceptEventAsync(Guid userId, Guid eventId, UpdateSubmissioDto dto)
+    public Task<SubmissionResponse> AcceptEventAsync(Guid userId, string adminEmail, Guid eventId, UpdateSubmissioDto dto)
     {
         throw new NotImplementedException();
     }
 
-    public Task<SubmissionResponse> RejectEventAsync(Guid userId, Guid eventId, UpdateSubmissioDto dto)
+    public Task<SubmissionResponse> RejectEventAsync(Guid userId, string adminEmail, Guid eventId, UpdateSubmissioDto dto)
     {
         throw new NotImplementedException();
     }

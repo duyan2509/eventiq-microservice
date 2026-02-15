@@ -1,3 +1,4 @@
+using Eventiq.EventService;
 using Eventiq.EventService.Extensions;
 using Serilog;
 
