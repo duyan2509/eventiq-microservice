@@ -7,4 +7,5 @@ public class Submission : BaseEntity
     public string AdminEmail { get; set; }
     public Guid AdminId { get; set; }
     public string Message { get; set; }
+    public EventStatus Status { get; set; }
 }

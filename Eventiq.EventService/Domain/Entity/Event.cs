@@ -20,6 +20,7 @@ public class Event : BaseEntity
     public ICollection<Legend> Legends { get; set; }=new List<Legend>();
     public ICollection<Session> Sessions { get; set; }=new List<Session>();
     public ICollection<Chart> Charts { get; set; }=new List<Chart>();
+    public ICollection<Submission> Submissions { get; set; }=new List<Submission>();
     public void AddSession(Session session)
     {
         ValidateSessionTime(session);
