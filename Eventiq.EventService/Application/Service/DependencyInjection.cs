@@ -1,3 +1,5 @@
+using Eventiq.EventService.Infrastructure.Persistence;
+
 namespace Eventiq.EventService.Application.Service;
 
 public static class DependencyInjection
@@ -9,6 +11,8 @@ public static class DependencyInjection
         services.AddScoped<ILegendService, LegendService>();
         services.AddScoped<ISessionService, SessionService>();
         services.AddScoped<IChartService, ChartService>();
+        services.AddScoped<IUnitOfWork, UnitOfWork>();
+
         return services;
     }
 }
