@@ -15,7 +15,8 @@ public static class DependencyInjection
 
         services.AddDbContext<EvtEventDbContext>(opt =>
         {
-            opt.UseNpgsql(connectionString, npgsql => npgsql.EnableRetryOnFailure(5));
+            opt.UseNpgsql(connectionString, npgsql => npgsql.EnableRetryOnFailure(5))
+                .UseSnakeCaseNamingConvention();
         });
 
         services.AddScoped<IDbConnection>(_ =>

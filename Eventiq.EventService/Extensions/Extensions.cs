@@ -17,6 +17,7 @@ public static class Extensions
         builder.Services.AddServices(builder.Configuration)
             .AddInfrastructure(builder.Configuration);
         builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
+        Dapper.DefaultTypeMap.MatchNamesWithUnderscores = true;
 
         JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
         var publicKeyPath = builder.Configuration["Jwt:PublicKeyPath"];
