@@ -9,10 +9,9 @@ public class UnitOfWork:IUnitOfWork
     private readonly IDbConnection _connection;
     private IDbTransaction _transaction;
 
-    public UnitOfWork(IDbConnection connection, IDbTransaction transaction, ILegendRepository legends, IEventRepository events, ISubmissionRepository submissions, IChartRepository charts, ISessionRepository sessions)
+    public UnitOfWork(IDbConnection connection, ILegendRepository legends, IEventRepository events, ISubmissionRepository submissions, IChartRepository charts, ISessionRepository sessions)
     {
         _connection = connection;
-        _transaction = transaction;
         Legends = legends;
         Events = events;
         Submissions = submissions;
