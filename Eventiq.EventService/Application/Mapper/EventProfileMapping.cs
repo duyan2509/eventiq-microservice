@@ -15,7 +15,9 @@ public class EventProfileMapping : Profile
         CreateMap<CreateLegendDto, Legend>();
         CreateMap<CreateChartDto, Chart>();
         CreateMap<ChartModel, ChartResponse>();
-        CreateMap<Session, Session>();
+        CreateMap<CreateSessionDto, Session> ();
+        CreateMap<SessionModel, SessionResponse>();
+        CreateMap<Session, SessionResponse>();
         CreateMap<Chart, Chart>();
     }
 }

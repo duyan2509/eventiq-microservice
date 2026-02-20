@@ -23,4 +23,6 @@ public class SessionResponse
     public required DateTime StartTime { get; set; }
     public required DateTime EndTime { get; set; }
     public required Guid ChartId { get; set; }
+    public string ChartName { get; set; }
+
 }

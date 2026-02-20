@@ -29,7 +29,7 @@ public class Event : BaseEntity
 
     private void ValidateSessionTime(Session session)
     {
-        session.ValidateSessionTime(session);
+        session.ValidateSessionTime();
 
         if (session.StartTime < StartTime || session.EndTime > EndTime)
             throw new BusinessException("Session must be within Event time range.");
