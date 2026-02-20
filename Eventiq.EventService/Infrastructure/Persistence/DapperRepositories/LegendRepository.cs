@@ -7,20 +7,21 @@ using Eventiq.EventService.Infrastructure.Persistence.ReadModel;
 
 namespace Eventiq.EventService.Infrastructure.Persistence.DapperRepositories;
 
-    public class LegendRepository : BaseRepository, ILegendRepository
+public class LegendRepository : BaseRepository, ILegendRepository
+{
+    public LegendRepository(IDbConnection connection) : base(connection)
     {
-        public LegendRepository(IDbConnection connection) : base(connection)
-        {
-        }
+    }
 
-        public async Task<PaginatedResult<LegendModel>> GetAllLegendsByEventIdAsync(Guid eventId, int page = 1, int size = 10)
-        {
-            var sql = @"
+    public async Task<PaginatedResult<LegendModel>> GetAllLegendsByEventIdAsync(Guid eventId, int page = 1,
+        int size = 10)
+    {
+        var sql = @"
     SELECT COUNT(*) 
     FROM legends
     WHERE event_id = @EventId;
 
-    SELECT *
+    SELECT id, name, color, price, event_id
     FROM legends
     WHERE event_id = @EventId
     ORDER BY created_at DESC
@@ -28,15 +29,15 @@ namespace Eventiq.EventService.Infrastructure.Persistence.DapperRepositories;
 ";
 
 
-            using var multi = await _connection.QueryMultipleAsync(
-                sql,
-                new
-                {
-                    EventId = eventId,
-                    Offset = (page - 1) * size,
-                    PageSize = size
-                },
-                transaction: _transaction);
+        using var multi = await _connection.QueryMultipleAsync(
+            sql,
+            new
+            {
+                EventId = eventId,
+                Offset = (page - 1) * size,
+                PageSize = size
+            },
+            transaction: _transaction);
 
         var total = await multi.ReadSingleAsync<int>();
         var data = (await multi.ReadAsync<LegendModel>()).ToList();
@@ -44,15 +45,15 @@ namespace Eventiq.EventService.Infrastructure.Persistence.DapperRepositories;
         return new PaginatedResult<LegendModel>
         {
             Page = page,
-            Size =size,
+            Size = size,
             Total = total,
             Data = data
         };
-
     }
-        public async Task<int> AddAsync(Legend legend)
-        {
-            var sql = @"
+
+    public async Task<int> AddAsync(Legend legend)
+    {
+        var sql = @"
         INSERT INTO legends
         (
             id,

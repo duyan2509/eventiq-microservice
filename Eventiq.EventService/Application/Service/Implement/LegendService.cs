@@ -94,6 +94,10 @@ public class LegendService : ILegendService
     {
         try
         {
+            await _uow.BeginTransactionAsync();
+            var evn = await _uow.Events.GetByIdAsync(eventId);
+            EventGuards.EnsureExist(evn);
+            EventGuards.EnsureOwner(evn, orgId);
             var affected = await _uow.Legends.DeleteAsync(
                 eventId,
                 orgId,
