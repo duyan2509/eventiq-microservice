@@ -68,16 +68,16 @@ public class ChartService : IChartService
             var evt = await _uow.Events.GetByIdAsync(eventId);
             EventGuards.EnsureExist(evt);
             EventGuards.EnsureOwner(evt, orgId);
-            var updatedLegend = await _uow.Charts.UpdatePartialAsync(
+            var updatedChart = await _uow.Charts.UpdatePartialAsync(
                 chartId,
                 eventId,
                 dto);
 
-            ChartGuard.EnsureExist(updatedLegend);
+            ChartGuard.EnsureExist(updatedChart);
  
             await _uow.CommitAsync();
 
-            return _mapper.Map<ChartResponse>(updatedLegend);
+            return _mapper.Map<ChartResponse>(updatedChart);
         }
         catch (DbUpdateException ex) when (ex.IsUniqueConstraintViolation())
         {

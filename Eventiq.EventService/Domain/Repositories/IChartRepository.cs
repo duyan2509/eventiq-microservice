@@ -10,5 +10,6 @@ public interface IChartRepository
     Task<PaginatedResult<ChartModel>> GetAllChartsByEventIdAsync(Guid eventId, int page, int size);
     Task<int> AddAsync(Guid EventId, Chart chart);
     Task<ChartModel?> UpdatePartialAsync(Guid chartId, Guid eventId, UpdateChartDto dto);
+    Task<ChartModel?> GetChartByIdEventIdAsync(Guid eventId, Guid? dtoChartId);
 }
 

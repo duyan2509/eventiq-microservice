@@ -134,4 +134,21 @@ public class ChartRepository : BaseRepository, IChartRepository
             transaction: _transaction
         );
     }
+
+    public async Task<ChartModel?> GetChartByIdEventIdAsync(Guid eventId, Guid? dtoChartId)
+    {
+        var sql = $@"
+        select id, name, event_id
+        from charts
+        where id = @ChartId
+        and  event_id = @EventId
+        limit 1
+";
+        return await _connection.QueryFirstOrDefaultAsync<ChartModel>(sql, new
+        {
+            ChartId = dtoChartId,
+            EventId = eventId,
+        },
+            transaction: _transaction);
+    }
 }
