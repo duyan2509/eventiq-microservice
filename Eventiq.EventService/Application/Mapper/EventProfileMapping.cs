@@ -1,5 +1,7 @@
 using AutoMapper;
 using Eventiq.EventService.Domain.Entity;
+using Eventiq.EventService.Dtos;
+using Eventiq.EventService.Infrastructure.Persistence.ReadModel;
 
 namespace Eventiq.EventService.Application.Mapper;
 
@@ -9,7 +11,10 @@ public class EventProfileMapping : Profile
     {
         CreateMap<Event, Event>();
         CreateMap<Submission, Submission>();
-        CreateMap<Legend, Legend>();
+        CreateMap<LegendModel, LegendResponse>();
+        CreateMap<CreateLegendDto, Legend>();
+        CreateMap<CreateChartDto, Chart>();
+        CreateMap<ChartModel, ChartResponse>();
         CreateMap<Session, Session>();
         CreateMap<Chart, Chart>();
     }

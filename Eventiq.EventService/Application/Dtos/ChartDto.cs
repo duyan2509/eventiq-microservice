@@ -1,6 +1,6 @@
 ﻿namespace Eventiq.EventService.Dtos;
 
-public class UpdateLChartDto
+public class UpdateChartDto
 {
     public string? Name { get; set; }
 
