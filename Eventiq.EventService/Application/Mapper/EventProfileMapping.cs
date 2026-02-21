@@ -10,7 +10,9 @@ public class EventProfileMapping : Profile
     public EventProfileMapping()
     {
         CreateMap<Event, Event>();
-        CreateMap<Submission, Submission>();
+        CreateMap<Submission, SubmissionResponse>();
+        CreateMap<SubmissionModel, SubmissionResponse>();
+
         CreateMap<LegendModel, LegendResponse>();
         CreateMap<CreateLegendDto, Legend>();
         CreateMap<CreateChartDto, Chart>();

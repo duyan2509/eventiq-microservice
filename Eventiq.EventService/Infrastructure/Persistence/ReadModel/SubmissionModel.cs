@@ -1,15 +1,10 @@
 ﻿using Eventiq.EventService.Domain.Entity;
 
-namespace Eventiq.EventService.Dtos;
+namespace Eventiq.EventService.Infrastructure.Persistence.ReadModel;
 
-public class UpdateSubmissioDto
+public class SubmissionModel
 {
-    public string? Message { get; set; }
-}
-
-
-public class SubmissionResponse
-{
+    public Guid Id { get; set; }
     public string AdminEmail { get; set; }
     public Guid AdminId { get; set; }
     public string Message { get; set; }

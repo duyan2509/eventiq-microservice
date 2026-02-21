@@ -17,4 +17,9 @@ public class EventRepository : BaseRepository, IEventRepository
     {
         throw new NotImplementedException();
     }
+
+    public Task SetEventStatusAsync(Guid eventId, EventStatus draft)
+    {
+        throw new NotImplementedException();
+    }
 }

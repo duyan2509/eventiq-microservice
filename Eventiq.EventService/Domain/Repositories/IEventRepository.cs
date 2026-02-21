@@ -7,4 +7,5 @@ namespace Eventiq.EventService.Domain.Repositories;
 public interface IEventRepository
 {
     Task<EventModel> GetByIdAsync(Guid eventId);
+    Task SetEventStatusAsync(Guid eventId, EventStatus draft);
 }

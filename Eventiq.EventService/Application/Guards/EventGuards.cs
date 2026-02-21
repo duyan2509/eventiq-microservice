@@ -22,4 +22,9 @@ public static class EventGuards
         if(evt.Status!=EventStatus.Draft)
             throw new BusinessException("Only draft events are supported");
     }
+    public static void EnsureStatus(EventModel evt, EventStatus status)
+    {
+        if(evt.Status!=status)
+            throw new BusinessException($"Your event is not in {status} status");
+    }
 }
