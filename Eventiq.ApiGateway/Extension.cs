@@ -18,7 +18,7 @@ public static class Extension
         );
         builder.Services.AddCors(options =>
         {
-            var allowedOrigins = new List<string> { "http://localhost:3000" };
+            var allowedOrigins = new List<string> { "http://localhost:5173" };
             
             // Add Vercel domain from configuration if available
             var vercelUrl = builder.Configuration["Cors:VercelUrl"];

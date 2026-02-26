@@ -7,7 +7,7 @@
         { "Host": "user-service", "Port": 8081 }
       ],
       "UpstreamPathTemplate": "/gateway/auth/login",
-      "UpstreamHttpMethod": ["POST"]
+      "UpstreamHttpMethod": ["POST","OPTIONS"]
     },
     {
       "DownstreamPathTemplate": "/api/auth/register",
