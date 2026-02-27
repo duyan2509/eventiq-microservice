@@ -45,14 +45,14 @@ public class UserService:IUserService
         if(PasswordHash.SHA256Hash(dto.Password)!=user.PasswordHash)
             throw new InvalidCredentialException("Wrong password");
         UserGuards.EnsureActive(user);
-
+        AppRoles currentRole = RoleGuards.ResolveActiveRole(user);
         var accessToken = _jwt.GenerateAccessToken(
-            user.Id, RoleGuards.ResolveActiveRole(user), new Dictionary<string, string>
+            user.Id, currentRole.ToString(), new Dictionary<string, string>
             {
                 ["email"]=user.Email,
             }
         );
-        var refreshToken = await _refresh.GenerateRefreshToken(user.Id);
+        var refreshToken = await _refresh.GenerateRefreshToken(user.Id,currentRole);
         
         return new LoginResponse(
             accessToken,
@@ -92,11 +92,13 @@ public class UserService:IUserService
         }
 
         var accessToken = _jwt.GenerateAccessToken(user.Id, role.ToString(), claims);;
-        var refreshToken = await _refresh.GenerateRefreshToken(user.Id);
-        
+        var oldRefreshToken = await _refresh.GetRefreshTokenModelByUserId(Guid.Parse(user.Id));
+        _refresh.RevokeRefreshToken(oldRefreshToken.Token);
+        var newRefreshToken = await _refresh.GenerateRefreshToken(user.Id, role);
+
         return new SwitchRoleRepsponse(
             accessToken,
-            refreshToken
+            newRefreshToken
         );
     }
 
@@ -114,14 +116,16 @@ public class UserService:IUserService
         if (user == null)
             throw new NotFoundException($"User not found with id {token.UserId}");
         UserGuards.EnsureActive(user);
+        var currentRefreshToken = await _refresh.GetRefreshTokenModelByUserId(Guid.Parse(user.Id));
+        
         var accessToken = _jwt.GenerateAccessToken(
-            token.UserId.ToString(), RoleGuards.ResolveActiveRole(user), new Dictionary<string, string>
+            token.UserId.ToString(), currentRefreshToken.CurrentRole.ToString(), new Dictionary<string, string>
             {
                 ["email"]=user.Email,
             }
         );
         await _refresh.RevokeRefreshToken(refreshToken);
-        var newRefreshToken = await  _refresh.GenerateRefreshToken(user.Id);
+        var newRefreshToken = await  _refresh.GenerateRefreshToken(user.Id, currentRefreshToken.CurrentRole);    
         return new RefreshResponse(
             accessToken,
             newRefreshToken

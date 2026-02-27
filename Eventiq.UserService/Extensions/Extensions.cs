@@ -31,14 +31,14 @@ public static class Extensions
                 {
                     ValidateIssuer = true,
                     ValidIssuer = "eventiq-auth",
-
+        
                     ValidateAudience = true,
                     ValidAudience = "eventiq",
-
+        
                     ValidateLifetime = true,
                     ValidateIssuerSigningKey = true,
                     IssuerSigningKey = publicKey,
-
+        
                     NameClaimType = "sub",
                     RoleClaimType = ClaimTypes.Role
                 };

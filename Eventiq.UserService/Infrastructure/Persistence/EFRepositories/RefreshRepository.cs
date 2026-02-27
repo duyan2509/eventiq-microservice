@@ -45,7 +45,22 @@ public class RefreshRepository:IRefreshTokenRepository
             {
                 Expires = token.Expires,
                 Token = token.Token,
-                UserId = token.UserId
+                UserId = token.UserId,
+                CurrentRole = token.CurrentRole
+            })
+            .SingleOrDefaultAsync();;
+    }
+
+    public async Task<RefreshTokenModel?> GetCurrentRefreshToken(Guid userId)
+    {
+        return await _refreshTokens
+            .Where(t => t.UserId == userId && t.Expires > DateTime.UtcNow)
+            .Select(token => new RefreshTokenModel
+            {
+                Expires = token.Expires,
+                Token = token.Token,
+                UserId = token.UserId,
+                CurrentRole = token.CurrentRole
             })
             .SingleOrDefaultAsync();;
     }

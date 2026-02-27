@@ -5,7 +5,7 @@ using Eventiq.UserService.Model;
 namespace Eventiq.UserService.Guards;
 public static class RoleGuards
 {
-    public static string ResolveActiveRole(LoginUserModel user)
+    public static AppRoles ResolveActiveRole(LoginUserModel user)
     {
         var priority = new[]
         {
@@ -16,8 +16,8 @@ public static class RoleGuards
         };
 
         return priority
-            .Select(r => r.ToString())
-            .First(r => user.Roles.Contains(r));
+            .Select(r => r)
+            .First(r => user.Roles.Contains(r.ToString()));
     }
 
     public static void EnsureUserRoleNotFound(UserRole userRole)

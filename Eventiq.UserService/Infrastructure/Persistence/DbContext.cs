@@ -1,4 +1,5 @@
-﻿using Eventiq.UserService.Domain.Entity;
+﻿using Eventiq.Contracts;
+using Eventiq.UserService.Domain.Entity;
 using Microsoft.EntityFrameworkCore;
 
 namespace Eventiq.UserService.Infrastructure.Persistence;
@@ -50,12 +51,8 @@ public sealed class EvtUserDbContext : DbContext
                 .OnDelete(DeleteBehavior.Cascade);
         });
 
-        modelBuilder.Entity<RefreshToken>(e =>
-        {
-            e.HasKey(x => x.Id);
-            e.HasIndex(x => x.Token).IsUnique();
-            e.HasIndex(x => x.UserId);
-        });
+
+
 
         modelBuilder.Entity<BanHistory>(e =>
         {

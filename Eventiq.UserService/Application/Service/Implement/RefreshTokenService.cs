@@ -1,5 +1,6 @@
 ﻿using System.Security.Cryptography;
 using Eventiq.UserService.Domain.Entity;
+using Eventiq.UserService.Domain.Enums;
 using Eventiq.UserService.Domain.Repositories;
 using Eventiq.UserService.Model;
 
@@ -14,7 +15,7 @@ public class RefreshTokenService:IRefreshTokenService
         _refreshTokenRepository = refreshTokenRepository;
     }
 
-    public async Task<string> GenerateRefreshToken(string userId)
+    public async Task<string> GenerateRefreshToken(string userId, AppRoles currentRole)
     {
         var token = Convert.ToBase64String(
             RandomNumberGenerator.GetBytes(64)
@@ -24,6 +25,7 @@ public class RefreshTokenService:IRefreshTokenService
             UserId = Guid.Parse(userId),
             Token = token,
             Expires = DateTime.UtcNow.AddDays(5),
+            CurrentRole = currentRole
         };
         await _refreshTokenRepository.AddRefreshToken(refresToken);
         return token;
@@ -46,5 +48,10 @@ public class RefreshTokenService:IRefreshTokenService
     public async Task RevokeRefreshToken(string refreshToken)
     {
          await _refreshTokenRepository.RemoveRefreshToken(refreshToken);
+    }
+
+    public async Task<RefreshTokenModel?> GetRefreshTokenModelByUserId(Guid userId)
+    {
+        return await _refreshTokenRepository.GetCurrentRefreshToken(userId);
     }
 }

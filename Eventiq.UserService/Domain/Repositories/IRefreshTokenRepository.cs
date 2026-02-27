@@ -8,5 +8,6 @@ public interface IRefreshTokenRepository
     Task<RefreshTokenModel> AddRefreshToken(RefreshToken refreshToken);
     Task  RemoveRefreshToken(string  refreshToken);
     Task<RefreshTokenModel?> GetRefreshToken(string refreshToken);
+    Task<RefreshTokenModel?> GetCurrentRefreshToken(Guid userId);
 }
 
