@@ -126,6 +126,7 @@ services:
       - user-service
       - org-service
       - event-service
+      - seat-service
     ports:
       - "5001:8080"
     volumes:
@@ -170,10 +171,65 @@ services:
       context: .
       dockerfile: Eventiq.Contracts/Dockerfile
 
+  postgres-seat:
+    image: postgres:15
+    container_name: eventiq-postgres-seat
+    environment:
+      POSTGRES_DB: eventiq_seat
+      POSTGRES_USER: eventiq
+      POSTGRES_PASSWORD: eventiq123
+    ports:
+      - "5435:5432"
+    volumes:
+      - postgres-seat-data:/var/lib/postgresql/data
+    networks:
+      - eventiq-net
+
+  redis:
+    image: redis:7-alpine
+    container_name: eventiq-redis
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes
+    volumes:
+      - redis-data:/data
+    networks:
+      - eventiq-net
+
+  seat-service:
+    image: seat-service
+    build:
+      context: .
+      dockerfile: Eventiq.SeatService/Dockerfile
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://+:8084
+      ConnectionStrings__Postgres: >
+        Host=postgres-seat;
+        Port=5432;
+        Database=eventiq_seat;
+        Username=eventiq;
+        Password=eventiq123;
+        Ssl Mode=Disable;
+      ConnectionStrings__Redis: redis:6379
+    depends_on:
+      postgres-seat:
+        condition: service_started
+      redis:
+        condition: service_started
+      rabbitmq:
+        condition: service_healthy
+    volumes:
+      - ./keys:/app/keys:ro
+    networks:
+      - eventiq-net
+
 volumes:
   postgres-user-data:
   postgres-org-data:
   postgres-event-data:
+  postgres-seat-data:
+  redis-data:
 
 networks:
   eventiq-net:
