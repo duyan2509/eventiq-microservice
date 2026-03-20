@@ -89,6 +89,34 @@
       "AuthenticationOptions": { "AuthenticationProviderKey": "Bearer", "AllowedScopes": [] },
       "RouteIsCaseSensitive": false
 
+    },
+    {
+      "DownstreamPathTemplate": "/api/events",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [{ "Host": "event-service", "Port": 8083 }],
+      "UpstreamPathTemplate": "/gateway/events",
+      "UpstreamHttpMethod": ["GET"],
+      "RouteIsCaseSensitive": false
+    },
+    {
+      "DownstreamPathTemplate": "/api/events/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [{ "Host": "event-service", "Port": 8083 }],
+      "UpstreamPathTemplate": "/gateway/events/{everything}",
+      "UpstreamHttpMethod": ["GET", "POST", "PATCH", "DELETE"],
+      "AddHeadersToRequest": { "Authorization": "{Authorization}" },
+      "AuthenticationOptions": { "AuthenticationProviderKey": "Bearer", "AllowedScopes": [] },
+      "RouteIsCaseSensitive": false
+    },
+    {
+      "DownstreamPathTemplate": "/api/seat-maps/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [{ "Host": "seat-service", "Port": 8084 }],
+      "UpstreamPathTemplate": "/gateway/seat-maps/{everything}",
+      "UpstreamHttpMethod": ["GET", "POST", "PUT", "DELETE"],
+      "AddHeadersToRequest": { "Authorization": "{Authorization}" },
+      "AuthenticationOptions": { "AuthenticationProviderKey": "Bearer", "AllowedScopes": [] },
+      "RouteIsCaseSensitive": false
     }
   ],
   "GlobalConfiguration": {
