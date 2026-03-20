@@ -299,4 +299,26 @@ public class EventRepository : BaseRepository, IEventRepository
             },
             transaction: _transaction);
     }
+
+    public async Task<IEnumerable<EventModel>> GetEventsByOrgAndStatusAsync(Guid organizationId, EventStatus status)
+    {
+        const string sql = @"
+        SELECT 
+            id,
+            organization_id AS OrganizationId,
+            status,
+            event_banner AS EventBanner,
+            name,
+            start_time AS StartTime,
+            end_time AS EndTime
+        FROM events
+        WHERE organization_id = @OrganizationId
+          AND status = @Status;
+        ";
+
+        return await _connection.QueryAsync<EventModel>(
+            sql,
+            new { OrganizationId = organizationId, Status = status },
+            transaction: _transaction);
+    }
 }
