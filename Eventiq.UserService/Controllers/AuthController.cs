@@ -1,7 +1,7 @@
 using System.Security.Claims;
 using Eventiq.UserService.Application.Dto;
 using Eventiq.UserService.Application.Service;
-using Eventiq.UserService.Domain.Enums;
+
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -41,14 +41,15 @@ public class AuthController : ControllerBase
     }
     [Authorize]
     [HttpPost("role")]
-    public async Task<ActionResult<SwitchRoleRepsponse>> Login([FromBody] SwitchRoleRequest dto )
+    public async Task<ActionResult<SwitchRoleRepsponse>> SwitchRole([FromBody] SwitchRoleRequest dto )
     {
         var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
         if (string.IsNullOrEmpty(userIdStr) || !Guid.TryParse(userIdStr, out var parsedUserId))
             throw new UnauthorizedException("User id is required");
-        var rs = await _userService.SwitchRole(parsedUserId, dto.Role, dto.OrganizationId );
+        var rs = await _userService.SwitchRole(parsedUserId, dto.OrganizationId);
         return Ok(rs);
     }
+
 
     [HttpPost("register")]
     public async Task<ActionResult<bool>> Register([FromBody] RegisterDto dto)

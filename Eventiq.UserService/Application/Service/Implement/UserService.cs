@@ -1,4 +1,4 @@
-﻿using System.Security.Authentication;
+using System.Security.Authentication;
 using AutoMapper;
 using Eventiq.UserService.Application.Dto;
 using Eventiq.UserService.Domain.Entity;
@@ -60,38 +60,28 @@ public class UserService:IUserService
         );
     }
 
-    public async Task<SwitchRoleRepsponse> SwitchRole(Guid userId, AppRoles role, Guid? organizationId)
+    public async Task<SwitchRoleRepsponse> SwitchRole(Guid userId, Guid organizationId)
     {
         var user = await _userRepository.GetUserById(userId);
         if (user == null)
-            throw new NotFoundException($"User not found with email {user.Id}");
+            throw new NotFoundException($"User not found with id {userId}");
         UserGuards.EnsureActive(user);
+
+        var userRole =
+            await _userRoleRepository.GetUserRoleByUserIdNOrgId(userId, organizationId);
+
+        RoleGuards.EnsureUserRoleExist(userRole);
+
+        if (!Enum.TryParse<AppRoles>(userRole.Role.Name, out var role))
+            throw new BadRequestException($"Invalid role: {userRole.Role.Name}");
+
         var claims = new Dictionary<string, string>
         {
-            ["email"] = user.Email
+            ["email"] = user.Email,
+            ["orgId"] = organizationId.ToString()
         };
 
-        if (role == AppRoles.Admin || role == AppRoles.User)
-        {
-            UserGuards.EnsureHasRole(user, role);
-        }
-        else
-        {
-            if (!organizationId.HasValue)
-                throw new BadRequestException("OrganizationId is required");
-
-            var userRole =
-                await _userRoleRepository.GetUserRoleByUserIdNOrgId(userId, organizationId.Value);
-
-            RoleGuards.EnsureUserRoleExist(userRole);
-
-            if (userRole.Role.Name != role.ToString())
-                throw new ForbiddenException($"You don't have {role} in selected organization");
-
-            claims["orgId"] = organizationId.Value.ToString();
-        }
-
-        var accessToken = _jwt.GenerateAccessToken(user.Id, role.ToString(), claims);;
+        var accessToken = _jwt.GenerateAccessToken(user.Id, role.ToString(), claims);
         var oldRefreshToken = await _refresh.GetRefreshTokenModelByUserId(Guid.Parse(user.Id));
         _refresh.RevokeRefreshToken(oldRefreshToken.Token);
         var newRefreshToken = await _refresh.GenerateRefreshToken(user.Id, role);
@@ -101,6 +91,7 @@ public class UserService:IUserService
             newRefreshToken
         );
     }
+
 
     public async Task<RefreshResponse> Refresh(string refreshToken)
     {

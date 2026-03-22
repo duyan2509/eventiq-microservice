@@ -1,4 +1,4 @@
-﻿using Eventiq.UserService.Application.Dto;
+using Eventiq.UserService.Application.Dto;
 using Eventiq.UserService.Domain.Enums;
 using Eventiq.UserService.Model;
 using Microsoft.AspNetCore.Mvc.RazorPages;
@@ -19,7 +19,7 @@ public interface IUserService
     Task<bool> UnbanUser(Guid adminId, Guid userId);
     
     Task<UserDto> ChangePassword(Guid userId, ChangePasswordRequest dto);
-    Task<SwitchRoleRepsponse> SwitchRole(Guid userId, AppRoles role, Guid? OrganizationId);
+    Task<SwitchRoleRepsponse> SwitchRole(Guid userId, Guid organizationId);
     
 }
 
