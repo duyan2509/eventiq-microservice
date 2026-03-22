@@ -49,6 +49,7 @@ public class OrganizationRepository : IOrganizationRepository
     public async Task<PaginatedResult<OrganizationDetail>> GetAllMyOrgAsync(Guid userId, int page, int size, CancellationToken cancellationToken = default)
     {
         var query =  _organizations.AsNoTracking()
+            .Where(o => o.Members.Any(m => m.UserId == userId))
             .Select(o => new OrganizationDetail
             {
                 Name = o.Name,

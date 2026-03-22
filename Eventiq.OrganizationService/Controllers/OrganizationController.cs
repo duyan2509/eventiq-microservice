@@ -46,7 +46,7 @@ public class OrganizationController : ControllerBase
             throw new NotFoundException($"Organization with id {id} does not exist");
         return Ok(item);
     }
-    [Authorize(Roles = $"{nameof(AppRoles.Organization)},{nameof(AppRoles.Staff)}")]
+    [Authorize]
     [HttpGet("me")]
     public async Task<ActionResult<PaginatedResult<OrganizationDetail>>> GetMyOrganizations(
         [FromQuery] int page = 1,
