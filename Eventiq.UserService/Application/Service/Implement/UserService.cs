@@ -83,7 +83,7 @@ public class UserService:IUserService
 
         var accessToken = _jwt.GenerateAccessToken(user.Id, role.ToString(), claims);
         var oldRefreshToken = await _refresh.GetRefreshTokenModelByUserId(Guid.Parse(user.Id));
-        _refresh.RevokeRefreshToken(oldRefreshToken.Token);
+        await _refresh.RevokeRefreshToken(oldRefreshToken.Token);
         var newRefreshToken = await _refresh.GenerateRefreshToken(user.Id, role);
 
         return new SwitchRoleRepsponse(

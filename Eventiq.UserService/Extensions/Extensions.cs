@@ -1,4 +1,4 @@
-﻿using System.IdentityModel.Tokens.Jwt;
+using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using Eventiq.Logging;
 using Eventiq.UserService.Application.Service;
@@ -53,7 +53,7 @@ public static class Extensions
             {
                 x.UsingRabbitMq((context, cfg) =>
                 {
-                    cfg.Host(builder.Configuration["RabbitMq:ConnectionString"]);
+                    cfg.Host(new Uri(builder.Configuration["RabbitMq:ConnectionString"] ?? string.Empty));
                     cfg.ConfigureEndpoints(context);
                 });
             }

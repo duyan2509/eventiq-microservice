@@ -12,14 +12,15 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Eventiq.UserService.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(EvtUserDbContext))]
-    [Migration("20260208151548_AddOrgIdToUserRole")]
-    partial class AddOrgIdToUserRole
+    [Migration("20260322083328_InitNeon")]
+    partial class InitNeon
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
+                .HasDefaultSchema("user_service")
                 .HasAnnotation("ProductVersion", "8.0.23")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
@@ -58,7 +59,7 @@ namespace Eventiq.UserService.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("BanHistories");
+                    b.ToTable("BanHistories", "user_service");
                 });
 
             modelBuilder.Entity("Eventiq.UserService.Domain.Entity.PasswordResetToken", b =>
@@ -97,7 +98,7 @@ namespace Eventiq.UserService.Infrastructure.Persistence.Migrations
                     b.HasIndex("UserId")
                         .IsUnique();
 
-                    b.ToTable("PasswordResetTokens");
+                    b.ToTable("PasswordResetTokens", "user_service");
                 });
 
             modelBuilder.Entity("Eventiq.UserService.Domain.Entity.RefreshToken", b =>
@@ -108,6 +109,9 @@ namespace Eventiq.UserService.Infrastructure.Persistence.Migrations
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("CurrentRole")
+                        .HasColumnType("integer");
 
                     b.Property<DateTime?>("DeletedAt")
                         .HasColumnType("timestamp with time zone");
@@ -130,12 +134,9 @@ namespace Eventiq.UserService.Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("Token")
-                        .IsUnique();
-
                     b.HasIndex("UserId");
 
-                    b.ToTable("RefreshTokens");
+                    b.ToTable("RefreshTokens", "user_service");
                 });
 
             modelBuilder.Entity("Eventiq.UserService.Domain.Entity.Role", b =>
@@ -165,7 +166,7 @@ namespace Eventiq.UserService.Infrastructure.Persistence.Migrations
                     b.HasIndex("Name")
                         .IsUnique();
 
-                    b.ToTable("Roles");
+                    b.ToTable("Roles", "user_service");
                 });
 
             modelBuilder.Entity("Eventiq.UserService.Domain.Entity.User", b =>
@@ -210,7 +211,7 @@ namespace Eventiq.UserService.Infrastructure.Persistence.Migrations
                     b.HasIndex("Email")
                         .IsUnique();
 
-                    b.ToTable("Users");
+                    b.ToTable("Users", "user_service");
                 });
 
             modelBuilder.Entity("Eventiq.UserService.Domain.Entity.UserRole", b =>
@@ -243,7 +244,7 @@ namespace Eventiq.UserService.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("RoleId");
 
-                    b.ToTable("UserRoles");
+                    b.ToTable("UserRoles", "user_service");
                 });
 
             modelBuilder.Entity("Eventiq.UserService.Domain.Entity.BanHistory", b =>

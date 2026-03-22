@@ -13,7 +13,11 @@ public static class DependencyInjection
         {
             opt.UseNpgsql(
                 config.GetConnectionString("Postgres"),
-                npgsql => npgsql.EnableRetryOnFailure(5));
+                npgsql =>
+                {
+                    npgsql.EnableRetryOnFailure(5);
+                    npgsql.MigrationsHistoryTable("__EFMigrationsHistory", "org_service");
+                });
         });
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         services.AddScoped<IOrganizationRepository, OrganizationRepository>();

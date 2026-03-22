@@ -12,14 +12,15 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Eventiq.EventService.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(EvtEventDbContext))]
-    [Migration("20260219150352_ReInitSchema")]
-    partial class ReInitSchema
+    [Migration("20260322112756_InitNeon")]
+    partial class InitNeon
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
+                .HasDefaultSchema("event_service")
                 .HasAnnotation("ProductVersion", "8.0.23")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
@@ -63,7 +64,7 @@ namespace Eventiq.EventService.Infrastructure.Persistence.Migrations
                     b.HasIndex("EventId")
                         .HasDatabaseName("ix_charts_event_id");
 
-                    b.ToTable("charts", (string)null);
+                    b.ToTable("charts", "event_service");
                 });
 
             modelBuilder.Entity("Eventiq.EventService.Domain.Entity.Event", b =>
@@ -150,7 +151,7 @@ namespace Eventiq.EventService.Infrastructure.Persistence.Migrations
                     b.HasKey("Id")
                         .HasName("pk_events");
 
-                    b.ToTable("events", (string)null);
+                    b.ToTable("events", "event_service");
                 });
 
             modelBuilder.Entity("Eventiq.EventService.Domain.Entity.Legend", b =>
@@ -199,7 +200,7 @@ namespace Eventiq.EventService.Infrastructure.Persistence.Migrations
                     b.HasIndex("EventId")
                         .HasDatabaseName("ix_legends_event_id");
 
-                    b.ToTable("legends", (string)null);
+                    b.ToTable("legends", "event_service");
                 });
 
             modelBuilder.Entity("Eventiq.EventService.Domain.Entity.Session", b =>
@@ -255,7 +256,7 @@ namespace Eventiq.EventService.Infrastructure.Persistence.Migrations
                     b.HasIndex("EventId")
                         .HasDatabaseName("ix_sessions_event_id");
 
-                    b.ToTable("sessions", (string)null);
+                    b.ToTable("sessions", "event_service");
                 });
 
             modelBuilder.Entity("Eventiq.EventService.Domain.Entity.Submission", b =>
@@ -309,7 +310,7 @@ namespace Eventiq.EventService.Infrastructure.Persistence.Migrations
                     b.HasIndex("EventId")
                         .HasDatabaseName("ix_submissions_event_id");
 
-                    b.ToTable("submissions", (string)null);
+                    b.ToTable("submissions", "event_service");
                 });
 
             modelBuilder.Entity("Eventiq.EventService.Domain.Entity.Chart", b =>

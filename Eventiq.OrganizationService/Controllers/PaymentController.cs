@@ -28,10 +28,10 @@ public class PaymentController : ControllerBase
     /// </summary>
     [HttpPost("connect")]
     public async Task<ActionResult<PaymentConnectResponse>> ConnectStripeAccount(
-        Guid orgId,
         CancellationToken cancellationToken = default)
     {
         var userId = GetUserId();
+        var orgId = GetOrgId();
         var result = await _paymentService.ConnectStripeAccountAsync(userId, orgId, cancellationToken);
         return Ok(result);
     }
@@ -41,9 +41,9 @@ public class PaymentController : ControllerBase
     /// </summary>
     [HttpGet("callback")]
     public async Task<ActionResult<PaymentStatusResponse>> HandleOnboardingCallback(
-        Guid orgId,
         CancellationToken cancellationToken = default)
     {
+        var orgId = GetOrgId();
         var userId = GetUserId();
         var result = await _paymentService.HandleOnboardingCallbackAsync(userId, orgId, cancellationToken);
         return Ok(result);
@@ -54,9 +54,9 @@ public class PaymentController : ControllerBase
     /// </summary>
     [HttpGet]
     public async Task<ActionResult<PaymentStatusResponse>> GetPaymentStatus(
-        Guid orgId,
         CancellationToken cancellationToken = default)
     {
+        var orgId = GetOrgId();
         var userId = GetUserId();
         var result = await _paymentService.GetPaymentStatusAsync(userId, orgId, cancellationToken);
         return Ok(result);
@@ -67,14 +67,20 @@ public class PaymentController : ControllerBase
     /// </summary>
     [HttpPost("disconnect")]
     public async Task<ActionResult> DisconnectStripeAccount(
-        Guid orgId,
         CancellationToken cancellationToken = default)
     {
+        var orgId = GetOrgId();
         var userId = GetUserId();
         await _paymentService.DisconnectStripeAccountAsync(userId, orgId, cancellationToken);
         return NoContent();
     }
-
+    private Guid GetOrgId()
+    {
+        var orgIdStr = User.FindFirstValue("org_id");
+        if (string.IsNullOrEmpty(orgIdStr) || !Guid.TryParse(orgIdStr, out var orgId))
+            throw new UnauthorizedException("Organization id is required");
+        return orgId;
+    }
     private Guid GetUserId()
     {
         var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);

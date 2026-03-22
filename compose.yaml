@@ -1,45 +1,45 @@
 services:
-  postgres-user:
-    image: postgres:15
-    container_name: eventiq-postgres-user
-    environment:
-      POSTGRES_DB: eventiq_user
-      POSTGRES_USER: eventiq
-      POSTGRES_PASSWORD: eventiq123
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres-user-data:/var/lib/postgresql/data
-    networks:
-      - eventiq-net
+  # postgres-user:
+  #   image: postgres:15
+  #   container_name: eventiq-postgres-user
+  #   environment:
+  #     POSTGRES_DB: eventiq_user
+  #     POSTGRES_USER: eventiq
+  #     POSTGRES_PASSWORD: eventiq123
+  #   ports:
+  #     - "5432:5432"
+  #   volumes:
+  #     - postgres-user-data:/var/lib/postgresql/data
+  #   networks:
+  #     - eventiq-net
 
-  postgres-org:
-    image: postgres:15
-    container_name: eventiq-postgres-org
-    environment:
-      POSTGRES_DB: eventiq_org
-      POSTGRES_USER: eventiq
-      POSTGRES_PASSWORD: eventiq123
-    ports:
-      - "5433:5432"
-    volumes:
-      - postgres-org-data:/var/lib/postgresql/data
-    networks:
-      - eventiq-net
+  # postgres-org:
+  #   image: postgres:15
+  #   container_name: eventiq-postgres-org
+  #   environment:
+  #     POSTGRES_DB: eventiq_org
+  #     POSTGRES_USER: eventiq
+  #     POSTGRES_PASSWORD: eventiq123
+  #   ports:
+  #     - "5433:5432"
+  #   volumes:
+  #     - postgres-org-data:/var/lib/postgresql/data
+  #   networks:
+  #     - eventiq-net
 
-  postgres-event:
-    image: postgres:15
-    container_name: eventiq-postgres-event
-    environment:
-      POSTGRES_DB: eventiq_event
-      POSTGRES_USER: eventiq
-      POSTGRES_PASSWORD: eventiq123
-    ports:
-      - "5434:5432"
-    volumes:
-      - postgres-event-data:/var/lib/postgresql/data
-    networks:
-      - eventiq-net
+  # postgres-event:
+  #   image: postgres:15
+  #   container_name: eventiq-postgres-event
+  #   environment:
+  #     POSTGRES_DB: eventiq_event
+  #     POSTGRES_USER: eventiq
+  #     POSTGRES_PASSWORD: eventiq123
+  #   ports:
+  #     - "5434:5432"
+  #   volumes:
+  #     - postgres-event-data:/var/lib/postgresql/data
+  #   networks:
+  #     - eventiq-net
 
   user-service:
     image: user-service
@@ -49,18 +49,12 @@ services:
     environment:
       ASPNETCORE_ENVIRONMENT: Development
       ASPNETCORE_URLS: http://+:8081
-      ConnectionStrings__Postgres: >
-        Host=postgres-user;
-        Port=5432;
-        Database=eventiq_user;
-        Username=eventiq;
-        Password=eventiq123;
-        Ssl Mode=Disable;
-    depends_on:
-      postgres-user:
-        condition: service_started
-      rabbitmq:
-        condition: service_healthy
+      ConnectionStrings__Postgres: "Host=ep-twilight-meadow-a1idagy9-pooler.ap-southeast-1.aws.neon.tech;Database=neondb;Username=neondb_owner;Password=npg_XT2yJ5xteEnC;SSL Mode=Require;Search Path=user_service"
+    # depends_on:
+    #   postgres-user:
+    #     condition: service_started
+      # rabbitmq:
+      #   condition: service_healthy
     volumes:
       - ./keys:/app/keys:ro
     networks:
@@ -73,18 +67,12 @@ services:
       environment:
         ASPNETCORE_ENVIRONMENT: Development
         ASPNETCORE_URLS: http://+:8082
-        ConnectionStrings__Postgres: >
-          Host=postgres-org;
-          Port=5432;
-          Database=eventiq_org;
-          Username=eventiq;
-          Password=eventiq123;
-          Ssl Mode=Disable;
-      depends_on:
-        postgres-org:
-          condition: service_started
-        rabbitmq:
-          condition: service_healthy
+        ConnectionStrings__Postgres: "Host=ep-twilight-meadow-a1idagy9-pooler.ap-southeast-1.aws.neon.tech;Database=neondb;Username=neondb_owner;Password=npg_XT2yJ5xteEnC;SSL Mode=Require;Search Path=org_service"
+      # depends_on:
+      #   postgres-org:
+      #     condition: service_started
+        # rabbitmq:
+        #   condition: service_healthy
       volumes:
         - ./keys:/app/keys:ro
       networks:
@@ -98,18 +86,12 @@ services:
     environment:
       ASPNETCORE_ENVIRONMENT: Development
       ASPNETCORE_URLS: http://+:8083
-      ConnectionStrings__Postgres: >
-        Host=postgres-event;
-        Port=5432;
-        Database=eventiq_event;
-        Username=eventiq;
-        Password=eventiq123;
-        Ssl Mode=Disable;
-    depends_on:
-      postgres-event:
-        condition: service_started
-      rabbitmq:
-        condition: service_healthy
+      ConnectionStrings__Postgres: "Host=ep-twilight-meadow-a1idagy9-pooler.ap-southeast-1.aws.neon.tech;Database=neondb;Username=neondb_owner;Password=npg_XT2yJ5xteEnC;SSL Mode=Require;Search Path=event_service"
+    # depends_on:
+    #   postgres-event:
+    #     condition: service_started
+      # rabbitmq:
+      #   condition: service_healthy
     volumes:
       - ./keys:/app/keys:ro
     networks:
@@ -142,59 +124,59 @@ services:
     environment:
       DOTNET_ENVIRONMENT: Development
       ASPNETCORE_ENVIRONMENT: Development
-      RabbitMq__ConnectionString: amqp://eventiq:eventiq123@rabbitmq:5672
-    depends_on:
-      rabbitmq:
-        condition: service_healthy
+      RabbitMq__ConnectionString: amqps://zbiaqafr:yegz8imBRoFKi47FjaY7JW4g2UZ0bMaX@gerbil.rmq.cloudamqp.com/zbiaqafr
+    # depends_on:
+    #   rabbitmq:
+    #     condition: service_healthy
     networks:
       - eventiq-net
 
-  rabbitmq:
-    image: rabbitmq:3-management
-    container_name: rabbitmq
-    ports:
-      - "5672:5672"
-      - "15672:15672"
-    environment:
-      RABBITMQ_DEFAULT_USER: eventiq
-      RABBITMQ_DEFAULT_PASS: eventiq123
-    healthcheck:
-      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    networks:
-      - eventiq-net
+  # rabbitmq:
+  #   image: rabbitmq:3-management
+  #   container_name: rabbitmq
+  #   ports:
+  #     - "5672:5672"
+  #     - "15672:15672"
+  #   environment:
+  #     RABBITMQ_DEFAULT_USER: eventiq
+  #     RABBITMQ_DEFAULT_PASS: eventiq123
+  #   healthcheck:
+  #     test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+  #     interval: 10s
+  #     timeout: 5s
+  #     retries: 5
+  #   networks:
+  #     - eventiq-net
   contracts:
     image:  contracts
     build:
       context: .
       dockerfile: Eventiq.Contracts/Dockerfile
 
-  postgres-seat:
-    image: postgres:15
-    container_name: eventiq-postgres-seat
-    environment:
-      POSTGRES_DB: eventiq_seat
-      POSTGRES_USER: eventiq
-      POSTGRES_PASSWORD: eventiq123
-    ports:
-      - "5435:5432"
-    volumes:
-      - postgres-seat-data:/var/lib/postgresql/data
-    networks:
-      - eventiq-net
+  # postgres-seat:
+  #   image: postgres:15
+  #   container_name: eventiq-postgres-seat
+  #   environment:
+  #     POSTGRES_DB: eventiq_seat
+  #     POSTGRES_USER: eventiq
+  #     POSTGRES_PASSWORD: eventiq123
+  #   ports:
+  #     - "5435:5432"
+  #   volumes:
+  #     - postgres-seat-data:/var/lib/postgresql/data
+  #   networks:
+  #     - eventiq-net
 
-  redis:
-    image: redis:7-alpine
-    container_name: eventiq-redis
-    ports:
-      - "6379:6379"
-    command: redis-server --appendonly yes
-    volumes:
-      - redis-data:/data
-    networks:
-      - eventiq-net
+  # redis:
+  #   image: redis:7-alpine
+  #   container_name: eventiq-redis
+  #   ports:
+  #     - "6379:6379"
+  #   command: redis-server --appendonly yes
+  #   volumes:
+  #     - redis-data:/data
+  #   networks:
+  #     - eventiq-net
 
   seat-service:
     image: seat-service
@@ -204,32 +186,26 @@ services:
     environment:
       ASPNETCORE_ENVIRONMENT: Development
       ASPNETCORE_URLS: http://+:8084
-      ConnectionStrings__Postgres: >
-        Host=postgres-seat;
-        Port=5432;
-        Database=eventiq_seat;
-        Username=eventiq;
-        Password=eventiq123;
-        Ssl Mode=Disable;
-      ConnectionStrings__Redis: redis:6379
-    depends_on:
-      postgres-seat:
-        condition: service_started
-      redis:
-        condition: service_started
-      rabbitmq:
-        condition: service_healthy
+      ConnectionStrings__Postgres: "Host=ep-twilight-meadow-a1idagy9-pooler.ap-southeast-1.aws.neon.tech;Database=neondb;Username=neondb_owner;Password=npg_XT2yJ5xteEnC;SSL Mode=Require;Search Path=seat_service"
+      ConnectionStrings__Redis: "easy-tahr-80535.upstash.io:6379,password=gQAAAAAAATqXAAIncDJiMGNmNDg1ZmJlNmI0ZjQxYTkwZDBlNDc0OTc1NzdhNHAyODA1MzU,ssl=True,abortConnect=False"
+    # depends_on:
+    #   postgres-seat:
+    #     condition: service_started
+      # redis:
+      #   condition: service_started
+      # rabbitmq:
+      #   condition: service_healthy
     volumes:
       - ./keys:/app/keys:ro
     networks:
       - eventiq-net
 
-volumes:
-  postgres-user-data:
-  postgres-org-data:
-  postgres-event-data:
-  postgres-seat-data:
-  redis-data:
+#volumes:
+  # postgres-user-data:
+  # postgres-org-data:
+  # postgres-event-data:
+  # postgres-seat-data:
+  # redis-data:
 
 networks:
   eventiq-net:

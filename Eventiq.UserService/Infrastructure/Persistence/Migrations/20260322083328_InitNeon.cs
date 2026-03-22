@@ -6,13 +6,17 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Eventiq.UserService.Infrastructure.Persistence.Migrations
 {
     /// <inheritdoc />
-    public partial class InitUserDb : Migration
+    public partial class InitNeon : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.EnsureSchema(
+                name: "user_service");
+
             migrationBuilder.CreateTable(
                 name: "Roles",
+                schema: "user_service",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
@@ -29,6 +33,7 @@ namespace Eventiq.UserService.Infrastructure.Persistence.Migrations
 
             migrationBuilder.CreateTable(
                 name: "Users",
+                schema: "user_service",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
@@ -49,11 +54,12 @@ namespace Eventiq.UserService.Infrastructure.Persistence.Migrations
 
             migrationBuilder.CreateTable(
                 name: "BanHistories",
+                schema: "user_service",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
                     UserId = table.Column<Guid>(type: "uuid", nullable: false),
-                    Reason = table.Column<string>(type: "text", nullable: false),
+                    Reason = table.Column<string>(type: "text", nullable: true),
                     BannedById = table.Column<Guid>(type: "uuid", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
@@ -66,12 +72,14 @@ namespace Eventiq.UserService.Infrastructure.Persistence.Migrations
                     table.ForeignKey(
                         name: "FK_BanHistories_Users_BannedById",
                         column: x => x.BannedById,
+                        principalSchema: "user_service",
                         principalTable: "Users",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_BanHistories_Users_UserId",
                         column: x => x.UserId,
+                        principalSchema: "user_service",
                         principalTable: "Users",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
@@ -79,6 +87,7 @@ namespace Eventiq.UserService.Infrastructure.Persistence.Migrations
 
             migrationBuilder.CreateTable(
                 name: "PasswordResetTokens",
+                schema: "user_service",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
@@ -96,6 +105,7 @@ namespace Eventiq.UserService.Infrastructure.Persistence.Migrations
                     table.ForeignKey(
                         name: "FK_PasswordResetTokens_Users_UserId",
                         column: x => x.UserId,
+                        principalSchema: "user_service",
                         principalTable: "Users",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
@@ -103,12 +113,14 @@ namespace Eventiq.UserService.Infrastructure.Persistence.Migrations
 
             migrationBuilder.CreateTable(
                 name: "RefreshTokens",
+                schema: "user_service",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
                     Token = table.Column<string>(type: "text", nullable: false),
                     Expires = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     UserId = table.Column<Guid>(type: "uuid", nullable: false),
+                    CurrentRole = table.Column<int>(type: "integer", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     DeletedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
@@ -120,6 +132,7 @@ namespace Eventiq.UserService.Infrastructure.Persistence.Migrations
                     table.ForeignKey(
                         name: "FK_RefreshTokens_Users_UserId",
                         column: x => x.UserId,
+                        principalSchema: "user_service",
                         principalTable: "Users",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
@@ -127,10 +140,12 @@ namespace Eventiq.UserService.Infrastructure.Persistence.Migrations
 
             migrationBuilder.CreateTable(
                 name: "UserRoles",
+                schema: "user_service",
                 columns: table => new
                 {
                     UserId = table.Column<Guid>(type: "uuid", nullable: false),
                     RoleId = table.Column<Guid>(type: "uuid", nullable: false),
+                    OrganizationId = table.Column<Guid>(type: "uuid", nullable: true),
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
@@ -143,12 +158,14 @@ namespace Eventiq.UserService.Infrastructure.Persistence.Migrations
                     table.ForeignKey(
                         name: "FK_UserRoles_Roles_RoleId",
                         column: x => x.RoleId,
+                        principalSchema: "user_service",
                         principalTable: "Roles",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_UserRoles_Users_UserId",
                         column: x => x.UserId,
+                        principalSchema: "user_service",
                         principalTable: "Users",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
@@ -156,50 +173,52 @@ namespace Eventiq.UserService.Infrastructure.Persistence.Migrations
 
             migrationBuilder.CreateIndex(
                 name: "IX_BanHistories_BannedById",
+                schema: "user_service",
                 table: "BanHistories",
                 column: "BannedById");
 
             migrationBuilder.CreateIndex(
                 name: "IX_BanHistories_UserId",
+                schema: "user_service",
                 table: "BanHistories",
                 column: "UserId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_PasswordResetTokens_Token",
+                schema: "user_service",
                 table: "PasswordResetTokens",
                 column: "Token",
                 unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_PasswordResetTokens_UserId",
+                schema: "user_service",
                 table: "PasswordResetTokens",
                 column: "UserId",
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "IX_RefreshTokens_Token",
-                table: "RefreshTokens",
-                column: "Token",
-                unique: true);
-
-            migrationBuilder.CreateIndex(
                 name: "IX_RefreshTokens_UserId",
+                schema: "user_service",
                 table: "RefreshTokens",
                 column: "UserId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Roles_Name",
+                schema: "user_service",
                 table: "Roles",
                 column: "Name",
                 unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_UserRoles_RoleId",
+                schema: "user_service",
                 table: "UserRoles",
                 column: "RoleId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Users_Email",
+                schema: "user_service",
                 table: "Users",
                 column: "Email",
                 unique: true);
@@ -209,22 +228,28 @@ namespace Eventiq.UserService.Infrastructure.Persistence.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
-                name: "BanHistories");
+                name: "BanHistories",
+                schema: "user_service");
 
             migrationBuilder.DropTable(
-                name: "PasswordResetTokens");
+                name: "PasswordResetTokens",
+                schema: "user_service");
 
             migrationBuilder.DropTable(
-                name: "RefreshTokens");
+                name: "RefreshTokens",
+                schema: "user_service");
 
             migrationBuilder.DropTable(
-                name: "UserRoles");
+                name: "UserRoles",
+                schema: "user_service");
 
             migrationBuilder.DropTable(
-                name: "Roles");
+                name: "Roles",
+                schema: "user_service");
 
             migrationBuilder.DropTable(
-                name: "Users");
+                name: "Users",
+                schema: "user_service");
         }
     }
 }

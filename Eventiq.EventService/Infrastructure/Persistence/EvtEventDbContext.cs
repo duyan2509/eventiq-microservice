@@ -19,6 +19,7 @@ public sealed class EvtEventDbContext : DbContext
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
+        modelBuilder.HasDefaultSchema("event_service");
 
         modelBuilder.Entity<Event>(e => e.HasKey(x => x.Id));
         modelBuilder.Entity<Submission>(e => e.HasKey(x => x.Id));

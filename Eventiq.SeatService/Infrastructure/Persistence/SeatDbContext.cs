@@ -20,6 +20,7 @@ public sealed class SeatDbContext : DbContext
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
+        modelBuilder.HasDefaultSchema("seat_service");
 
         // === SeatMap ===
         modelBuilder.Entity<SeatMap>(e =>

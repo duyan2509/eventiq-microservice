@@ -1,4 +1,4 @@
-﻿using Eventiq.Contracts;
+using Eventiq.Contracts;
 using Eventiq.UserService.Domain.Entity;
 using Microsoft.EntityFrameworkCore;
 
@@ -21,6 +21,7 @@ public sealed class EvtUserDbContext : DbContext
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
+        modelBuilder.HasDefaultSchema("user_service");
 
         modelBuilder.Entity<User>(e =>
         {

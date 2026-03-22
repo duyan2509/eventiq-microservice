@@ -17,7 +17,11 @@ public class DesignTimeDbContextFactory : IDesignTimeDbContextFactory<EvtUserDbC
         var optionsBuilder = new DbContextOptionsBuilder<EvtUserDbContext>();
         optionsBuilder.UseNpgsql(
             configuration.GetConnectionString("Postgres"),
-            npgsql => npgsql.EnableRetryOnFailure(5));
+            npgsql =>
+            {
+                npgsql.EnableRetryOnFailure(5);
+                npgsql.MigrationsHistoryTable("__EFMigrationsHistory", "user_service");
+            });
 
         return new EvtUserDbContext(optionsBuilder.Options);
     }

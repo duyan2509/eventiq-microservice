@@ -18,8 +18,11 @@ public static class DependencyInjection
 
         services.AddDbContext<SeatDbContext>(opt =>
         {
-            opt.UseNpgsql(connectionString, npgsql => npgsql.EnableRetryOnFailure(5))
-                .UseSnakeCaseNamingConvention();
+            opt.UseNpgsql(connectionString, npgsql =>
+            {
+                npgsql.EnableRetryOnFailure(5);
+                npgsql.MigrationsHistoryTable("__EFMigrationsHistory", "seat_service");
+            }).UseSnakeCaseNamingConvention();
         });
 
         // Redis

@@ -12,14 +12,15 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Eventiq.SeatService.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(SeatDbContext))]
-    [Migration("20260321140018_InitSeatSchema")]
-    partial class InitSeatSchema
+    [Migration("20260322112817_InitNeon")]
+    partial class InitNeon
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
+                .HasDefaultSchema("seat_service")
                 .HasAnnotation("ProductVersion", "8.0.23")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
@@ -89,7 +90,7 @@ namespace Eventiq.SeatService.Infrastructure.Persistence.Migrations
                     b.HasIndex("RowId")
                         .HasDatabaseName("ix_seats_row_id");
 
-                    b.ToTable("seats", (string)null);
+                    b.ToTable("seats", "seat_service");
                 });
 
             modelBuilder.Entity("Eventiq.SeatService.Domain.Entity.SeatMap", b =>
@@ -158,7 +159,7 @@ namespace Eventiq.SeatService.Infrastructure.Persistence.Migrations
                     b.HasIndex("OrganizationId")
                         .HasDatabaseName("ix_seat_maps_organization_id");
 
-                    b.ToTable("seat_maps", (string)null);
+                    b.ToTable("seat_maps", "seat_service");
                 });
 
             modelBuilder.Entity("Eventiq.SeatService.Domain.Entity.SeatMapVersion", b =>
@@ -211,7 +212,7 @@ namespace Eventiq.SeatService.Infrastructure.Persistence.Migrations
                     b.HasIndex("SeatMapId")
                         .HasDatabaseName("ix_versions_seat_map_id");
 
-                    b.ToTable("versions", (string)null);
+                    b.ToTable("versions", "seat_service");
                 });
 
             modelBuilder.Entity("Eventiq.SeatService.Domain.Entity.SeatObject", b =>
@@ -268,7 +269,7 @@ namespace Eventiq.SeatService.Infrastructure.Persistence.Migrations
                     b.HasIndex("SeatMapId")
                         .HasDatabaseName("ix_objects_seat_map_id");
 
-                    b.ToTable("objects", (string)null);
+                    b.ToTable("objects", "seat_service");
                 });
 
             modelBuilder.Entity("Eventiq.SeatService.Domain.Entity.SeatRow", b =>
@@ -321,7 +322,7 @@ namespace Eventiq.SeatService.Infrastructure.Persistence.Migrations
                     b.HasIndex("SectionId")
                         .HasDatabaseName("ix_rows_section_id");
 
-                    b.ToTable("rows", (string)null);
+                    b.ToTable("rows", "seat_service");
                 });
 
             modelBuilder.Entity("Eventiq.SeatService.Domain.Entity.SeatSection", b =>
@@ -383,7 +384,7 @@ namespace Eventiq.SeatService.Infrastructure.Persistence.Migrations
                     b.HasIndex("SeatMapId")
                         .HasDatabaseName("ix_sections_seat_map_id");
 
-                    b.ToTable("sections", (string)null);
+                    b.ToTable("sections", "seat_service");
                 });
 
             modelBuilder.Entity("Eventiq.SeatService.Domain.Entity.Seat", b =>

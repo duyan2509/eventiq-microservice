@@ -106,7 +106,7 @@ public static class ServiceExtensions
             {
                 x.UsingRabbitMq((context, cfg) =>
                 {
-                    cfg.Host(builder.Configuration["RabbitMq:ConnectionString"]);
+                    cfg.Host(new Uri(builder.Configuration["RabbitMq:ConnectionString"] ?? string.Empty));
                     cfg.ConfigureEndpoints(context);
                 });
             }

@@ -6,13 +6,17 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Eventiq.EventService.Infrastructure.Persistence.Migrations
 {
     /// <inheritdoc />
-    public partial class ReInitSchema : Migration
+    public partial class InitNeon : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.EnsureSchema(
+                name: "event_service");
+
             migrationBuilder.CreateTable(
                 name: "events",
+                schema: "event_service",
                 columns: table => new
                 {
                     id = table.Column<Guid>(type: "uuid", nullable: false),
@@ -42,6 +46,7 @@ namespace Eventiq.EventService.Infrastructure.Persistence.Migrations
 
             migrationBuilder.CreateTable(
                 name: "charts",
+                schema: "event_service",
                 columns: table => new
                 {
                     id = table.Column<Guid>(type: "uuid", nullable: false),
@@ -58,6 +63,7 @@ namespace Eventiq.EventService.Infrastructure.Persistence.Migrations
                     table.ForeignKey(
                         name: "fk_charts_events_event_id",
                         column: x => x.event_id,
+                        principalSchema: "event_service",
                         principalTable: "events",
                         principalColumn: "id",
                         onDelete: ReferentialAction.Cascade);
@@ -65,6 +71,7 @@ namespace Eventiq.EventService.Infrastructure.Persistence.Migrations
 
             migrationBuilder.CreateTable(
                 name: "legends",
+                schema: "event_service",
                 columns: table => new
                 {
                     id = table.Column<Guid>(type: "uuid", nullable: false),
@@ -83,6 +90,7 @@ namespace Eventiq.EventService.Infrastructure.Persistence.Migrations
                     table.ForeignKey(
                         name: "fk_legends_events_event_id",
                         column: x => x.event_id,
+                        principalSchema: "event_service",
                         principalTable: "events",
                         principalColumn: "id",
                         onDelete: ReferentialAction.Cascade);
@@ -90,6 +98,7 @@ namespace Eventiq.EventService.Infrastructure.Persistence.Migrations
 
             migrationBuilder.CreateTable(
                 name: "submissions",
+                schema: "event_service",
                 columns: table => new
                 {
                     id = table.Column<Guid>(type: "uuid", nullable: false),
@@ -109,6 +118,7 @@ namespace Eventiq.EventService.Infrastructure.Persistence.Migrations
                     table.ForeignKey(
                         name: "fk_submissions_events_event_id",
                         column: x => x.event_id,
+                        principalSchema: "event_service",
                         principalTable: "events",
                         principalColumn: "id",
                         onDelete: ReferentialAction.Cascade);
@@ -116,6 +126,7 @@ namespace Eventiq.EventService.Infrastructure.Persistence.Migrations
 
             migrationBuilder.CreateTable(
                 name: "sessions",
+                schema: "event_service",
                 columns: table => new
                 {
                     id = table.Column<Guid>(type: "uuid", nullable: false),
@@ -135,12 +146,14 @@ namespace Eventiq.EventService.Infrastructure.Persistence.Migrations
                     table.ForeignKey(
                         name: "fk_sessions_charts_chart_id",
                         column: x => x.chart_id,
+                        principalSchema: "event_service",
                         principalTable: "charts",
                         principalColumn: "id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "fk_sessions_events_event_id",
                         column: x => x.event_id,
+                        principalSchema: "event_service",
                         principalTable: "events",
                         principalColumn: "id",
                         onDelete: ReferentialAction.Cascade);
@@ -148,26 +161,31 @@ namespace Eventiq.EventService.Infrastructure.Persistence.Migrations
 
             migrationBuilder.CreateIndex(
                 name: "ix_charts_event_id",
+                schema: "event_service",
                 table: "charts",
                 column: "event_id");
 
             migrationBuilder.CreateIndex(
                 name: "ix_legends_event_id",
+                schema: "event_service",
                 table: "legends",
                 column: "event_id");
 
             migrationBuilder.CreateIndex(
                 name: "ix_sessions_chart_id",
+                schema: "event_service",
                 table: "sessions",
                 column: "chart_id");
 
             migrationBuilder.CreateIndex(
                 name: "ix_sessions_event_id",
+                schema: "event_service",
                 table: "sessions",
                 column: "event_id");
 
             migrationBuilder.CreateIndex(
                 name: "ix_submissions_event_id",
+                schema: "event_service",
                 table: "submissions",
                 column: "event_id");
         }
@@ -176,19 +194,24 @@ namespace Eventiq.EventService.Infrastructure.Persistence.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
-                name: "legends");
+                name: "legends",
+                schema: "event_service");
 
             migrationBuilder.DropTable(
-                name: "sessions");
+                name: "sessions",
+                schema: "event_service");
 
             migrationBuilder.DropTable(
-                name: "submissions");
+                name: "submissions",
+                schema: "event_service");
 
             migrationBuilder.DropTable(
-                name: "charts");
+                name: "charts",
+                schema: "event_service");
 
             migrationBuilder.DropTable(
-                name: "events");
+                name: "events",
+                schema: "event_service");
         }
     }
 }

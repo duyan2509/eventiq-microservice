@@ -1,4 +1,4 @@
-﻿using Eventiq.UserService.Domain.Repositories;
+using Eventiq.UserService.Domain.Repositories;
 using Eventiq.UserService.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
@@ -12,7 +12,11 @@ public static class DependencyInjection
         {
             opt.UseNpgsql(
                 config.GetConnectionString("Postgres"),
-                npgsql => npgsql.EnableRetryOnFailure(5)
+                npgsql =>
+                {
+                    npgsql.EnableRetryOnFailure(5);
+                    npgsql.MigrationsHistoryTable("__EFMigrationsHistory", "user_service");
+                }
             );
         });
         services.AddScoped<IUserRepository, UserRepository>();

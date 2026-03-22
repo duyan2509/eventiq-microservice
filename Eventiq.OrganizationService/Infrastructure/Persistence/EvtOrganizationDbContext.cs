@@ -20,6 +20,7 @@ public sealed class EvtOrganizationDbContext : DbContext
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
+        modelBuilder.HasDefaultSchema("org_service");
 
         modelBuilder.Entity<Organization>(e =>
         {

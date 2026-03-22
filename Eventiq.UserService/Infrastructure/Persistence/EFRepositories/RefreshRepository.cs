@@ -1,4 +1,4 @@
-﻿using Eventiq.UserService.Domain.Entity;
+using Eventiq.UserService.Domain.Entity;
 using Eventiq.UserService.Domain.Repositories;
 using Eventiq.UserService.Model;
 using Microsoft.EntityFrameworkCore;
@@ -55,6 +55,7 @@ public class RefreshRepository:IRefreshTokenRepository
     {
         return await _refreshTokens
             .Where(t => t.UserId == userId && t.Expires > DateTime.UtcNow)
+            .OrderByDescending(t => t.Expires)
             .Select(token => new RefreshTokenModel
             {
                 Expires = token.Expires,
@@ -62,6 +63,6 @@ public class RefreshRepository:IRefreshTokenRepository
                 UserId = token.UserId,
                 CurrentRole = token.CurrentRole
             })
-            .SingleOrDefaultAsync();;
+            .FirstOrDefaultAsync();
     }
 }

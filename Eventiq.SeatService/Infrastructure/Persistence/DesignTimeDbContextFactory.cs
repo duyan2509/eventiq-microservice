@@ -17,7 +17,11 @@ public class DesignTimeDbContextFactory : IDesignTimeDbContextFactory<SeatDbCont
         var optionsBuilder = new DbContextOptionsBuilder<SeatDbContext>();
         optionsBuilder.UseNpgsql(
             configuration.GetConnectionString("Postgres"),
-            npgsql => npgsql.EnableRetryOnFailure(5))
+            npgsql =>
+            {
+                npgsql.EnableRetryOnFailure(5);
+                npgsql.MigrationsHistoryTable("__EFMigrationsHistory", "seat_service");
+            })
             .UseSnakeCaseNamingConvention();
 
         return new SeatDbContext(optionsBuilder.Options);

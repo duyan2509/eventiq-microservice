@@ -17,6 +17,7 @@ namespace Eventiq.OrganizationService.Infrastructure.Persistence.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
+                .HasDefaultSchema("org_service")
                 .HasAnnotation("ProductVersion", "8.0.23")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
@@ -68,7 +69,7 @@ namespace Eventiq.OrganizationService.Infrastructure.Persistence.Migrations
                     b.HasIndex("Status", "OrganizationId", "UserId", "UserEmail")
                         .IsUnique();
 
-                    b.ToTable("Invitations");
+                    b.ToTable("Invitations", "org_service");
                 });
 
             modelBuilder.Entity("Eventiq.OrganizationService.Domain.Entity.Member", b =>
@@ -108,7 +109,7 @@ namespace Eventiq.OrganizationService.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("PermissionId");
 
-                    b.ToTable("Members");
+                    b.ToTable("Members", "org_service");
                 });
 
             modelBuilder.Entity("Eventiq.OrganizationService.Domain.Entity.Organization", b =>
@@ -157,7 +158,7 @@ namespace Eventiq.OrganizationService.Infrastructure.Persistence.Migrations
                     b.HasIndex("OwnerEmail", "Name")
                         .IsUnique();
 
-                    b.ToTable("Organizations");
+                    b.ToTable("Organizations", "org_service");
                 });
 
             modelBuilder.Entity("Eventiq.OrganizationService.Domain.Entity.Permission", b =>
@@ -195,7 +196,7 @@ namespace Eventiq.OrganizationService.Infrastructure.Persistence.Migrations
                     b.HasIndex("Name", "OrganizationId")
                         .IsUnique();
 
-                    b.ToTable("Permissions");
+                    b.ToTable("Permissions", "org_service");
                 });
 
             modelBuilder.Entity("MassTransit.EntityFrameworkCoreIntegration.InboxState", b =>
@@ -242,7 +243,7 @@ namespace Eventiq.OrganizationService.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("Delivered");
 
-                    b.ToTable("InboxState");
+                    b.ToTable("InboxState", "org_service");
                 });
 
             modelBuilder.Entity("MassTransit.EntityFrameworkCoreIntegration.OutboxMessage", b =>
@@ -333,7 +334,7 @@ namespace Eventiq.OrganizationService.Infrastructure.Persistence.Migrations
                     b.HasIndex("InboxMessageId", "InboxConsumerId", "SequenceNumber")
                         .IsUnique();
 
-                    b.ToTable("OutboxMessage");
+                    b.ToTable("OutboxMessage", "org_service");
                 });
 
             modelBuilder.Entity("MassTransit.EntityFrameworkCoreIntegration.OutboxState", b =>
@@ -363,7 +364,7 @@ namespace Eventiq.OrganizationService.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("Created");
 
-                    b.ToTable("OutboxState");
+                    b.ToTable("OutboxState", "org_service");
                 });
 
             modelBuilder.Entity("Eventiq.OrganizationService.Domain.Entity.Invitation", b =>

@@ -15,14 +15,20 @@ public static class DependencyInjection
 
         services.AddDbContext<EvtEventDbContext>(opt =>
         {
-            opt.UseNpgsql(connectionString, npgsql => npgsql.EnableRetryOnFailure(5))
-                .UseSnakeCaseNamingConvention();
+            opt.UseNpgsql(connectionString, npgsql =>
+            {
+                npgsql.EnableRetryOnFailure(5);
+                npgsql.MigrationsHistoryTable("__EFMigrationsHistory", "event_service");
+            }).UseSnakeCaseNamingConvention();
         });
 
         services.AddScoped<IDbConnection>(_ =>
         {
             var conn = new NpgsqlConnection(connectionString);
             conn.Open();
+            using var cmd = conn.CreateCommand();
+            cmd.CommandText = "SET search_path TO event_service";
+            cmd.ExecuteNonQuery();
             return conn;
         });
 
