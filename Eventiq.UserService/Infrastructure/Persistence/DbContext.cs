@@ -39,7 +39,12 @@ public sealed class EvtUserDbContext : DbContext
 
         modelBuilder.Entity<UserRole>(e =>
         {
-            e.HasKey(x => new { x.UserId, x.RoleId });
+            e.HasKey(x => x.Id);
+
+            // 1 user trong 1 org chỉ có duy nhất 1 role
+            e.HasIndex(x => new { x.UserId, x.OrganizationId })
+                .IsUnique()
+                .HasFilter(null);
 
             e.HasOne(x => x.User)
                 .WithMany(u => u.UserRoles)

@@ -1,5 +1,3 @@
-﻿using Eventiq.UserService.Domain.Enums;
-
 namespace Eventiq.UserService.Domain.Entity;
 
 public class RefreshToken:BaseEntity
@@ -8,6 +6,6 @@ public class RefreshToken:BaseEntity
     public DateTime Expires { get; set; }
     public Guid UserId { get; set; }
     public virtual User User { get; set; }
-    public AppRoles CurrentRole { get; set; }
+    public Guid? OrganizationId { get; set; }
 }
 

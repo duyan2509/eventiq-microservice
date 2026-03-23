@@ -1,4 +1,4 @@
-﻿using Eventiq.UserService.Domain.Entity;
+using Eventiq.UserService.Domain.Entity;
 using Eventiq.UserService.Domain.Repositories;
 using Microsoft.EntityFrameworkCore;
 
@@ -48,5 +48,11 @@ public class UserRoleRepository: IUserRoleRepository
     {
         _userRoles.Remove(userRole);
         await  _context.SaveChangesAsync();
+    }
+
+    public async Task<bool> ExistsUserRole(Guid userId, Guid orgId)
+    {
+        return await _userRoles.AsNoTracking()
+            .AnyAsync(ur => ur.UserId == userId && ur.OrganizationId == orgId);
     }
 }

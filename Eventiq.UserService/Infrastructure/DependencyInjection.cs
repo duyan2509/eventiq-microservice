@@ -24,6 +24,7 @@ public static class DependencyInjection
         services.AddScoped<IBanHistoryRepository, BanHistoryRepository>();
         services.AddScoped<IUserRoleRepository, UserRoleRepository>();
         services.AddScoped<IRoleRepository, RoleRepository>();
+        services.AddScoped<IPasswordResetTokenRepository, PasswordResetTokenRepository>();
         return services;
     }
     

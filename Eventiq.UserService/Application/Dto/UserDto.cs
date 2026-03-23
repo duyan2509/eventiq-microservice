@@ -8,6 +8,8 @@ public class UserDto
     public string Email { get; set; } = string.Empty;
     
     public string? CurrentRole { get; set; } 
+    public string? OrgId { get; set; }
+    public string? OrgName { get; set; }
     public ICollection<string>? Roles { get; set; } = new List<string>();
     public bool IsBanned { get; set; } = false;
 }
@@ -62,10 +64,7 @@ public class RefreshResponse:LoginResponse
     }
 }
 
-public class RefreshRequest
-{
-    public string RefreshToken { get; set; } = string.Empty;
-}
+
 public class CreateUserDto
 {
 
@@ -92,3 +91,19 @@ public class ChangePasswordRequest
     [StringLength(15, MinimumLength = 6)]
     public string NewPassword { get; set; } = string.Empty;
 }
+
+public class ForgotPasswordRequest
+{
+    [Required]
+    [EmailAddress]
+    public string Email { get; set; } = string.Empty;
+}
+
+public class ResetPasswordRequest
+{
+    [Required]
+    public string Token { get; set; } = string.Empty;
+    [Required]
+    [StringLength(15, MinimumLength = 6)]
+    public string NewPassword { get; set; } = string.Empty;
+}

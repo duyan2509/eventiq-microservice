@@ -1,4 +1,3 @@
-﻿using Eventiq.UserService.Domain.Enums;
 using Eventiq.UserService.Model;
 
 namespace Eventiq.UserService.Application.Service;
@@ -7,7 +6,7 @@ public interface IRefreshTokenService
 {
     Task<string> GenerateRefreshToken(
         string userId,
-        AppRoles currentRole
+        Guid? organizationId = null
     );
 
     bool ValidateRefreshToken(RefreshTokenModel? refreshToken);

@@ -46,7 +46,7 @@ public class RefreshRepository:IRefreshTokenRepository
                 Expires = token.Expires,
                 Token = token.Token,
                 UserId = token.UserId,
-                CurrentRole = token.CurrentRole
+                OrganizationId = token.OrganizationId
             })
             .SingleOrDefaultAsync();;
     }
@@ -61,7 +61,7 @@ public class RefreshRepository:IRefreshTokenRepository
                 Expires = token.Expires,
                 Token = token.Token,
                 UserId = token.UserId,
-                CurrentRole = token.CurrentRole
+                OrganizationId = token.OrganizationId
             })
             .FirstOrDefaultAsync();
     }

@@ -1,4 +1,4 @@
-﻿using Eventiq.UserService.Domain.Entity;
+using Eventiq.UserService.Domain.Entity;
 
 namespace Eventiq.UserService.Domain.Repositories;
 
@@ -10,4 +10,5 @@ public interface IUserRoleRepository
 
     Task<UserRole?> GetUserRoleByOrgIdUserIdRoleIdAsync(Guid orgId, Guid userId, Guid roleId);
     Task  RemoveUserRole(UserRole userRole);
+    Task<bool> ExistsUserRole(Guid userId, Guid orgId);
 }

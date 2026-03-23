@@ -1,12 +1,15 @@
 using System.Security.Authentication;
+using System.Security.Cryptography;
 using AutoMapper;
+using Eventiq.Contracts;
 using Eventiq.UserService.Application.Dto;
 using Eventiq.UserService.Domain.Entity;
-using Eventiq.UserService.Domain.Enums;
+using AppRoles = Eventiq.UserService.Domain.Enums.AppRoles;
 using Eventiq.UserService.Domain.Repositories;
 using Eventiq.UserService.Guards;
 using Eventiq.UserService.Helper;
 using Eventiq.UserService.Model;
+using MassTransit;
 using Microsoft.IdentityModel.Tokens;
 
 namespace Eventiq.UserService.Application.Service;
@@ -20,6 +23,9 @@ public class UserService:IUserService
     private readonly IMapper _mapper;
     private readonly IUserRoleRepository _userRoleRepository;
     private readonly IRoleRepository _roleRepository;
+    private readonly IPasswordResetTokenRepository _passwordResetTokenRepository;
+    private readonly IPublishEndpoint _publishEndpoint;
+    
     public UserService(
         IJwtService jwt,
         IRefreshTokenService refresh,
@@ -27,6 +33,8 @@ public class UserService:IUserService
         IBanHistoryRepository banHistoryRepository,
         IUserRoleRepository userRoleRepository,
         IRoleRepository roleRepository,
+        IPasswordResetTokenRepository passwordResetTokenRepository,
+        IPublishEndpoint publishEndpoint,
         IMapper mapper)
     {
         _jwt = jwt;
@@ -35,6 +43,8 @@ public class UserService:IUserService
         _banHistoryRepository = banHistoryRepository;
         _userRoleRepository = userRoleRepository;
         _roleRepository = roleRepository;
+        _passwordResetTokenRepository = passwordResetTokenRepository;
+        _publishEndpoint = publishEndpoint;
         _mapper = mapper;
     }
     public async Task<LoginResponse> Login(LoginDto dto)
@@ -52,7 +62,7 @@ public class UserService:IUserService
                 ["email"]=user.Email,
             }
         );
-        var refreshToken = await _refresh.GenerateRefreshToken(user.Id,currentRole);
+        var refreshToken = await _refresh.GenerateRefreshToken(user.Id);
         
         return new LoginResponse(
             accessToken,
@@ -60,7 +70,7 @@ public class UserService:IUserService
         );
     }
 
-    public async Task<SwitchRoleRepsponse> SwitchRole(Guid userId, Guid organizationId)
+    public async Task<SwitchRoleRepsponse> SwitchRole(Guid userId, Guid organizationId, string? orgName = null)
     {
         var user = await _userRepository.GetUserById(userId);
         if (user == null)
@@ -80,11 +90,13 @@ public class UserService:IUserService
             ["email"] = user.Email,
             ["orgId"] = organizationId.ToString()
         };
+        if (!string.IsNullOrEmpty(orgName))
+            claims["orgName"] = orgName;
 
         var accessToken = _jwt.GenerateAccessToken(user.Id, role.ToString(), claims);
         var oldRefreshToken = await _refresh.GetRefreshTokenModelByUserId(Guid.Parse(user.Id));
         await _refresh.RevokeRefreshToken(oldRefreshToken.Token);
-        var newRefreshToken = await _refresh.GenerateRefreshToken(user.Id, role);
+        var newRefreshToken = await _refresh.GenerateRefreshToken(user.Id, organizationId);
 
         return new SwitchRoleRepsponse(
             accessToken,
@@ -107,16 +119,45 @@ public class UserService:IUserService
         if (user == null)
             throw new NotFoundException($"User not found with id {token.UserId}");
         UserGuards.EnsureActive(user);
-        var currentRefreshToken = await _refresh.GetRefreshTokenModelByUserId(Guid.Parse(user.Id));
-        
-        var accessToken = _jwt.GenerateAccessToken(
-            token.UserId.ToString(), currentRefreshToken.CurrentRole.ToString(), new Dictionary<string, string>
+
+        // Determine role & claims based on stored orgId
+        var claims = new Dictionary<string, string>
+        {
+            ["email"] = user.Email,
+        };
+        Guid? orgIdForNewToken = token.OrganizationId;
+        string roleName;
+
+        if (token.OrganizationId.HasValue)
+        {
+            // Check if the user still has a role in this org
+            var userRole = await _userRoleRepository.GetUserRoleByUserIdNOrgId(
+                token.UserId, token.OrganizationId.Value);
+
+            if (userRole != null)
             {
-                ["email"]=user.Email,
+                // Org still valid — keep the same org context
+                roleName = userRole.Role.Name;
+                claims["orgId"] = token.OrganizationId.Value.ToString();
             }
+            else
+            {
+                // Org no longer valid — fallback to basic User role
+                roleName = AppRoles.User.ToString();
+                orgIdForNewToken = null;
+            }
+        }
+        else
+        {
+            // No org context — resolve default role
+            roleName = RoleGuards.ResolveActiveRole(user).ToString();
+        }
+
+        var accessToken = _jwt.GenerateAccessToken(
+            token.UserId.ToString(), roleName, claims
         );
         await _refresh.RevokeRefreshToken(refreshToken);
-        var newRefreshToken = await  _refresh.GenerateRefreshToken(user.Id, currentRefreshToken.CurrentRole);    
+        var newRefreshToken = await _refresh.GenerateRefreshToken(user.Id, orgIdForNewToken);
         return new RefreshResponse(
             accessToken,
             newRefreshToken
@@ -144,13 +185,15 @@ public class UserService:IUserService
         return true;
     }
 
-    public async Task<UserDto> GetMe(Guid userId, string role)
+    public async Task<UserDto> GetMe(Guid userId, string role, string? orgId = null, string? orgName = null)
     {
         var model = await _userRepository.GetUserById(userId);
         if (model == null)
             throw new NotFoundException($"User not found with id {userId}");
         var rs = _mapper.Map<UserDto>(model);
         rs.CurrentRole = role;
+        rs.OrgId = orgId;
+        rs.OrgName = orgName;
         return rs;
     }
 
@@ -217,5 +260,84 @@ public class UserService:IUserService
         return _mapper.Map<UserDto>(user);
     }
 
+    public async Task ForgotPassword(string email)
+    {
+        var user = await _userRepository.GetUserByEmail(email);
+        if (user == null)
+            throw new NotFoundException($"User not found with email {email}");
+        
+        // Remove old tokens for this user
+        await _passwordResetTokenRepository.RemoveTokensByUserId(Guid.Parse(user.Id));
 
-}
+        // Generate a new token
+        var resetToken = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32));
+        var expires = DateTime.UtcNow.AddMinutes(30);
+
+        var passwordResetToken = new PasswordResetToken
+        {
+            Token = resetToken,
+            Expires = expires,
+            UserId = Guid.Parse(user.Id),
+        };
+
+        await _passwordResetTokenRepository.AddToken(passwordResetToken);
+
+        // Publish event to EmailService
+        await _publishEndpoint.Publish(new PasswordResetRequested
+        {
+            EmailAddress = email,
+            ResetToken = resetToken,
+            ExpireAt = expires
+        });
+    }
+
+    public async Task<bool> ResetPassword(string token, string newPassword)
+    {
+        var resetToken = await _passwordResetTokenRepository.GetByToken(token);
+        if (resetToken == null)
+            throw new NotFoundException("Invalid or expired reset token");
+        
+        if (DateTime.UtcNow > resetToken.Expires)
+        {
+            await _passwordResetTokenRepository.RemoveToken(resetToken);
+            throw new BadRequestException("Reset token has expired");
+        }
+
+        var user = await _userRepository.GetTrackingUserById(resetToken.UserId);
+        if (user == null)
+            throw new NotFoundException($"User not found");
+
+        user.PasswordHash = PasswordHash.SHA256Hash(newPassword);
+        await _userRepository.UpdateUser(user);
+
+        // Clean up used token
+        await _passwordResetTokenRepository.RemoveToken(resetToken);
+
+        return true;
+    }
+
+    public async Task<SwitchRoleRepsponse> SwitchToUser(Guid userId)
+    {
+        var user = await _userRepository.GetUserById(userId);
+        if (user == null)
+            throw new NotFoundException($"User not found with id {userId}");
+        UserGuards.EnsureActive(user);
+
+        var claims = new Dictionary<string, string>
+        {
+            ["email"] = user.Email,
+        };
+
+        var accessToken = _jwt.GenerateAccessToken(user.Id, AppRoles.User.ToString(), claims);
+        var oldRefreshToken = await _refresh.GetRefreshTokenModelByUserId(Guid.Parse(user.Id));
+        if (oldRefreshToken != null)
+            await _refresh.RevokeRefreshToken(oldRefreshToken.Token);
+        var newRefreshToken = await _refresh.GenerateRefreshToken(user.Id);
+
+        return new SwitchRoleRepsponse(
+            accessToken,
+            newRefreshToken
+        );
+    }
+
+}
