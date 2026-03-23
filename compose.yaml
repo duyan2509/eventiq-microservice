@@ -49,7 +49,7 @@ services:
     environment:
       ASPNETCORE_ENVIRONMENT: Development
       ASPNETCORE_URLS: http://+:8081
-      ConnectionStrings__Postgres: "Host=ep-twilight-meadow-a1idagy9-pooler.ap-southeast-1.aws.neon.tech;Database=neondb;Username=neondb_owner;Password=npg_XT2yJ5xteEnC;SSL Mode=Require;Search Path=user_service"
+      ConnectionStrings__Postgres: "Host=ep-twilight-meadow-a1idagy9-pooler.ap-southeast-1.aws.neon.tech;Database=neondb;Username=neondb_owner;Password=xxx;SSL Mode=Require;Search Path=user_service"
     # depends_on:
     #   postgres-user:
     #     condition: service_started
@@ -67,7 +67,7 @@ services:
       environment:
         ASPNETCORE_ENVIRONMENT: Development
         ASPNETCORE_URLS: http://+:8082
-        ConnectionStrings__Postgres: "Host=ep-twilight-meadow-a1idagy9-pooler.ap-southeast-1.aws.neon.tech;Database=neondb;Username=neondb_owner;Password=npg_XT2yJ5xteEnC;SSL Mode=Require;Search Path=org_service"
+        ConnectionStrings__Postgres: "Host=ep-twilight-meadow-a1idagy9-pooler.ap-southeast-1.aws.neon.tech;Database=neondb;Username=neondb_owner;Password=xxx;SSL Mode=Require;Search Path=org_service"
       # depends_on:
       #   postgres-org:
       #     condition: service_started
@@ -86,7 +86,7 @@ services:
     environment:
       ASPNETCORE_ENVIRONMENT: Development
       ASPNETCORE_URLS: http://+:8083
-      ConnectionStrings__Postgres: "Host=ep-twilight-meadow-a1idagy9-pooler.ap-southeast-1.aws.neon.tech;Database=neondb;Username=neondb_owner;Password=npg_XT2yJ5xteEnC;SSL Mode=Require;Search Path=event_service"
+      ConnectionStrings__Postgres: "Host=ep-twilight-meadow-a1idagy9-pooler.ap-southeast-1.aws.neon.tech;Database=neondb;Username=neondb_owner;Password=xxx;SSL Mode=Require;Search Path=event_service"
     # depends_on:
     #   postgres-event:
     #     condition: service_started
@@ -186,8 +186,8 @@ services:
     environment:
       ASPNETCORE_ENVIRONMENT: Development
       ASPNETCORE_URLS: http://+:8084
-      ConnectionStrings__Postgres: "Host=ep-twilight-meadow-a1idagy9-pooler.ap-southeast-1.aws.neon.tech;Database=neondb;Username=neondb_owner;Password=npg_XT2yJ5xteEnC;SSL Mode=Require;Search Path=seat_service"
-      ConnectionStrings__Redis: "easy-tahr-80535.upstash.io:6379,password=gQAAAAAAATqXAAIncDJiMGNmNDg1ZmJlNmI0ZjQxYTkwZDBlNDc0OTc1NzdhNHAyODA1MzU,ssl=True,abortConnect=False"
+      ConnectionStrings__Postgres: "Host=ep-twilight-meadow-a1idagy9-pooler.ap-southeast-1.aws.neon.tech;Database=neondb;Username=neondb_owner;Password=xxx;SSL Mode=Require;Search Path=seat_service"
+      ConnectionStrings__Redis: "easy-tahr-80535.upstash.io:6379,password=xxx,ssl=True,abortConnect=False"
     # depends_on:
     #   postgres-seat:
     #     condition: service_started
