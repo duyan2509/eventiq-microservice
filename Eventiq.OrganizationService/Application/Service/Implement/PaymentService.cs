@@ -46,14 +46,12 @@ public class PaymentService : IPaymentService
 
         string stripeAccountId;
 
-        // Reuse existing Stripe account if available (e.g. previous incomplete onboarding)
         if (!string.IsNullOrEmpty(org.StripeAccountId))
         {
             stripeAccountId = org.StripeAccountId;
         }
         else
         {
-            // Create a new Stripe Connected Account (Standard type)
             var accountOptions = new AccountCreateOptions
             {
                 Type = "express",
