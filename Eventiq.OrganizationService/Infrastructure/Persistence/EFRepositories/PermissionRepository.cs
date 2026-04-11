@@ -28,7 +28,7 @@ public class PermissionRepository:IPermissionRepository
     {
         var query = _permissions
             .AsNoTracking()
-            .Where(p=>p.OrganizationId==orgId &&p.Organization.OwnerId==userId);
+            .Where(p=>p.OrganizationId==orgId && (p.Organization.OwnerId==userId || p.Organization.Members.Any(m => m.UserId == userId)));
         int total = await query.CountAsync(cancellationToken);
         var data = new List<PermissionResponse>();
         if((page-1)*size<total)

@@ -51,11 +51,14 @@ public class MemberRepository:IMemberRepository
         int total = await query.CountAsync(cancellationToken);
         var data = new List<MemberReponse>();
         if(size*(page-1)<total)
-            data = await query
+        {
+            var members = await query
+                .Include(m => m.Permission)
                 .Skip((page-1) * size)
                 .Take(size)
-                .Select(m=>_mapper.Map<MemberReponse>(m))
-                .ToListAsync();
+                .ToListAsync(cancellationToken);
+            data = members.Select(m=>_mapper.Map<MemberReponse>(m)).ToList();
+        }
         return new PaginatedResult<MemberReponse>()
         {
             Data = data,

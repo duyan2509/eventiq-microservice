@@ -51,9 +51,10 @@ public class MemberService : IMemberService
         OwnerGuards.EnsureOwner(org,ownerId);
         var member = await _memberRepository.GetAsync(memberId, cancellationToken);
         MemberGuards.EnsureExists(member);
+        MemberGuards.EnsureNotOwner(member);
         var permission = await  _permissionRepository.GetByIdAsync(dto.PermissionId, cancellationToken);
         PermissionGuards.EnsureExists(permission);
-        PermissionGuards.EnsureNotDuplicatePermission(permission, dto.PermissionId);
+        PermissionGuards.EnsureNotDuplicatePermission(dto.PermissionId, member.PermissionId);
         PermissionGuards.EnsureNotOwnerPermission(permission);
         member.PermissionId = dto.PermissionId;
         await _memberRepository.UpdateAsync(member, cancellationToken);
@@ -71,7 +72,7 @@ public class MemberService : IMemberService
         MemberGuards.EnsureNotOwner(member);
         await _memberRepository.RemoveAsync(member, cancellationToken);
         // send message
-        _publishEndpoint.Publish(new StaffRemoved()
+        await _publishEndpoint.Publish(new StaffRemoved()
         {
             OrganizationId = orgId,
             UserId = member.UserId.Value,
