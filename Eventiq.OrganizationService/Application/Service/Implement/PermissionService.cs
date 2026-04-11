@@ -26,7 +26,7 @@ public class PermissionService : IPermissionService
 
     public async Task<PaginatedResult<PermissionResponse>> GetPermissionsAsync(Guid userId, Guid orgId, int page = 1 , int size = 10, CancellationToken cancellationToken = default)
     {
-        return await _permissionRepository.GetByOrgIdUserId(orgId, userId, page,size, cancellationToken);
+        return await _permissionRepository.GetByOrgIdUserId(userId, orgId, page,size, cancellationToken);
     }
 
     public async Task<PermissionResponse> AddPermissionAsync(Guid userId, Guid orgId, PermissionDto dto, CancellationToken cancellationToken = default)
