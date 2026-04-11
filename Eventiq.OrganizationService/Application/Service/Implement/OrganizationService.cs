@@ -30,9 +30,14 @@ public class OrganizationService : IOrganizationService
     }
 
 
-    public Task<OrganizationDetail?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
+    public async Task<OrganizationDetail?> GetByIdAsync(Guid id, Guid? requesterId = null, CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        var organization = await _organizationRepository.GetByIdAsync(id, cancellationToken);
+        if (organization == null) return null;
+
+        var detail = _mapper.Map<OrganizationDetail>(organization);
+        detail.isOwner = requesterId.HasValue && organization.OwnerId == requesterId.Value;
+        return detail;
     }
 
     public async Task<PaginatedResult<OrganizationDetail>> GetAllAsync(int page = 1, int pageSize = 10, CancellationToken cancellationToken = default)
@@ -51,6 +56,8 @@ public class OrganizationService : IOrganizationService
         try
         {
             var organization = _mapper.Map<Organization>(dto);
+            organization.OwnerId = userId;
+            organization.OwnerEmail = email;
             organization.Permissions = new List<Permission>();
             organization.Permissions.Add(new Permission()
             {

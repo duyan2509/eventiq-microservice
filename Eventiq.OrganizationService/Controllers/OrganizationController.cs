@@ -41,7 +41,10 @@ public class OrganizationController : ControllerBase
         Guid id,
         CancellationToken cancellationToken = default)
     {
-        var item = await _organizationService.GetByIdAsync(id, cancellationToken);
+        var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        Guid? requesterId = Guid.TryParse(userIdStr, out var parsedId) ? parsedId : null;
+
+        var item = await _organizationService.GetByIdAsync(id, requesterId, cancellationToken);
         if (item == null)
             throw new NotFoundException($"Organization with id {id} does not exist");
         return Ok(item);

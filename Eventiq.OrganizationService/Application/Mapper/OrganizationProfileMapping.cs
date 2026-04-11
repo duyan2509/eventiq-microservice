@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using Eventiq.OrganizationService.Domain.Entity;
 using Eventiq.OrganizationService.Dtos;
 
@@ -11,6 +11,9 @@ public class OrganizationProfileMapping:Profile
         CreateMap<Organization, OrganizationDto>();
         CreateMap<OrganizationDto, Organization>();
         CreateMap<Organization, OrganizationResponse>();
+        CreateMap<Organization, OrganizationDetail>()
+            .ForMember(dest => dest.Size, opt => opt.MapFrom(src => src.Members.Count))
+            .ForMember(dest => dest.isOwner, opt => opt.Ignore());
         CreateMap<PermissionDto, Permission>();
         CreateMap<Permission, PermissionResponse>();
         CreateMap<Invitation, InviationResponse>()
