@@ -9,8 +9,13 @@ public class TemplateRenderer(IRazorLightEngine engine) : ITemplateRenderer
         InvitationCreatedTemplateModel model,
         CancellationToken cancellationToken = default)
     {
-        // Template key is the filename without extension
         return engine.CompileRenderAsync("InvitationCreated", model);
     }
-}
 
+    public Task<string> RenderPasswordResetAsync(
+        PasswordResetTemplateModel model,
+        CancellationToken cancellationToken = default)
+    {
+        return engine.CompileRenderAsync("PasswordReset", model);
+    }
+}

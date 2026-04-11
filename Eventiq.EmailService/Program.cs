@@ -28,6 +28,7 @@ builder.Services.AddSingleton<ITemplateRenderer>(sp =>
 builder.Services.AddMassTransit(x =>
 {
     x.AddConsumer<InvitationCreatedConsumer>();
+    x.AddConsumer<PasswordResetRequestedConsumer>();
 
     if (builder.Environment.IsDevelopment())
     {
