@@ -1,4 +1,4 @@
-﻿using Eventiq.OrganizationService.Domain.Entity;
+using Eventiq.OrganizationService.Domain.Entity;
 
 namespace Eventiq.OrganizationService.Guards;
 
@@ -11,13 +11,13 @@ public static class PermissionGuards
     }
     public static void EnsureNotOwnerPermission(Permission? permission)
     {
-        if (permission.Name=="Owner")
+        if (permission?.Name == "Owner")
             throw new BusinessException("Cannot interact Owner permission.");
     }
 
-    public static void EnsureNotDuplicatePermission(Permission permission, Guid permissionId)
+    public static void EnsureNotDuplicatePermission(Guid newPermissionId, Guid? oldPermissionId)
     {
-        if(permissionId==permission.Id)
-            throw new BusinessException($"Member has already had {permission.Name} permission.");
+        if(newPermissionId == oldPermissionId)
+            throw new BusinessException($"Member has already had this permission.");
     }
 }

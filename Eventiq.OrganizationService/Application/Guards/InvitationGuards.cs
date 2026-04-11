@@ -1,4 +1,4 @@
-﻿using Eventiq.Contracts;
+using Eventiq.Contracts;
 using Eventiq.OrganizationService.Domain.Entity;
 using Eventiq.OrganizationService.Domain.Enum;
 
@@ -16,8 +16,16 @@ public static class InvitationGuards
     {
         if(invitation.ExpiresAt < DateTime.UtcNow)
             throw new BusinessException("Invitation has expired");
-        if(invitation.Status!=InvitationStatus.PENDING)
-            throw new BusinessException("Invitation has already been accepted");
+            
+        switch (invitation.Status)
+        {
+            case InvitationStatus.ACCEPTED:
+                throw new BusinessException("Invitation has already been accepted");
+            case InvitationStatus.REJECTED:
+                throw new BusinessException("Invitation has already been rejected");
+            case InvitationStatus.CANCELED:
+                throw new BusinessException("Invitation has been canceled by the organization");
+        }
     }
 
     public static void EnsureOrgInvitation(Invitation invitation, Guid orgId)
@@ -33,14 +41,10 @@ public static class InvitationGuards
 
     public static void EnsureNotActive(Invitation invitation)
     {
-        var activeStatus = new List<string>();
-        activeStatus.AddRange([
-            InvitationStatus.ACCEPTED.ToString(),
-            InvitationStatus.REJECTED.ToString(),
-        ]);
-        if(activeStatus.Contains(invitation.Status.ToString()))
-            throw new BusinessException("Invitation is active");
-        if(invitation.ExpiresAt > DateTime.UtcNow )
-            throw new BusinessException("Invitation hasn't expired");
+        if (invitation.Status == InvitationStatus.ACCEPTED)
+            throw new BusinessException("User has already accepted an invitation");
+            
+        if (invitation.Status == InvitationStatus.PENDING && invitation.ExpiresAt > DateTime.UtcNow)
+            throw new BusinessException("A pending invitation has already been sent and hasn't expired");
     }
 }
