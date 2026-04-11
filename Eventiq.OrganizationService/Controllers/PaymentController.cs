@@ -76,7 +76,7 @@ public class PaymentController : ControllerBase
     }
     private Guid GetOrgId()
     {
-        var orgIdStr = User.FindFirstValue("org_id");
+        var orgIdStr = User.FindFirstValue("orgId");
         if (string.IsNullOrEmpty(orgIdStr) || !Guid.TryParse(orgIdStr, out var orgId))
             throw new UnauthorizedException("Organization id is required");
         return orgId;

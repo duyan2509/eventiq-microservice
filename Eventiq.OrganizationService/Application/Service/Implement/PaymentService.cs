@@ -56,7 +56,7 @@ public class PaymentService : IPaymentService
             // Create a new Stripe Connected Account (Standard type)
             var accountOptions = new AccountCreateOptions
             {
-                Type = "standard",
+                Type = "express",
                 Email = org.OwnerEmail,
                 Metadata = new Dictionary<string, string>
                 {
@@ -79,12 +79,15 @@ public class PaymentService : IPaymentService
         var linkOptions = new AccountLinkCreateOptions
         {
             Account = stripeAccountId,
-            RefreshUrl = _configuration["Stripe:RefreshUrl"]
-                         ?? $"http://localhost:3000/organizations/{orgId}/payment/refresh",
-            ReturnUrl = _configuration["Stripe:ReturnUrl"]
-                        ?? $"http://localhost:3000/organizations/{orgId}/payment/return",
+            RefreshUrl = (_configuration["Stripe:RefreshUrl"]
+                          ?? $"http://localhost:5173/organizations/{{orgId}}/payment/refresh")
+                         .Replace("{orgId}", orgId.ToString()),
+            ReturnUrl = (_configuration["Stripe:ReturnUrl"]
+                         ?? $"http://localhost:5173/organizations/{{orgId}}/payment/return")
+                        .Replace("{orgId}", orgId.ToString()),
             Type = "account_onboarding"
         };
+
 
         var linkService = new AccountLinkService();
         var accountLink = await linkService.CreateAsync(linkOptions, cancellationToken: cancellationToken);
