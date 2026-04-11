@@ -47,8 +47,10 @@ public class InvitationService : IInvitationService
         PermissionGuards.EnsureExists(permission);
         PermissionGuards.EnsureNotOwnerPermission(permission);
         var invitation = await _invitationRepository.GetInvitationByEmailAndOrgId(userEmail,  org.Id, cancellationToken); 
-        InvitationGuards.EnsureExist(invitation);
-        InvitationGuards.EnsureNotActive(invitation);
+        if (invitation != null)
+        {
+            InvitationGuards.EnsureNotActive(invitation);
+        }
         invitation = new Invitation()
         {
             OrganizationId = org.Id,
@@ -57,7 +59,7 @@ public class InvitationService : IInvitationService
             ExpiresAt = InvitationGuards.GetExpiresAfter7Day()
         };
         await _invitationRepository.AddAsync(invitation, cancellationToken);
-        _publishEndpoint.Publish(new InvitationCreated()
+        await _publishEndpoint.Publish(new InvitationCreated()
         {
             EmailAddress = userEmail,
             ExpireAt = invitation.ExpiresAt,
@@ -76,9 +78,9 @@ public class InvitationService : IInvitationService
         return await _invitationRepository.GetOrgInvitationsAsync(orgId, page, size, cancellationToken);
     }
 
-    public async Task<PaginatedResult<InviationResponse>> GetUserInvitationsAsync(Guid userId, int page=1, int size =10, CancellationToken cancellationToken = default)
+    public async Task<PaginatedResult<InviationResponse>> GetUserInvitationsAsync(string userEmail, int page=1, int size =10, CancellationToken cancellationToken = default)
     {
-        return await _invitationRepository.GetUserInvitationsAsync(userId, page, size, cancellationToken);
+        return await _invitationRepository.GetUserInvitationsAsync(userEmail, page, size, cancellationToken);
     }
 
 

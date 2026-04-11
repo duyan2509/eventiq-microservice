@@ -22,6 +22,8 @@ public class InvitationRepository:IInvitationRepository
     public async Task<PaginatedResult<InviationResponse>> GetOrgInvitationsAsync(Guid orgId, int page, int size, CancellationToken cancellationToken = default)
     {
         var query = _invitations.AsNoTracking()
+            .Include(i => i.Organization)
+            .Include(i => i.Permission)
             .Where(i => i.OrganizationId == orgId);
         int total = await query.CountAsync(cancellationToken);
         var data = new List<InviationResponse>();
@@ -38,10 +40,12 @@ public class InvitationRepository:IInvitationRepository
         };
     }
 
-    public async Task<PaginatedResult<InviationResponse>> GetUserInvitationsAsync(Guid userId, int page, int size, CancellationToken cancellationToken = default)
+    public async Task<PaginatedResult<InviationResponse>> GetUserInvitationsAsync(string userEmail, int page, int size, CancellationToken cancellationToken = default)
     {
         var query = _invitations.AsNoTracking()
-            .Where(i => i.UserId == userId);
+            .Include(i => i.Organization)
+            .Include(i => i.Permission)
+            .Where(i => i.UserEmail == userEmail);
         int total = await query.CountAsync(cancellationToken);
         var data = new List<InviationResponse>();
         if(size*(page-1)<total)
@@ -74,6 +78,9 @@ public class InvitationRepository:IInvitationRepository
 
     public async Task<Invitation?> GetInvitationByEmailAndOrgId(string userEmail, Guid orgId, CancellationToken cancellationToken)
     {
-        return await _invitations.AsNoTracking().Where(i=>i.UserEmail == userEmail && i.OrganizationId == orgId).FirstOrDefaultAsync(cancellationToken);
+        return await _invitations.AsNoTracking()
+            .Where(i=>i.UserEmail == userEmail && i.OrganizationId == orgId)
+            .OrderByDescending(i => i.CreatedAt)
+            .FirstOrDefaultAsync(cancellationToken);
     }
 }

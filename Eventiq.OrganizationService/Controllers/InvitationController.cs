@@ -102,14 +102,14 @@ public class UserInvitationController : ControllerBase
         [FromQuery] int size = 10,
         CancellationToken cancellationToken = default)
     {
-        var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (string.IsNullOrEmpty(userIdStr) || !Guid.TryParse(userIdStr, out var userId))
-            throw new UnauthorizedException("User id is required");
+        var email = User.FindFirstValue(ClaimTypes.Email);
+        if (string.IsNullOrEmpty(email))
+            throw new UnauthorizedException("User email is required");
 
         if (page <= 0 || size <= 0)
             throw new BadRequestException("Page and size must be greater than 0");
 
-        var result = await _invitationService.GetUserInvitationsAsync(userId, page, size, cancellationToken);
+        var result = await _invitationService.GetUserInvitationsAsync(email, page, size, cancellationToken);
         return Ok(result);
     }
 
