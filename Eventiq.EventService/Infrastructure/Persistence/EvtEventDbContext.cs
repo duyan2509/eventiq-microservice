@@ -15,6 +15,7 @@ public sealed class EvtEventDbContext : DbContext
     public DbSet<Legend> Legends => Set<Legend>();
     public DbSet<Session> Sessions => Set<Session>();
     public DbSet<Chart> Charts => Set<Chart>();
+    public DbSet<OrgPaymentInfo> OrgPaymentInfos => Set<OrgPaymentInfo>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -26,6 +27,12 @@ public sealed class EvtEventDbContext : DbContext
         modelBuilder.Entity<Legend>(e => e.HasKey(x => x.Id));
         modelBuilder.Entity<Session>(e => e.HasKey(x => x.Id));
         modelBuilder.Entity<Chart>(e => e.HasKey(x => x.Id));
+
+        modelBuilder.Entity<OrgPaymentInfo>(e =>
+        {
+            e.HasKey(x => x.OrganizationId);
+            e.Property(x => x.OrganizationId).ValueGeneratedNever();
+        });
 
         foreach (var entityType in modelBuilder.Model.GetEntityTypes())
         {

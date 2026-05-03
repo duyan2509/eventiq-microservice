@@ -4,42 +4,87 @@
       "DownstreamPathTemplate": "/api/auth/login",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
-        { "Host": "user-service", "Port": 8081 }
+        {
+          "Host": "localhost",
+          "Port": 5228
+        }
       ],
       "UpstreamPathTemplate": "/gateway/auth/login",
-      "UpstreamHttpMethod": ["POST","OPTIONS"]
+      "UpstreamHttpMethod": [
+        "POST",
+        "OPTIONS"
+      ]
     },
     {
       "DownstreamPathTemplate": "/api/auth/register",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
-        { "Host": "user-service", "Port": 8081 }
+        {
+          "Host": "localhost",
+          "Port": 5228
+        }
       ],
       "UpstreamPathTemplate": "/gateway/auth/register",
-      "UpstreamHttpMethod": ["POST"]
+      "UpstreamHttpMethod": [
+        "POST"
+      ]
     },
     {
       "DownstreamPathTemplate": "/api/auth/refresh",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
-        { "Host": "user-service", "Port": 8081 }
+        {
+          "Host": "localhost",
+          "Port": 5228
+        }
       ],
       "UpstreamPathTemplate": "/gateway/auth/refresh",
-      "UpstreamHttpMethod": ["POST"]
+      "UpstreamHttpMethod": [
+        "POST"
+      ]
     },
-    
-    
-    
+    {
+      "DownstreamPathTemplate": "/api/auth/forgot-password",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 5228
+        }
+      ],
+      "UpstreamPathTemplate": "/gateway/auth/forgot-password",
+      "UpstreamHttpMethod": [
+        "POST"
+      ]
+    },
+    {
+      "DownstreamPathTemplate": "/api/auth/reset-password",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 5228
+        }
+      ],
+      "UpstreamPathTemplate": "/gateway/auth/reset-password",
+      "UpstreamHttpMethod": [
+        "POST"
+      ]
+    },
     {
       "DownstreamPathTemplate": "/api/auth/{everything}",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
         {
-          "Host": "user-service",
-          "Port": 8081
+          "Host": "localhost",
+          "Port": 5228
         }
       ],
-      "UpstreamHttpMethod": ["GET", "POST", "PATCH"],
+      "UpstreamHttpMethod": [
+        "GET",
+        "POST",
+        "PATCH"
+      ],
       "UpstreamPathTemplate": "/gateway/auth/{everything}",
       "AddHeadersToRequest": {
         "Authorization": "{Authorization}"
@@ -54,11 +99,14 @@
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
         {
-          "Host": "user-service",
-          "Port": 8081
+          "Host": "localhost",
+          "Port": 5228
         }
       ],
-      "UpstreamHttpMethod": ["GET", "PATCH"],
+      "UpstreamHttpMethod": [
+        "GET",
+        "PATCH"
+      ],
       "UpstreamPathTemplate": "/gateway/users/{everything}",
       "AddHeadersToRequest": {
         "Authorization": "{Authorization}"
@@ -71,51 +119,144 @@
     {
       "DownstreamPathTemplate": "/api/organizations/{everything}",
       "DownstreamScheme": "http",
-      "DownstreamHostAndPorts": [{ "Host": "org-service", "Port": 8082 }],
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 5230
+        }
+      ],
       "UpstreamPathTemplate": "/gateway/organizations/{everything}",
-      "UpstreamHttpMethod": ["GET", "POST", "PATCH", "DELETE"],
-      "AddHeadersToRequest": { "Authorization": "{Authorization}" },
-      "AuthenticationOptions": { "AuthenticationProviderKey": "Bearer", "AllowedScopes": [] },
+      "UpstreamHttpMethod": [
+        "GET",
+        "POST",
+        "PATCH",
+        "DELETE"
+      ],
+      "AddHeadersToRequest": {
+        "Authorization": "{Authorization}"
+      },
+      "AuthenticationOptions": {
+        "AuthenticationProviderKey": "Bearer",
+        "AllowedScopes": []
+      },
       "RouteIsCaseSensitive": false
-
     },
     {
       "DownstreamPathTemplate": "/api/invitations/{everything}",
       "DownstreamScheme": "http",
-      "DownstreamHostAndPorts": [{ "Host": "org-service", "Port": 8082 }],
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 5230
+        }
+      ],
       "UpstreamPathTemplate": "/gateway/invitations/{everything}",
-      "UpstreamHttpMethod": ["GET", "POST"],
-      "AddHeadersToRequest": { "Authorization": "{Authorization}" },
-      "AuthenticationOptions": { "AuthenticationProviderKey": "Bearer", "AllowedScopes": [] },
+      "UpstreamHttpMethod": [
+        "GET",
+        "POST"
+      ],
+      "AddHeadersToRequest": {
+        "Authorization": "{Authorization}"
+      },
+      "AuthenticationOptions": {
+        "AuthenticationProviderKey": "Bearer",
+        "AllowedScopes": []
+      },
       "RouteIsCaseSensitive": false
-
+    },
+    {
+      "DownstreamPathTemplate": "/api/address/provinces",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 5232
+        }
+      ],
+      "UpstreamPathTemplate": "/gateway/address/provinces",
+      "UpstreamHttpMethod": [
+        "GET"
+      ],
+      "RouteIsCaseSensitive": false
+    },
+    {
+      "DownstreamPathTemplate": "/api/address/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 5232
+        }
+      ],
+      "UpstreamPathTemplate": "/gateway/address/{everything}",
+      "UpstreamHttpMethod": [
+        "GET"
+      ],
+      "RouteIsCaseSensitive": false
     },
     {
       "DownstreamPathTemplate": "/api/events",
       "DownstreamScheme": "http",
-      "DownstreamHostAndPorts": [{ "Host": "event-service", "Port": 8083 }],
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 5232
+        }
+      ],
       "UpstreamPathTemplate": "/gateway/events",
-      "UpstreamHttpMethod": ["GET"],
+      "UpstreamHttpMethod": [
+        "GET"
+      ],
       "RouteIsCaseSensitive": false
     },
     {
       "DownstreamPathTemplate": "/api/events/{everything}",
       "DownstreamScheme": "http",
-      "DownstreamHostAndPorts": [{ "Host": "event-service", "Port": 8083 }],
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 5232
+        }
+      ],
       "UpstreamPathTemplate": "/gateway/events/{everything}",
-      "UpstreamHttpMethod": ["GET", "POST", "PATCH", "DELETE"],
-      "AddHeadersToRequest": { "Authorization": "{Authorization}" },
-      "AuthenticationOptions": { "AuthenticationProviderKey": "Bearer", "AllowedScopes": [] },
+      "UpstreamHttpMethod": [
+        "GET",
+        "POST",
+        "PATCH",
+        "DELETE"
+      ],
+      "AddHeadersToRequest": {
+        "Authorization": "{Authorization}"
+      },
+      "AuthenticationOptions": {
+        "AuthenticationProviderKey": "Bearer",
+        "AllowedScopes": []
+      },
       "RouteIsCaseSensitive": false
     },
     {
       "DownstreamPathTemplate": "/api/seat-maps/{everything}",
       "DownstreamScheme": "http",
-      "DownstreamHostAndPorts": [{ "Host": "seat-service", "Port": 8084 }],
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 5234
+        }
+      ],
       "UpstreamPathTemplate": "/gateway/seat-maps/{everything}",
-      "UpstreamHttpMethod": ["GET", "POST", "PUT", "DELETE"],
-      "AddHeadersToRequest": { "Authorization": "{Authorization}" },
-      "AuthenticationOptions": { "AuthenticationProviderKey": "Bearer", "AllowedScopes": [] },
+      "UpstreamHttpMethod": [
+        "GET",
+        "POST",
+        "PUT",
+        "DELETE"
+      ],
+      "AddHeadersToRequest": {
+        "Authorization": "{Authorization}"
+      },
+      "AuthenticationOptions": {
+        "AuthenticationProviderKey": "Bearer",
+        "AllowedScopes": []
+      },
       "RouteIsCaseSensitive": false
     }
   ],

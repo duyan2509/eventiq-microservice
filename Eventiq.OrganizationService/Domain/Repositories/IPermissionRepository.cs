@@ -1,4 +1,4 @@
-﻿using Eventiq.OrganizationService.Domain.Entity;
+using Eventiq.OrganizationService.Domain.Entity;
 using Eventiq.OrganizationService.Dtos;
 
 namespace Eventiq.OrganizationService.Domain.Repositories;
@@ -10,4 +10,5 @@ public interface IPermissionRepository
     Task DeleteAsync(Permission? permission, CancellationToken cancellationToken = default);
     Task<Permission?> GetByIdAsync(Guid permissionId,CancellationToken cancellationToken = default);
     Task UpdateAsync(Permission? permission, CancellationToken cancellationToken = default);
+    Task<bool> ExistsByNameAsync(Guid orgId, string name, CancellationToken cancellationToken = default);
 }

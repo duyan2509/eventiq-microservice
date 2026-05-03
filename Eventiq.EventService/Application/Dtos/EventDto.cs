@@ -1,9 +1,8 @@
-﻿namespace Eventiq.EventService.Dtos;
+namespace Eventiq.EventService.Dtos;
 
 public class UpdateEventDto
 {
-    //public required Stream BannerStream { get; set; }
-    //public string EventBanner { get; set; } = string.Empty;
+    public string? EventBanner { get; set; }
     public string? Name { get; set; }
     public string? Description { get; set; }
     public string? DetailAddress { get; set; }
@@ -45,6 +44,7 @@ public class EventQuickViewData
 public class EventDetail
 {
     public Guid Id { get; set; }
+    public Guid OrganizationId { get; set; }
     public string? EventBanner { get; set; }
     public required string Name { get; set; }
     public required DateTime StartTime { get; set; }

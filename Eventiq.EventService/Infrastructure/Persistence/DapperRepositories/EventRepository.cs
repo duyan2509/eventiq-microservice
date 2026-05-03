@@ -64,6 +64,7 @@ public class EventRepository : BaseRepository, IEventRepository
         string? query,
         EventStatus? status,
         string? province,
+        Guid? organizationId,
         bool newest,
         bool increasePrice,
         int page,
@@ -87,6 +88,11 @@ public class EventRepository : BaseRepository, IEventRepository
         if (!string.IsNullOrWhiteSpace(province))
         {
             whereBuilder.Append(" AND (province_code = @Province OR province_name = @Province)");
+        }
+
+        if (organizationId.HasValue)
+        {
+            whereBuilder.Append(" AND organization_id = @OrganizationId");
         }
 
         var orderClause = new StringBuilder();
@@ -157,6 +163,7 @@ public class EventRepository : BaseRepository, IEventRepository
                 Query = !string.IsNullOrWhiteSpace(query) ? $"%{query.Trim()}%" : null,
                 Status = status,
                 Province = string.IsNullOrWhiteSpace(province) ? null : province.Trim(),
+                OrganizationId = organizationId,
                 Offset = (page - 1) * size,
                 PageSize = size
             },
@@ -264,6 +271,7 @@ public class EventRepository : BaseRepository, IEventRepository
             commune_name = COALESCE(@CommuneName, commune_name),
             start_time = COALESCE(@StartTime, start_time),
             end_time = COALESCE(@EndTime, end_time),
+            event_banner = COALESCE(@EventBanner, event_banner),
             updated_at = NOW()
         WHERE id = @EventId
         RETURNING 
@@ -287,6 +295,7 @@ public class EventRepository : BaseRepository, IEventRepository
             new
             {
                 EventId = eventId,
+                dto.EventBanner,
                 dto.Name,
                 dto.Description,
                 dto.DetailAddress,

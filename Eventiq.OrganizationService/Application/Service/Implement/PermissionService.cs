@@ -5,6 +5,7 @@ using Eventiq.OrganizationService.Domain.Repositories;
 using Eventiq.OrganizationService.Dtos;
 using Eventiq.OrganizationService.Guards;
 
+
 namespace Eventiq.OrganizationService.Application.Service;
 
 public class PermissionService : IPermissionService
@@ -14,14 +15,16 @@ public class PermissionService : IPermissionService
     private readonly IMapper _mapper;
     private readonly IOrganizationRepository _organizationRepository;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IMemberRepository _memberRepository;
 
-    public PermissionService(IPermissionRepository permissionRepository, ILogger<PermissionService> logger, IMapper mapper, IOrganizationRepository organizationRepository, IUnitOfWork unitOfWork)
+    public PermissionService(IPermissionRepository permissionRepository, ILogger<PermissionService> logger, IMapper mapper, IOrganizationRepository organizationRepository, IUnitOfWork unitOfWork, IMemberRepository memberRepository)
     {
         _permissionRepository = permissionRepository;
         _logger = logger;
         _mapper = mapper;
         _organizationRepository = organizationRepository;
         _unitOfWork = unitOfWork;
+        _memberRepository = memberRepository;
     }
 
     public async Task<PaginatedResult<PermissionResponse>> GetPermissionsAsync(Guid userId, Guid orgId, int page = 1 , int size = 10, CancellationToken cancellationToken = default)
@@ -34,6 +37,8 @@ public class PermissionService : IPermissionService
         var org = await _organizationRepository.GetByIdAsync(orgId);
         OrgGuards.EnsureExists(org);
         OwnerGuards.EnsureOwner(org,userId);
+        var nameExists = await _permissionRepository.ExistsByNameAsync(orgId, dto.Name, cancellationToken);
+        PermissionGuards.EnsureNameNotDuplicate(nameExists);
         var permission = _mapper.Map<PermissionDto, Permission>(dto);
         permission.OrganizationId = orgId;
         await _permissionRepository.AddAsync(permission, cancellationToken);
@@ -67,6 +72,8 @@ public class PermissionService : IPermissionService
         var permission = await _permissionRepository.GetByIdAsync(permissionId);
         PermissionGuards.EnsureExists(permission);
         PermissionGuards.EnsureNotOwnerPermission(permission);
+        var hasMembersWithPermission = await _memberRepository.AnyByPermissionIdAsync(permissionId, cancellationToken);
+        PermissionGuards.EnsureNoMembersAssigned(hasMembersWithPermission);
         await _permissionRepository.DeleteAsync(permission, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
         return true;

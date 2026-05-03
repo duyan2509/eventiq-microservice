@@ -10,23 +10,26 @@ public class EventService : IEventService
 {
     private readonly IUnitOfWork _uow;
     private readonly IMapper _mapper;
+    private readonly IBlobService _blobService;
 
-    public EventService(IUnitOfWork uow, IMapper mapper)
+    public EventService(IUnitOfWork uow, IMapper mapper, IBlobService blobService)
     {
         _uow = uow;
         _mapper = mapper;
+        _blobService = blobService;
     }
 
     public async Task<PaginatedResult<EventQuickViewData>> GetAllEventsAsync(
         string? query,
         EventStatus? status,
         string? province,
+        Guid? organizationId,
         bool newest = true,
         bool increasePrice = true,
         int page = 1,
         int size = 10)
     {
-        var rs = await _uow.Events.GetAllEventsAsync(query, status, province, newest, increasePrice, page, size);
+        var rs = await _uow.Events.GetAllEventsAsync(query, status, province, organizationId, newest, increasePrice, page, size);
 
         var data = rs.Data.Select(ToQuickView);
 
@@ -39,15 +42,23 @@ public class EventService : IEventService
         };
     }
 
-    public async Task<EventQuickViewData> CreateEventAsync(Guid userId, Guid orgId, CreateEventDto dto)
+    public async Task<EventQuickViewData> CreateEventAsync(Guid userId, Guid orgId, CreateEventDto dto, IFormFile? banner = null)
     {
+        // Upload banner to Azure Blob Storage if provided
+        string? bannerUrl = null;
+        if (banner is { Length: > 0 })
+        {
+            using var stream = banner.OpenReadStream();
+            bannerUrl = await _blobService.UploadAsync(stream, banner.FileName, banner.ContentType);
+        }
+
         var ev = new Event
         {
             Id = Guid.NewGuid(),
             OrganizationId = orgId,
             OrganizationName = string.Empty,
             OranizationAvatar = null,
-            EventBanner = null,
+            EventBanner = bannerUrl,
             Name = dto.Name,
             Description = dto.Description,
             DetailAddress = dto.DetailAddress,
@@ -74,6 +85,9 @@ public class EventService : IEventService
         catch
         {
             await _uow.RollbackAsync();
+            // Clean up uploaded banner if DB save fails
+            if (bannerUrl != null)
+                await _blobService.DeleteAsync(bannerUrl);
             throw;
         }
 
@@ -104,6 +118,7 @@ public class EventService : IEventService
         return new EventDetail
         {
             Id = evt.Id,
+            OrganizationId = evt.OrganizationId,
             EventBanner = evt.EventBanner,
             Name = evt.Name,
             StartTime = evt.StartTime ?? DateTime.MinValue,
@@ -120,7 +135,7 @@ public class EventService : IEventService
         };
     }
 
-    public async Task<EventQuickViewData> UpdateEventAsync(Guid userId, Guid eventId, UpdateEventDto dto)
+    public async Task<EventQuickViewData> UpdateEventAsync(Guid userId, Guid eventId, UpdateEventDto dto, IFormFile? banner = null)
     {
         // First load current event to validate time range
         var current = await _uow.Events.GetByIdAsync(eventId);
@@ -134,16 +149,33 @@ public class EventService : IEventService
             throw new BusinessException("Event StartTime must be earlier than EndTime");
         }
 
+        // Upload new banner if provided
+        string? newBannerUrl = null;
+        if (banner is { Length: > 0 })
+        {
+            using var stream = banner.OpenReadStream();
+            newBannerUrl = await _blobService.UploadAsync(stream, banner.FileName, banner.ContentType);
+            dto.EventBanner = newBannerUrl;
+        }
+
         EventModel? updated;
+        var oldBannerUrl = current.EventBanner;
         try
         {
             await _uow.BeginTransactionAsync();
             updated = await _uow.Events.UpdatePartialAsync(eventId, dto);
             await _uow.CommitAsync();
+
+            // Delete old banner after successful DB update
+            if (newBannerUrl != null && !string.IsNullOrEmpty(oldBannerUrl))
+                await _blobService.DeleteAsync(oldBannerUrl);
         }
         catch
         {
             await _uow.RollbackAsync();
+            // Clean up newly uploaded banner if DB update fails
+            if (newBannerUrl != null)
+                await _blobService.DeleteAsync(newBannerUrl);
             throw;
         }
 

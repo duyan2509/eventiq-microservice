@@ -56,6 +56,17 @@ public sealed class EvtOrganizationDbContext : DbContext
         modelBuilder.Entity<Member>(e =>
         {
             e.HasKey(x => x.Id);
+            e.HasOne(x => x.Permission)
+                .WithMany()
+                .HasForeignKey(x => x.PermissionId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+        modelBuilder.Entity<Invitation>(e =>
+        {
+            e.HasOne(x => x.Permission)
+                .WithMany()
+                .HasForeignKey(x => x.PermissionId)
+                .OnDelete(DeleteBehavior.Restrict);
         });
         modelBuilder.AddInboxStateEntity();
         modelBuilder.AddOutboxMessageEntity();

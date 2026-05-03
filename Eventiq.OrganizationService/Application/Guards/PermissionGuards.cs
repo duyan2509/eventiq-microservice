@@ -20,4 +20,16 @@ public static class PermissionGuards
         if(newPermissionId == oldPermissionId)
             throw new BusinessException($"Member has already had this permission.");
     }
+
+    public static void EnsureNoMembersAssigned(bool hasMembersWithPermission)
+    {
+        if (hasMembersWithPermission)
+            throw new BusinessException("Cannot delete permission that is still assigned to members. Please reassign or remove members first.");
+    }
+
+    public static void EnsureNameNotDuplicate(bool exists)
+    {
+        if (exists)
+            throw new ConflictException("A permission with this name already exists in the organization.");
+    }
 }

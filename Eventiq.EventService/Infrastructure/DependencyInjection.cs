@@ -1,5 +1,7 @@
 using System.Data;
+using Eventiq.EventService.Application.Service;
 using Eventiq.EventService.Domain.Repositories;
+using Eventiq.EventService.Infrastructure.Blob;
 using Eventiq.EventService.Infrastructure.Persistence;
 using Eventiq.EventService.Infrastructure.Persistence.DapperRepositories;
 using Microsoft.EntityFrameworkCore;
@@ -37,6 +39,8 @@ public static class DependencyInjection
         services.AddScoped<ILegendRepository, LegendRepository>();
         services.AddScoped<ISessionRepository, SessionRepository>();
         services.AddScoped<IChartRepository, ChartRepository>();
+        services.AddScoped<IOrgPaymentRepository, OrgPaymentRepository>();
+        services.AddScoped<IBlobService, AzureBlobService>();
 
         return services;
     }

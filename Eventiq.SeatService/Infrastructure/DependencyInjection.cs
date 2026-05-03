@@ -25,10 +25,15 @@ public static class DependencyInjection
             }).UseSnakeCaseNamingConvention();
         });
 
-        // Redis
+        // Redis (lazy connection to avoid startup crashes)
         var redisConnectionString = config.GetConnectionString("Redis") ?? "localhost:6379";
-        services.AddSingleton<IConnectionMultiplexer>(
-            ConnectionMultiplexer.Connect(redisConnectionString));
+        services.AddSingleton<IConnectionMultiplexer>(sp =>
+        {
+            var options = ConfigurationOptions.Parse(redisConnectionString);
+            options.AbortOnConnectFail = false;
+            options.ConnectTimeout = 10000;
+            return ConnectionMultiplexer.Connect(options);
+        });
 
         // Repositories
         services.AddScoped<ISeatMapRepository, SeatMapRepository>();

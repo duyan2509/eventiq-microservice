@@ -4,44 +4,42 @@ using MassTransit;
 
 namespace Eventiq.EventService.Consumers;
 
+/// <summary>
+/// Receives PaymentConfigured from OrganizationService and updates the local
+/// org_payment_info table so SubmissionService can check payment status without
+/// calling OrgService over HTTP.
+/// </summary>
 public class PaymentConfiguredConsumer : IConsumer<PaymentConfigured>
 {
-    private readonly IEventRepository _eventRepository;
+    private readonly IOrgPaymentRepository _orgPaymentRepo;
     private readonly ILogger<PaymentConfiguredConsumer> _logger;
 
     public PaymentConfiguredConsumer(
-        IEventRepository eventRepository,
+        IOrgPaymentRepository orgPaymentRepo,
         ILogger<PaymentConfiguredConsumer> logger)
     {
-        _eventRepository = eventRepository;
+        _orgPaymentRepo = orgPaymentRepo;
         _logger = logger;
     }
 
     public async Task Consume(ConsumeContext<PaymentConfigured> context)
     {
-        var message = context.Message;
+        var msg = context.Message;
 
         _logger.LogInformation(
-            "Received PaymentConfigured for org {OrgId}, Stripe account {StripeAccountId}",
-            message.OrganizationId, message.StripeAccountId);
+            "PaymentConfigured received for org {OrgId}, Stripe={StripeAccountId}, Status={Status}",
+            msg.OrganizationId, msg.StripeAccountId, msg.PaymentStatus);
 
-        // Update all events of this organization that are in Approved status to Published
-        // since payment is now configured
-        var approvedEvents = await _eventRepository.GetEventsByOrgAndStatusAsync(
-            message.OrganizationId,
-            Domain.Entity.EventStatus.Approved);
+        var isActive = msg.PaymentStatus.Equals("Configured", StringComparison.OrdinalIgnoreCase);
 
-        foreach (var evt in approvedEvents)
-        {
-            await _eventRepository.SetEventStatusAsync(evt.Id, Domain.Entity.EventStatus.Published);
-
-            _logger.LogInformation(
-                "Event {EventId} auto-published after payment configured for org {OrgId}",
-                evt.Id, message.OrganizationId);
-        }
+        await _orgPaymentRepo.UpsertAsync(
+            orgId: msg.OrganizationId,
+            stripeAccountId: msg.StripeAccountId,
+            isActive: isActive,
+            updatedAt: msg.ConfiguredAt);
 
         _logger.LogInformation(
-            "PaymentConfigured processed successfully for org {OrgId}. {Count} events auto-published.",
-            message.OrganizationId, approvedEvents.Count());
+            "org_payment_info upserted for org {OrgId}: IsActive={IsActive}",
+            msg.OrganizationId, isActive);
     }
 }

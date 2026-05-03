@@ -12,11 +12,13 @@ public class SubmissionService : ISubmissionService
 {
     private readonly IMapper _mapper;
     private readonly IUnitOfWork _uow;
+    private readonly IOrgPaymentRepository _orgPayment;
 
-    public SubmissionService(IMapper mapper, IUnitOfWork uow)
+    public SubmissionService(IMapper mapper, IUnitOfWork uow, IOrgPaymentRepository orgPayment)
     {
         _mapper = mapper;
         _uow = uow;
+        _orgPayment = orgPayment;
     }
 
     public async Task<PaginatedResult<SubmissionResponse>> GetAllSubmissionByEventIdAsync(Guid userId, Guid eventId)
@@ -34,6 +36,12 @@ public class SubmissionService : ISubmissionService
 
     public async Task<SubmissionResponse> SubmitEventAsync(Guid userId, Guid orgId, Guid eventId)
     {
+        // Check org has active Stripe payment (from local cache updated via RabbitMQ)
+        var hasPayment = await _orgPayment.HasActivePaymentAsync(orgId);
+        if (!hasPayment)
+            throw new BusinessException(
+                "Tổ chức chưa liên kết tài khoản thanh toán. Vui lòng kết nối Stripe trước khi gửi duyệt sự kiện.");
+
         try
         {
             await _uow.BeginTransactionAsync();
@@ -41,7 +49,7 @@ public class SubmissionService : ISubmissionService
             EventGuards.EnsureExist(evt);
             EventGuards.EnsureOwner(evt, orgId);
             EventGuards.EnsureStatus(evt, EventStatus.Draft);
-            await _uow.Events.SetEventStatusAsync(eventId,EventStatus.Pending);
+            await _uow.Events.SetEventStatusAsync(eventId, EventStatus.Pending);
             var submission = new Submission()
             {
                 EventId = eventId,
@@ -71,23 +79,18 @@ public class SubmissionService : ISubmissionService
             await _uow.BeginTransactionAsync();
             var evt = await _uow.Events.GetByIdAsync(eventId);
             EventGuards.EnsureExist(evt);
-            EventGuards.EnsureStatus(evt,EventStatus.Pending);
-            // check validate 
-            
-            //call grpc to org service to get payment infor, if exist: published, else approved
-            bool existPayment = true;
-            var status = existPayment? EventStatus.Published : EventStatus.Approved;
-            var message = !existPayment? "\nPlease provide organization payment information to publish event":"";
+            EventGuards.EnsureStatus(evt, EventStatus.Pending);
+
             var submission = new Submission()
             {
                 EventId = eventId,
                 AdminId = userId,
                 AdminEmail = adminEmail,
-                Message = dto.Message+ message,
-                Status = status
+                Message = dto.Message,
+                Status = EventStatus.Approved
             };
             await _uow.Submissions.AddAsync(eventId, submission);
-            await _uow.Events.SetEventStatusAsync(eventId,status);
+            await _uow.Events.SetEventStatusAsync(eventId, EventStatus.Approved);
 
             await _uow.CommitAsync();
 

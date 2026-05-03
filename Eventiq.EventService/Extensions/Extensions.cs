@@ -16,6 +16,7 @@ public static class Extensions
     public static void AddApplicationServices(this WebApplicationBuilder builder)
     {
         builder.Host.UseEventiqSerilog();
+        builder.Services.AddHttpClient();
         builder.Services.AddServices(builder.Configuration)
             .AddInfrastructure(builder.Configuration);
         builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());

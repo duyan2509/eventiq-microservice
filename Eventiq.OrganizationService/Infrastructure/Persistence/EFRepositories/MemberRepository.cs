@@ -67,4 +67,9 @@ public class MemberRepository:IMemberRepository
             Page = page
         };
     }
+
+    public async Task<bool> AnyByPermissionIdAsync(Guid permissionId, CancellationToken cancellationToken = default)
+    {
+        return await _members.AnyAsync(m => m.PermissionId == permissionId, cancellationToken);
+    }
 }

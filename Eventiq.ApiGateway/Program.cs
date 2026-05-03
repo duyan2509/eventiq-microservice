@@ -26,9 +26,9 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 // log request HTTP
 app.UseSerilogRequestLogging();
+app.UseCors("AllowFrontend");       
 app.UseAuthentication();
 app.UseAuthorization();
-app.UseCors("AllowFrontend");
 await app.UseOcelot();
 
 app.Run();

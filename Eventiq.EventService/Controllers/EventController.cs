@@ -26,6 +26,7 @@ public class EventController : ControllerBase
         [FromQuery] string? query,
         [FromQuery] EventStatus? status,
         [FromQuery] string? province,
+        [FromQuery] Guid? organizationId,
         [FromQuery] bool newest = true,
         [FromQuery] bool increasePrice = true,
         [FromQuery] int page = 1,
@@ -34,18 +35,20 @@ public class EventController : ControllerBase
         if (page <= 0 || size <= 0)
             throw new BadRequestException("Page and size must be greater than 0");
 
-        var result = await _eventService.GetAllEventsAsync(query, status, province, newest, increasePrice, page, size);
+        var result = await _eventService.GetAllEventsAsync(query, status, province, organizationId, newest, increasePrice, page, size);
         return Ok(result);
     }
 
     [Authorize(Roles = $"{nameof(AppRoles.Organization)},{nameof(AppRoles.Staff)}")]
     [HttpPost("{orgId:guid}")]
+    [Consumes("multipart/form-data")]
     public async Task<ActionResult<EventQuickViewData>> CreateEvent(
         Guid orgId,
-        [FromBody] CreateEventDto dto)
+        [FromForm] CreateEventDto dto,
+        IFormFile? banner)
     {
         var userId = GetUserId();
-        var result = await _eventService.CreateEventAsync(userId, orgId, dto);
+        var result = await _eventService.CreateEventAsync(userId, orgId, dto, banner);
         return Ok(result);
     }
 
@@ -59,12 +62,14 @@ public class EventController : ControllerBase
 
     [Authorize(Roles = $"{nameof(AppRoles.Organization)},{nameof(AppRoles.Staff)}")]
     [HttpPatch("{eventId:guid}")]
+    [Consumes("multipart/form-data")]
     public async Task<ActionResult<EventQuickViewData>> UpdateEvent(
         Guid eventId,
-        [FromBody] UpdateEventDto dto)
+        [FromForm] UpdateEventDto dto,
+        IFormFile? banner)
     {
         var userId = GetUserId();
-        var result = await _eventService.UpdateEventAsync(userId, eventId, dto);
+        var result = await _eventService.UpdateEventAsync(userId, eventId, dto, banner);
         return Ok(result);
     }
 

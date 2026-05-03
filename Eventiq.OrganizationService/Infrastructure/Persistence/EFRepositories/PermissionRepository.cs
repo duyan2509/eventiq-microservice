@@ -61,4 +61,9 @@ public class PermissionRepository:IPermissionRepository
         _permissions.Update(permission);
         return Task.CompletedTask;
     }
+
+    public async Task<bool> ExistsByNameAsync(Guid orgId, string name, CancellationToken cancellationToken = default)
+    {
+        return await _permissions.AnyAsync(p => p.OrganizationId == orgId && p.Name == name, cancellationToken);
+    }
 }
