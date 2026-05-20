@@ -26,7 +26,16 @@ public sealed class SeatDbContext : DbContext
         modelBuilder.Entity<SeatMap>(e =>
         {
             e.HasKey(x => x.Id);
-            e.HasIndex(x => x.ChartId).IsUnique();
+            // One template per chart (session_id IS NULL)
+            e.HasIndex(x => x.ChartId)
+                .IsUnique()
+                .HasFilter("session_id IS NULL")
+                .HasDatabaseName("ix_seat_maps_chart_id_template");
+            // One clone per (chart, session)
+            e.HasIndex(x => new { x.ChartId, x.SessionId })
+                .IsUnique()
+                .HasFilter("session_id IS NOT NULL")
+                .HasDatabaseName("ix_seat_maps_chart_session");
             e.HasIndex(x => x.EventId);
             e.HasIndex(x => x.OrganizationId);
             e.Property(x => x.CanvasSettings).HasColumnType("jsonb");

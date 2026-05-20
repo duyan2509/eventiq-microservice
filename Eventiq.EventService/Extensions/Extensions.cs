@@ -4,6 +4,7 @@ using Eventiq.EventService.Application.Service;
 using Eventiq.EventService.Consumers;
 using Eventiq.EventService.Helper;
 using Eventiq.EventService.Infrastructure;
+using Eventiq.EventService.Infrastructure.Http;
 using Eventiq.Logging;
 using MassTransit;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -17,6 +18,11 @@ public static class Extensions
     {
         builder.Host.UseEventiqSerilog();
         builder.Services.AddHttpClient();
+        builder.Services.AddHttpClient<ISeatServiceClient, SeatServiceClient>(client =>
+        {
+            var baseUrl = builder.Configuration["InternalServices:SeatServiceBaseUrl"] ?? "http://localhost:5234";
+            client.BaseAddress = new Uri(baseUrl);
+        });
         builder.Services.AddServices(builder.Configuration)
             .AddInfrastructure(builder.Configuration);
         builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());

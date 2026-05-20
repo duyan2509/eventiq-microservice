@@ -11,4 +11,5 @@ public interface ISeatMapService
     Task DeleteAsync(Guid orgId, Guid seatMapId);
     Task<SeatMapResponse> PublishAsync(Guid orgId, Guid seatMapId);
     Task<SeatMapStatsResponse> GetStatsAsync(Guid seatMapId);
+    Task<bool> HasPublishedTemplateForEventAsync(Guid eventId);
 }

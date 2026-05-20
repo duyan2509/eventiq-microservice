@@ -1,9 +1,11 @@
 using AutoMapper;
+using Eventiq.Contracts;
 using Eventiq.SeatService.Application.Dtos;
 using Eventiq.SeatService.Application.Guards;
 using Eventiq.SeatService.Application.Service.Interface;
 using Eventiq.SeatService.Domain.Entity;
 using Eventiq.SeatService.Domain.Enum;
+using MassTransit;
 
 namespace Eventiq.SeatService.Application.Service.Implement;
 
@@ -11,11 +13,13 @@ public class SeatMapService : ISeatMapService
 {
     private readonly IUnitOfWork _uow;
     private readonly IMapper _mapper;
+    private readonly IPublishEndpoint _publishEndpoint;
 
-    public SeatMapService(IUnitOfWork uow, IMapper mapper)
+    public SeatMapService(IUnitOfWork uow, IMapper mapper, IPublishEndpoint publishEndpoint)
     {
         _uow = uow;
         _mapper = mapper;
+        _publishEndpoint = publishEndpoint;
     }
 
     public async Task<List<SeatMapResponse>> GetByEventIdAsync(Guid eventId)
@@ -83,15 +87,36 @@ public class SeatMapService : ISeatMapService
 
     public async Task<SeatMapResponse> PublishAsync(Guid orgId, Guid seatMapId)
     {
-        var seatMap = await _uow.SeatMaps.GetByIdAsync(seatMapId);
+        var seatMap = await _uow.SeatMaps.GetByIdWithDetailsAsync(seatMapId);
         SeatMapGuards.EnsureExists(seatMap);
         SeatMapGuards.EnsureOwner(seatMap!, orgId);
 
+        var totalSeats = seatMap.Sections
+            .SelectMany(s => s.Rows)
+            .SelectMany(r => r.Seats)
+            .Count();
+
         seatMap!.Publish();
+        seatMap.TotalSeats = totalSeats;
         await _uow.SeatMaps.UpdateAsync(seatMap);
         await _uow.SaveChangesAsync();
 
+        await _publishEndpoint.Publish(new SeatMapPublished
+        {
+            SeatMapId = seatMapId,
+            ChartId = seatMap.ChartId,
+            EventId = seatMap.EventId,
+            OrganizationId = seatMap.OrganizationId,
+            TotalSeats = totalSeats
+        });
+
         return _mapper.Map<SeatMapResponse>(seatMap);
+    }
+
+    public async Task<bool> HasPublishedTemplateForEventAsync(Guid eventId)
+    {
+        var maps = await _uow.SeatMaps.GetByEventIdAsync(eventId);
+        return maps.Any(m => m.SessionId == null && m.Status == SeatMapStatus.Published);
     }
 
     public async Task<SeatMapStatsResponse> GetStatsAsync(Guid seatMapId)

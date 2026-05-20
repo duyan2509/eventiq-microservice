@@ -101,6 +101,7 @@ public static class ServiceExtensions
         {
             x.AddConsumer<ChartDeletedConsumer>();
             x.AddConsumer<StaffRemovedConsumer>();
+            x.AddConsumer<EventApprovedConsumer>();
 
             if (builder.Environment.IsDevelopment())
             {

@@ -7,6 +7,10 @@ public class SeatMap : BaseEntity
     public Guid ChartId { get; set; }
     public Guid EventId { get; set; }
     public Guid OrganizationId { get; set; }
+    /// <summary>
+    /// Null = designer template. Set when cloned per-session on event approval.
+    /// </summary>
+    public Guid? SessionId { get; set; }
     public string Name { get; set; } = string.Empty;
     public SeatMapStatus Status { get; set; } = SeatMapStatus.Draft;
     
@@ -20,6 +24,7 @@ public class SeatMap : BaseEntity
     /// Incremented on each change.
     /// </summary>
     public int Version { get; set; } = 1;
+    public int TotalSeats { get; set; }
 
     public virtual ICollection<SeatSection> Sections { get; set; } = new List<SeatSection>();
     public virtual ICollection<SeatObject> Objects { get; set; } = new List<SeatObject>();

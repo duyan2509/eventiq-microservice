@@ -1,3 +1,4 @@
+using Eventiq.EventService.Infrastructure.Http;
 using Eventiq.EventService.Infrastructure.Persistence;
 
 namespace Eventiq.EventService.Application.Service;

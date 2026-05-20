@@ -13,6 +13,7 @@ public interface ISessionRepository
     Task<Session?> GetByIdAsync(Guid sessionId);
 
     Task<bool> CheckOverlappedAsync(Guid eventId, Guid sessionId, DateTime sessionStartTime, DateTime sessionEndTime);
+    Task<List<Session>> GetAllByEventIdAsync(Guid eventId);
 }
 
 

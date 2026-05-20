@@ -130,10 +130,18 @@ namespace Eventiq.SeatService.Infrastructure.Persistence.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("organization_id");
 
+                    b.Property<Guid?>("SessionId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("session_id");
+
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("status");
+
+                    b.Property<int>("TotalSeats")
+                        .HasColumnType("integer")
+                        .HasColumnName("total_seats");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone")
@@ -148,7 +156,13 @@ namespace Eventiq.SeatService.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("ChartId")
                         .IsUnique()
-                        .HasDatabaseName("ix_seat_maps_chart_id");
+                        .HasFilter("session_id IS NULL")
+                        .HasDatabaseName("ix_seat_maps_chart_id_template");
+
+                    b.HasIndex(new[] { "ChartId", "SessionId" })
+                        .IsUnique()
+                        .HasFilter("session_id IS NOT NULL")
+                        .HasDatabaseName("ix_seat_maps_chart_session");
 
                     b.HasIndex("EventId")
                         .HasDatabaseName("ix_seat_maps_event_id");

@@ -154,6 +154,16 @@ public class SessionRepository : BaseRepository, ISessionRepository
             transaction: _transaction);
     }
 
+    public async Task<List<Session>> GetAllByEventIdAsync(Guid eventId)
+    {
+        const string sql = @"
+            SELECT id, chart_id, event_id, name, start_time, end_time
+            FROM sessions
+            WHERE event_id = @EventId AND is_deleted = false";
+        var result = await _connection.QueryAsync<Session>(sql, new { EventId = eventId }, _transaction);
+        return result.ToList();
+    }
+
     public async Task<bool> CheckOverlappedAsync(Guid eventId, Guid sessionId, DateTime sessionStartTime, DateTime sessionEndTime)
     {
         var sql = $@"

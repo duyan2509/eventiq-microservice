@@ -1,4 +1,5 @@
 using Eventiq.SeatService.Domain.Entity;
+using Eventiq.SeatService.Domain.Enum;
 using Eventiq.SeatService.Domain.Repositories;
 using Microsoft.EntityFrameworkCore;
 
@@ -27,6 +28,18 @@ public class SeatMapRepository : ISeatMapRepository
 
     public async Task<SeatMap?> GetByChartIdAsync(Guid chartId)
         => await _ctx.SeatMaps.FirstOrDefaultAsync(m => m.ChartId == chartId);
+
+    public async Task<SeatMap?> GetBySessionIdAsync(Guid sessionId)
+        => await _ctx.SeatMaps.FirstOrDefaultAsync(m => m.SessionId == sessionId);
+
+    public async Task<SeatMap?> GetPublishedTemplateByChartIdAsync(Guid chartId)
+        => await _ctx.SeatMaps
+            .Include(m => m.Sections).ThenInclude(s => s.Rows).ThenInclude(r => r.Seats)
+            .Include(m => m.Objects)
+            .AsSplitQuery()
+            .FirstOrDefaultAsync(m => m.ChartId == chartId
+                && m.SessionId == null
+                && m.Status == SeatMapStatus.Published);
 
     public async Task<List<SeatMap>> GetByEventIdAsync(Guid eventId)
         => await _ctx.SeatMaps

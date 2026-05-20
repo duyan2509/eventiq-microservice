@@ -1,10 +1,11 @@
 using AutoMapper;
+using Eventiq.Contracts;
 using Eventiq.EventService.Domain.Entity;
 using Eventiq.EventService.Domain.Repositories;
 using Eventiq.EventService.Dtos;
 using Eventiq.EventService.Extensions;
 using Eventiq.EventService.Guards;
-using Microsoft.EntityFrameworkCore;
+using MassTransit;
 
 namespace Eventiq.EventService.Application.Service;
 
@@ -13,19 +14,28 @@ public class SubmissionService : ISubmissionService
     private readonly IMapper _mapper;
     private readonly IUnitOfWork _uow;
     private readonly IOrgPaymentRepository _orgPayment;
+    private readonly ISeatServiceClient _seatServiceClient;
+    private readonly IPublishEndpoint _publishEndpoint;
 
-    public SubmissionService(IMapper mapper, IUnitOfWork uow, IOrgPaymentRepository orgPayment)
+    public SubmissionService(
+        IMapper mapper,
+        IUnitOfWork uow,
+        IOrgPaymentRepository orgPayment,
+        ISeatServiceClient seatServiceClient,
+        IPublishEndpoint publishEndpoint)
     {
         _mapper = mapper;
         _uow = uow;
         _orgPayment = orgPayment;
+        _seatServiceClient = seatServiceClient;
+        _publishEndpoint = publishEndpoint;
     }
 
     public async Task<PaginatedResult<SubmissionResponse>> GetAllSubmissionByEventIdAsync(Guid userId, Guid eventId, int page = 1, int size = 20)
     {
         var rs = await _uow.Submissions.GetAllSubmissionsByEventIdAsync(eventId, page, size);
-        var data = rs.Data.Select(lg=>_mapper.Map<SubmissionResponse>(lg));
-        return new PaginatedResult<SubmissionResponse>()
+        var data = rs.Data.Select(lg => _mapper.Map<SubmissionResponse>(lg));
+        return new PaginatedResult<SubmissionResponse>
         {
             Data = data,
             Total = rs.Total,
@@ -36,11 +46,15 @@ public class SubmissionService : ISubmissionService
 
     public async Task<SubmissionResponse> SubmitEventAsync(Guid userId, Guid orgId, Guid eventId)
     {
-        // Check org has active Stripe payment (from local cache updated via RabbitMQ)
         var hasPayment = await _orgPayment.HasActivePaymentAsync(orgId);
         if (!hasPayment)
             throw new BusinessException(
                 "Tổ chức chưa liên kết tài khoản thanh toán. Vui lòng kết nối Stripe trước khi gửi duyệt sự kiện.");
+
+        var hasSeatMap = await _seatServiceClient.HasPublishedSeatMapAsync(eventId);
+        if (!hasSeatMap)
+            throw new BusinessException(
+                "Sự kiện chưa có sơ đồ chỗ ngồi đã xuất bản. Vui lòng tạo và xuất bản sơ đồ trước khi gửi duyệt.");
 
         try
         {
@@ -50,7 +64,7 @@ public class SubmissionService : ISubmissionService
             EventGuards.EnsureOwner(evt, orgId);
             EventGuards.EnsureStatus(evt, EventStatus.Draft);
             await _uow.Events.SetEventStatusAsync(eventId, EventStatus.Pending);
-            var submission = new Submission()
+            var submission = new Submission
             {
                 EventId = eventId,
                 AdminId = Guid.Empty,
@@ -60,7 +74,6 @@ public class SubmissionService : ISubmissionService
             };
             await _uow.Submissions.AddAsync(eventId, submission);
             await _uow.CommitAsync();
-
             return _mapper.Map<SubmissionResponse>(submission);
         }
         catch
@@ -70,10 +83,12 @@ public class SubmissionService : ISubmissionService
         }
     }
 
-
-
     public async Task<SubmissionResponse> AcceptEventAsync(Guid userId, string adminEmail, Guid eventId, UpdateSubmissioDto dto)
     {
+        // Read sessions before opening the write transaction
+        var sessions = await _uow.Sessions.GetAllByEventIdAsync(eventId);
+
+        SubmissionResponse result;
         try
         {
             await _uow.BeginTransactionAsync();
@@ -81,7 +96,7 @@ public class SubmissionService : ISubmissionService
             EventGuards.EnsureExist(evt);
             EventGuards.EnsureStatus(evt, EventStatus.Pending);
 
-            var submission = new Submission()
+            var submission = new Submission
             {
                 EventId = eventId,
                 AdminId = userId,
@@ -91,16 +106,25 @@ public class SubmissionService : ISubmissionService
             };
             await _uow.Submissions.AddAsync(eventId, submission);
             await _uow.Events.SetEventStatusAsync(eventId, EventStatus.Approved);
-
             await _uow.CommitAsync();
-
-            return _mapper.Map<SubmissionResponse>(submission);
+            result = _mapper.Map<SubmissionResponse>(submission);
         }
         catch
         {
             await _uow.RollbackAsync();
             throw;
         }
+
+        await _publishEndpoint.Publish(new EventApproved
+        {
+            EventId = eventId,
+            Sessions = sessions
+                .Select(s => new SessionChartPair(s.Id, s.ChartId))
+                .ToArray(),
+            ApprovedAt = DateTime.UtcNow
+        });
+
+        return result;
     }
 
     public async Task<SubmissionResponse> RejectEventAsync(Guid userId, string adminEmail, Guid eventId, UpdateSubmissioDto dto)
@@ -110,7 +134,7 @@ public class SubmissionService : ISubmissionService
             await _uow.BeginTransactionAsync();
             var evt = await _uow.Events.GetByIdAsync(eventId);
             EventGuards.EnsureExist(evt);
-            var submission = new Submission()
+            var submission = new Submission
             {
                 EventId = eventId,
                 AdminId = userId,
@@ -119,10 +143,8 @@ public class SubmissionService : ISubmissionService
                 Status = EventStatus.Rejected
             };
             await _uow.Submissions.AddAsync(eventId, submission);
-            await _uow.Events.SetEventStatusAsync(eventId,EventStatus.Draft);
-
+            await _uow.Events.SetEventStatusAsync(eventId, EventStatus.Draft);
             await _uow.CommitAsync();
-
             return _mapper.Map<SubmissionResponse>(submission);
         }
         catch
@@ -130,6 +152,5 @@ public class SubmissionService : ISubmissionService
             await _uow.RollbackAsync();
             throw;
         }
-        
     }
 }
