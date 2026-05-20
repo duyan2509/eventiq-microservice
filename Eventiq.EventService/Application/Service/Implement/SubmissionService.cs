@@ -21,9 +21,9 @@ public class SubmissionService : ISubmissionService
         _orgPayment = orgPayment;
     }
 
-    public async Task<PaginatedResult<SubmissionResponse>> GetAllSubmissionByEventIdAsync(Guid userId, Guid eventId)
+    public async Task<PaginatedResult<SubmissionResponse>> GetAllSubmissionByEventIdAsync(Guid userId, Guid eventId, int page = 1, int size = 20)
     {
-        var rs = await _uow.Submissions.GetAllSubmissionsByEventIdAsync(eventId);
+        var rs = await _uow.Submissions.GetAllSubmissionsByEventIdAsync(eventId, page, size);
         var data = rs.Data.Select(lg=>_mapper.Map<SubmissionResponse>(lg));
         return new PaginatedResult<SubmissionResponse>()
         {

@@ -18,26 +18,24 @@ public class SubmissionRepository : BaseRepository, ISubmissionRepository
     public string Message { get; set; }
     public EventStatus Status { get; set; }
     public DateTime CreatedAt { get; set; }
-    public async Task<PaginatedResult<SubmissionModel>> GetAllSubmissionsByEventIdAsync(Guid eventId)
+    public async Task<PaginatedResult<SubmissionModel>> GetAllSubmissionsByEventIdAsync(Guid eventId, int page = 1, int size = 20)
     {
+        var offset = (page - 1) * size;
         var sql = @"
-        SELECT COUNT(*) 
+        SELECT COUNT(*)
         FROM submissions
         WHERE event_id = @EventId;
 
-        SELECT s.id, s.admin_email, s.admin_id, s.message, s.create_at, s,status
+        SELECT s.id, s.admin_email, s.admin_id, s.message, s.created_at, s.status
         FROM submissions s
         WHERE s.event_id = @EventId
         ORDER BY s.created_at DESC
+        LIMIT @Size OFFSET @Offset;
     ";
-
 
         using var multi = await _connection.QueryMultipleAsync(
             sql,
-            new
-            {
-                EventId = eventId,
-            },
+            new { EventId = eventId, Size = size, Offset = offset },
             transaction: _transaction);
 
         var total = await multi.ReadSingleAsync<int>();
@@ -45,8 +43,8 @@ public class SubmissionRepository : BaseRepository, ISubmissionRepository
 
         return new PaginatedResult<SubmissionModel>
         {
-            Page = 1,
-            Size = total,
+            Page = page,
+            Size = size,
             Total = total,
             Data = data
         };

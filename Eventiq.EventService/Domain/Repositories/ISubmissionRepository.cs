@@ -6,7 +6,7 @@ namespace Eventiq.EventService.Domain.Repositories;
 
 public interface ISubmissionRepository
 {
-    Task<PaginatedResult<SubmissionModel>> GetAllSubmissionsByEventIdAsync(Guid eventId);
+    Task<PaginatedResult<SubmissionModel>> GetAllSubmissionsByEventIdAsync(Guid eventId, int page = 1, int size = 20);
     Task AddAsync(Guid eventId, Submission submission);
 }
 

@@ -23,10 +23,12 @@ public class SubmissionController : ControllerBase
     [Authorize(Roles = $"{nameof(AppRoles.Organization)},{nameof(AppRoles.Staff)},{nameof(AppRoles.Admin)}")]
     [HttpGet]
     public async Task<ActionResult<PaginatedResult<SubmissionResponse>>> GetAllSubmissions(
-        Guid eventId)
+        Guid eventId,
+        [FromQuery] int page = 1,
+        [FromQuery] int size = 20)
     {
         var userId = GetUserId();
-        var result = await _submissionService.GetAllSubmissionByEventIdAsync(userId, eventId);
+        var result = await _submissionService.GetAllSubmissionByEventIdAsync(userId, eventId, page, size);
         return Ok(result);
     }
 
