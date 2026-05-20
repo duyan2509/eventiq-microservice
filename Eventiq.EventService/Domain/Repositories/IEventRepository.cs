@@ -14,6 +14,7 @@ public interface IEventRepository
         EventStatus? status,
         string? province,
         Guid? organizationId,
+        string? organizationName,
         bool newest,
         bool increasePrice,
         int page,

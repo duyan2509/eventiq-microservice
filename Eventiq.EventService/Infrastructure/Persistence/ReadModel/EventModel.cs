@@ -19,6 +19,8 @@ public class EventModel
     public DateTime? StartTime { get; set; }
     public DateTime? EndTime { get; set; }
 
+    public string? OrganizationName { get; set; }
+
     // For listing
     public int? LowestPrice { get; set; }
 }

@@ -65,6 +65,7 @@ public class EventRepository : BaseRepository, IEventRepository
         EventStatus? status,
         string? province,
         Guid? organizationId,
+        string? organizationName,
         bool newest,
         bool increasePrice,
         int page,
@@ -95,6 +96,11 @@ public class EventRepository : BaseRepository, IEventRepository
             whereBuilder.Append(" AND organization_id = @OrganizationId");
         }
 
+        if (!string.IsNullOrWhiteSpace(organizationName))
+        {
+            whereBuilder.Append(" AND organization_name ILIKE @OrgName");
+        }
+
         var orderClause = new StringBuilder();
 
         if (increasePrice)
@@ -120,9 +126,10 @@ public class EventRepository : BaseRepository, IEventRepository
         FROM events e
         {whereBuilder};
 
-        SELECT 
+        SELECT
             e.id,
             e.organization_id AS OrganizationId,
+            e.organization_name AS OrganizationName,
             e.status,
             e.event_banner AS EventBanner,
             e.name,
@@ -138,9 +145,10 @@ public class EventRepository : BaseRepository, IEventRepository
         FROM events e
         LEFT JOIN legends l ON l.event_id = e.id
         {whereBuilder}
-        GROUP BY 
+        GROUP BY
             e.id,
             e.organization_id,
+            e.organization_name,
             e.status,
             e.event_banner,
             e.name,
@@ -164,6 +172,7 @@ public class EventRepository : BaseRepository, IEventRepository
                 Status = status,
                 Province = string.IsNullOrWhiteSpace(province) ? null : province.Trim(),
                 OrganizationId = organizationId,
+                OrgName = !string.IsNullOrWhiteSpace(organizationName) ? $"%{organizationName.Trim()}%" : null,
                 Offset = (page - 1) * size,
                 PageSize = size
             },

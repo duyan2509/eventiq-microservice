@@ -33,6 +33,8 @@ public class CreateEventDto
 public class EventQuickViewData
 {
     public Guid Id { get; set; }
+    public Guid OrganizationId { get; set; }
+    public string? OrganizationName { get; set; }
     public string? EventBanner { get; set; }
     public required string Name { get; set; }
     public required DateTime Start { get; set; }

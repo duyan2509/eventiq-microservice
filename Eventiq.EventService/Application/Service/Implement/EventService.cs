@@ -24,12 +24,13 @@ public class EventService : IEventService
         EventStatus? status,
         string? province,
         Guid? organizationId,
+        string? organizationName = null,
         bool newest = true,
         bool increasePrice = true,
         int page = 1,
         int size = 10)
     {
-        var rs = await _uow.Events.GetAllEventsAsync(query, status, province, organizationId, newest, increasePrice, page, size);
+        var rs = await _uow.Events.GetAllEventsAsync(query, status, province, organizationId, organizationName, newest, increasePrice, page, size);
 
         var data = rs.Data.Select(ToQuickView);
 
@@ -201,6 +202,8 @@ public class EventService : IEventService
         new EventQuickViewData
         {
             Id = ev.Id,
+            OrganizationId = ev.OrganizationId,
+            OrganizationName = ev.OrganizationName,
             EventBanner = ev.EventBanner,
             Name = ev.Name,
             Start = ev.StartTime ?? DateTime.MinValue,

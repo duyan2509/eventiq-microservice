@@ -27,6 +27,7 @@ public class EventController : ControllerBase
         [FromQuery] EventStatus? status,
         [FromQuery] string? province,
         [FromQuery] Guid? organizationId,
+        [FromQuery] string? organizationName,
         [FromQuery] bool newest = true,
         [FromQuery] bool increasePrice = true,
         [FromQuery] int page = 1,
@@ -35,7 +36,7 @@ public class EventController : ControllerBase
         if (page <= 0 || size <= 0)
             throw new BadRequestException("Page and size must be greater than 0");
 
-        var result = await _eventService.GetAllEventsAsync(query, status, province, organizationId, newest, increasePrice, page, size);
+        var result = await _eventService.GetAllEventsAsync(query, status, province, organizationId, organizationName, newest, increasePrice, page, size);
         return Ok(result);
     }
 
