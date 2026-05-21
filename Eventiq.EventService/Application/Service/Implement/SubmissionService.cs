@@ -153,4 +153,32 @@ public class SubmissionService : ISubmissionService
             throw;
         }
     }
+
+    public async Task<SubmissionResponse> CancelEventAsync(Guid userId, string adminEmail, Guid eventId, UpdateSubmissioDto dto)
+    {
+        try
+        {
+            await _uow.BeginTransactionAsync();
+            var evt = await _uow.Events.GetByIdAsync(eventId);
+            EventGuards.EnsureExist(evt);
+            EventGuards.EnsureStatus(evt, EventStatus.Pending);
+            var submission = new Submission
+            {
+                EventId = eventId,
+                AdminId = userId,
+                AdminEmail = adminEmail,
+                Message = dto.Message,
+                Status = EventStatus.Cancelled
+            };
+            await _uow.Submissions.AddAsync(eventId, submission);
+            await _uow.Events.SetEventStatusAsync(eventId, EventStatus.Draft);
+            await _uow.CommitAsync();
+            return _mapper.Map<SubmissionResponse>(submission);
+        }
+        catch
+        {
+            await _uow.RollbackAsync();
+            throw;
+        }
+    }
 }
