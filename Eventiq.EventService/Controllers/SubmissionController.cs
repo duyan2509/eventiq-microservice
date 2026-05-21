@@ -67,6 +67,18 @@ public class SubmissionController : ControllerBase
         return Ok(result);
     }
 
+    [Authorize(Roles = $"{nameof(AppRoles.Organization)},{nameof(AppRoles.Staff)}")]
+    [HttpPost("cancel")]
+    public async Task<ActionResult<SubmissionResponse>> CancelEvent(
+        Guid eventId,
+        [FromBody] UpdateSubmissioDto dto)
+    {
+        var userId = GetUserId();
+        var userEmail = GetUserEmail();
+        var result = await _submissionService.CancelEventAsync(userId, userEmail, eventId, dto);
+        return Ok(result);
+    }
+
     private Guid GetUserId()
     {
         var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);

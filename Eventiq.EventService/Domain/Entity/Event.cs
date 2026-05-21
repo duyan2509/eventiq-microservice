@@ -53,7 +53,8 @@ public enum EventStatus
     Pending,
     Approved,
     Rejected,
-    Published 
+    Published,
+    Cancelled
 }
 
 
