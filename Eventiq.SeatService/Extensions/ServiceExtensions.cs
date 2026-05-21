@@ -72,7 +72,8 @@ public static class ServiceExtensions
                             var accessToken = context.Request.Query["access_token"];
                             var path = context.HttpContext.Request.Path;
                             if (!string.IsNullOrEmpty(accessToken) &&
-                                path.StartsWithSegments("/hubs/seat-design"))
+                                (path.StartsWithSegments("/hubs/seat-design") ||
+                                 path.StartsWithSegments("/hubs/seat-booking")))
                             {
                                 context.Token = accessToken;
                             }

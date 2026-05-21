@@ -24,10 +24,12 @@ public class SeatMapResponse
     public Guid ChartId { get; set; }
     public Guid EventId { get; set; }
     public Guid OrganizationId { get; set; }
+    public Guid? SessionId { get; set; }
     public string Name { get; set; } = string.Empty;
     public string Status { get; set; } = string.Empty;
     public string? CanvasSettings { get; set; }
     public int Version { get; set; }
+    public int TotalSeats { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime? UpdatedAt { get; set; }
 }
@@ -36,6 +38,49 @@ public class SeatMapDetailResponse : SeatMapResponse
 {
     public List<SeatSectionResponse> Sections { get; set; } = [];
     public List<SeatObjectResponse> Objects { get; set; } = [];
+}
+
+// Layout-only response for the booking view — no seat statuses, safe to cache indefinitely.
+public class SeatMapLayoutResponse : SeatMapResponse
+{
+    public List<SeatSectionLayoutResponse> Sections { get; set; } = [];
+    public List<SeatObjectResponse> Objects { get; set; } = [];
+}
+
+public class SeatSectionLayoutResponse
+{
+    public Guid Id { get; set; }
+    public Guid SeatMapId { get; set; }
+    public string Label { get; set; } = string.Empty;
+    public string SectionType { get; set; } = string.Empty;
+    public string? Geometry { get; set; }
+    public string? Style { get; set; }
+    public Guid? LegendId { get; set; }
+    public int SortOrder { get; set; }
+    public List<SeatRowLayoutResponse> Rows { get; set; } = [];
+}
+
+public class SeatRowLayoutResponse
+{
+    public Guid Id { get; set; }
+    public Guid SectionId { get; set; }
+    public string Label { get; set; } = string.Empty;
+    public int RowNumber { get; set; }
+    public string? Curve { get; set; }
+    public int SeatSpacing { get; set; }
+    public List<SeatLayoutResponse> Seats { get; set; } = [];
+}
+
+public class SeatLayoutResponse
+{
+    public Guid Id { get; set; }
+    public Guid RowId { get; set; }
+    public string Label { get; set; } = string.Empty;
+    public int SeatNumber { get; set; }
+    public string SeatType { get; set; } = string.Empty;
+    public string? Position { get; set; }
+    public Guid? LegendId { get; set; }
+    public string? CustomProperties { get; set; }
 }
 
 // ========== SeatSection DTOs ==========
@@ -228,7 +273,7 @@ public class SeatMapStatsResponse
 {
     public int TotalSeats { get; set; }
     public int AvailableSeats { get; set; }
-    public int ReservedSeats { get; set; }
+    public int HoldingSeats { get; set; }
     public int SoldSeats { get; set; }
     public int BlockedSeats { get; set; }
     public int TotalSections { get; set; }

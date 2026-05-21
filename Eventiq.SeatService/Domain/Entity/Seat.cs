@@ -26,4 +26,31 @@ public class Seat : BaseEntity
     /// JSONB: extra metadata (e.g. obstructed view, premium, etc.)
     /// </summary>
     public string? CustomProperties { get; set; }
+
+    public Guid? HeldBy { get; set; }
+    public DateTime? HeldUntil { get; set; }
+
+    public void Hold(Guid userId, TimeSpan duration)
+    {
+        Status = SeatStatus.Holding;
+        HeldBy = userId;
+        HeldUntil = DateTime.UtcNow.Add(duration);
+        MarkUpdated();
+    }
+
+    public void Release()
+    {
+        Status = SeatStatus.Available;
+        HeldBy = null;
+        HeldUntil = null;
+        MarkUpdated();
+    }
+
+    public void Sell()
+    {
+        Status = SeatStatus.Sold;
+        HeldBy = null;
+        HeldUntil = null;
+        MarkUpdated();
+    }
 }

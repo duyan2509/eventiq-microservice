@@ -12,4 +12,5 @@ public interface ISeatRepository
     Task UpdateRangeAsync(IEnumerable<Seat> seats);
     Task<bool> DeleteAsync(Guid id);
     Task DeleteRangeAsync(IEnumerable<Guid> ids);
+    Task<List<Seat>> GetExpiredHoldingAsync(DateTime cutoff);
 }

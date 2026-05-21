@@ -1,4 +1,3 @@
-using Eventiq.SeatService;
 using Eventiq.SeatService.Extensions;
 using Eventiq.SeatService.Hubs;
 using Serilog;
@@ -19,6 +18,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseCors("SignalRCors");
+app.UseOutputCache();
 app.UseAuthentication();
 app.UseAuthorization();
 app.UseMiddleware<GlobalExceptionMiddleware>();
@@ -26,4 +26,5 @@ app.UseHttpsRedirection();
 app.UseSerilogRequestLogging();
 app.MapControllers();
 app.MapHub<SeatDesignHub>("/hubs/seat-design");
+app.MapHub<SeatBookingHub>("/hubs/seat-booking");
 app.Run();

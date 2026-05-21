@@ -140,6 +140,13 @@ public class SeatRepository : ISeatRepository
         foreach (var seat in seats)
             seat.MarkDeleted();
     }
+
+    public async Task<List<Seat>> GetExpiredHoldingAsync(DateTime cutoff)
+        => await _ctx.Seats
+            .Include(s => s.Row)
+                .ThenInclude(r => r.Section)
+            .Where(s => s.Status == Domain.Enum.SeatStatus.Holding && s.HeldUntil < cutoff)
+            .ToListAsync();
 }
 
 public class SeatObjectRepository : ISeatObjectRepository

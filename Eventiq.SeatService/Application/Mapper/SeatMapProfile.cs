@@ -11,9 +11,24 @@ public class SeatMapProfile : Profile
         // SeatMap
         CreateMap<CreateSeatMapDto, SeatMap>();
         CreateMap<SeatMap, SeatMapResponse>()
-            .ForMember(d => d.Status, o => o.MapFrom(s => s.Status.ToString()));
+            .ForMember(d => d.Status, o => o.MapFrom(s => s.Status.ToString()))
+            .ForMember(d => d.SessionId, o => o.MapFrom(s => s.SessionId))
+            .ForMember(d => d.TotalSeats, o => o.MapFrom(s => s.TotalSeats));
         CreateMap<SeatMap, SeatMapDetailResponse>()
-            .ForMember(d => d.Status, o => o.MapFrom(s => s.Status.ToString()));
+            .ForMember(d => d.Status, o => o.MapFrom(s => s.Status.ToString()))
+            .ForMember(d => d.SessionId, o => o.MapFrom(s => s.SessionId))
+            .ForMember(d => d.TotalSeats, o => o.MapFrom(s => s.TotalSeats));
+
+        // Layout-only (booking view, no seat statuses)
+        CreateMap<SeatMap, SeatMapLayoutResponse>()
+            .ForMember(d => d.Status, o => o.MapFrom(s => s.Status.ToString()))
+            .ForMember(d => d.SessionId, o => o.MapFrom(s => s.SessionId))
+            .ForMember(d => d.TotalSeats, o => o.MapFrom(s => s.TotalSeats));
+        CreateMap<SeatSection, SeatSectionLayoutResponse>()
+            .ForMember(d => d.SectionType, o => o.MapFrom(s => s.SectionType.ToString()));
+        CreateMap<SeatRow, SeatRowLayoutResponse>();
+        CreateMap<Seat, SeatLayoutResponse>()
+            .ForMember(d => d.SeatType, o => o.MapFrom(s => s.SeatType.ToString()));
 
         // Section
         CreateMap<AddSectionDto, SeatSection>();

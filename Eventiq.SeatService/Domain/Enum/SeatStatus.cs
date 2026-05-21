@@ -3,7 +3,7 @@ namespace Eventiq.SeatService.Domain.Enum;
 public enum SeatStatus
 {
     Available,
-    Reserved,
+    Holding,
     Sold,
     Blocked
 }

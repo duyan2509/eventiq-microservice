@@ -32,6 +32,15 @@ public class SeatMapRepository : ISeatMapRepository
     public async Task<SeatMap?> GetBySessionIdAsync(Guid sessionId)
         => await _ctx.SeatMaps.FirstOrDefaultAsync(m => m.SessionId == sessionId);
 
+    public async Task<SeatMap?> GetBySessionIdWithDetailsAsync(Guid sessionId)
+        => await _ctx.SeatMaps
+            .Include(m => m.Sections.OrderBy(s => s.SortOrder))
+                .ThenInclude(s => s.Rows.OrderBy(r => r.RowNumber))
+                    .ThenInclude(r => r.Seats.OrderBy(s => s.SeatNumber))
+            .Include(m => m.Objects.OrderBy(o => o.ZIndex))
+            .AsSplitQuery()
+            .FirstOrDefaultAsync(m => m.SessionId == sessionId);
+
     public async Task<SeatMap?> GetPublishedTemplateByChartIdAsync(Guid chartId)
         => await _ctx.SeatMaps
             .Include(m => m.Sections).ThenInclude(s => s.Rows).ThenInclude(r => r.Seats)

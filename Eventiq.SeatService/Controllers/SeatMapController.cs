@@ -1,7 +1,9 @@
 using Eventiq.SeatService.Application.Dtos;
 using Eventiq.SeatService.Application.Service.Interface;
+using Eventiq.SeatService.Infrastructure;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.OutputCaching;
 
 namespace Eventiq.SeatService.Controllers;
 
@@ -11,10 +13,12 @@ namespace Eventiq.SeatService.Controllers;
 public class SeatMapController : ControllerBase
 {
     private readonly ISeatMapService _seatMapService;
+    private readonly IOutputCacheStore _cacheStore;
 
-    public SeatMapController(ISeatMapService seatMapService)
+    public SeatMapController(ISeatMapService seatMapService, IOutputCacheStore cacheStore)
     {
         _seatMapService = seatMapService;
+        _cacheStore = cacheStore;
     }
 
     [HttpGet]
@@ -28,6 +32,14 @@ public class SeatMapController : ControllerBase
     public async Task<IActionResult> GetById(Guid id)
     {
         var result = await _seatMapService.GetByIdAsync(id);
+        return Ok(result);
+    }
+
+    [HttpGet("sessions/{sessionId:guid}")]
+    [OutputCache(PolicyName = OutputCachePolicies.SeatMapLayout)]
+    public async Task<IActionResult> GetBySessionId(Guid sessionId)
+    {
+        var result = await _seatMapService.GetBySessionIdAsync(sessionId);
         return Ok(result);
     }
 
@@ -62,6 +74,10 @@ public class SeatMapController : ControllerBase
     {
         var orgId = GetOrgId();
         var result = await _seatMapService.PublishAsync(orgId, id);
+
+        // Evict cached session layout so the next request picks up the published state.
+        await _cacheStore.EvictByTagAsync(OutputCachePolicies.SeatMapLayoutTag, default);
+
         return Ok(result);
     }
 

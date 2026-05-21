@@ -35,6 +35,13 @@ public class SeatMapService : ISeatMapService
         return _mapper.Map<SeatMapDetailResponse>(seatMap!);
     }
 
+    public async Task<SeatMapLayoutResponse> GetBySessionIdAsync(Guid sessionId)
+    {
+        var seatMap = await _uow.SeatMaps.GetBySessionIdWithDetailsAsync(sessionId);
+        SeatMapGuards.EnsureExists(seatMap);
+        return _mapper.Map<SeatMapLayoutResponse>(seatMap!);
+    }
+
     public async Task<SeatMapResponse> CreateAsync(Guid userId, Guid orgId, CreateSeatMapDto dto)
     {
         // Check if a seat map already exists for this chart
@@ -133,7 +140,7 @@ public class SeatMapService : ISeatMapService
         {
             TotalSeats = allSeats.Count,
             AvailableSeats = allSeats.Count(s => s.Status == SeatStatus.Available),
-            ReservedSeats = allSeats.Count(s => s.Status == SeatStatus.Reserved),
+            HoldingSeats = allSeats.Count(s => s.Status == SeatStatus.Holding),
             SoldSeats = allSeats.Count(s => s.Status == SeatStatus.Sold),
             BlockedSeats = allSeats.Count(s => s.Status == SeatStatus.Blocked),
             TotalSections = seatMap.Sections.Count,
