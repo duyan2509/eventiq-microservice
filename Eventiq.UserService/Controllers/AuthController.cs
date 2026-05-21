@@ -143,4 +143,28 @@ public class AuthController : ControllerBase
         SetRefreshTokenCookie(rs.RefreshToken);
         return Ok(new { accessToken = rs.AccessToken });
     }
+
+    [Authorize]
+    [HttpPatch("avatar")]
+    public async Task<ActionResult<string>> UpdateAvatar(IFormFile file)
+    {
+        var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (string.IsNullOrEmpty(userIdStr) || !Guid.TryParse(userIdStr, out var parsedUserId))
+            throw new UnauthorizedException("User id is required");
+
+        var url = await _userService.UpdateAvatarAsync(parsedUserId, file);
+        return Ok(new { avatarUrl = url });
+    }
+
+    [Authorize]
+    [HttpDelete("avatar")]
+    public async Task<ActionResult> DeleteAvatar()
+    {
+        var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (string.IsNullOrEmpty(userIdStr) || !Guid.TryParse(userIdStr, out var parsedUserId))
+            throw new UnauthorizedException("User id is required");
+
+        await _userService.DeleteAvatarAsync(parsedUserId);
+        return NoContent();
+    }
 }

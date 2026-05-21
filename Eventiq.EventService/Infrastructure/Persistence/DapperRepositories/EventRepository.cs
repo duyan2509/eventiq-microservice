@@ -321,7 +321,7 @@ public class EventRepository : BaseRepository, IEventRepository
     public async Task<IEnumerable<EventModel>> GetEventsByOrgAndStatusAsync(Guid organizationId, EventStatus status)
     {
         const string sql = @"
-        SELECT 
+        SELECT
             id,
             organization_id AS OrganizationId,
             status,
@@ -337,6 +337,20 @@ public class EventRepository : BaseRepository, IEventRepository
         return await _connection.QueryAsync<EventModel>(
             sql,
             new { OrganizationId = organizationId, Status = status },
+            transaction: _transaction);
+    }
+
+    public async Task<int> DeleteAsync(Guid eventId, Guid orgId)
+    {
+        const string sql = @"
+        UPDATE events
+        SET is_deleted = TRUE, updated_at = NOW()
+        WHERE id = @EventId AND organization_id = @OrgId AND is_deleted = FALSE;
+        ";
+
+        return await _connection.ExecuteAsync(
+            sql,
+            new { EventId = eventId, OrgId = orgId },
             transaction: _transaction);
     }
 }

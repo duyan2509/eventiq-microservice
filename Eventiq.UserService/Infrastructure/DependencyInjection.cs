@@ -1,4 +1,6 @@
+using Eventiq.UserService.Application.Service;
 using Eventiq.UserService.Domain.Repositories;
+using Eventiq.UserService.Infrastructure.Blob;
 using Eventiq.UserService.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
@@ -25,6 +27,7 @@ public static class DependencyInjection
         services.AddScoped<IUserRoleRepository, UserRoleRepository>();
         services.AddScoped<IRoleRepository, RoleRepository>();
         services.AddScoped<IPasswordResetTokenRepository, PasswordResetTokenRepository>();
+        services.AddScoped<IBlobService, AzureBlobService>();
         return services;
     }
     

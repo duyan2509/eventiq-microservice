@@ -25,4 +25,5 @@ public interface IEventRepository
     Task<EventModel?> UpdatePartialAsync(Guid eventId, UpdateEventDto dto);
 
     Task<IEnumerable<EventModel>> GetEventsByOrgAndStatusAsync(Guid organizationId, EventStatus status);
+    Task<int> DeleteAsync(Guid eventId, Guid orgId);
 }

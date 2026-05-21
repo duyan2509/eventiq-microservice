@@ -10,6 +10,7 @@ using Eventiq.UserService.Guards;
 using Eventiq.UserService.Helper;
 using Eventiq.UserService.Model;
 using MassTransit;
+using Microsoft.AspNetCore.Http;
 using Microsoft.IdentityModel.Tokens;
 
 namespace Eventiq.UserService.Application.Service;
@@ -25,7 +26,8 @@ public class UserService:IUserService
     private readonly IRoleRepository _roleRepository;
     private readonly IPasswordResetTokenRepository _passwordResetTokenRepository;
     private readonly IPublishEndpoint _publishEndpoint;
-    
+    private readonly IBlobService _blobService;
+
     public UserService(
         IJwtService jwt,
         IRefreshTokenService refresh,
@@ -35,6 +37,7 @@ public class UserService:IUserService
         IRoleRepository roleRepository,
         IPasswordResetTokenRepository passwordResetTokenRepository,
         IPublishEndpoint publishEndpoint,
+        IBlobService blobService,
         IMapper mapper)
     {
         _jwt = jwt;
@@ -45,6 +48,7 @@ public class UserService:IUserService
         _roleRepository = roleRepository;
         _passwordResetTokenRepository = passwordResetTokenRepository;
         _publishEndpoint = publishEndpoint;
+        _blobService = blobService;
         _mapper = mapper;
     }
     public async Task<LoginResponse> Login(LoginDto dto)
@@ -338,6 +342,38 @@ public class UserService:IUserService
             accessToken,
             newRefreshToken
         );
+    }
+
+    public async Task<string> UpdateAvatarAsync(Guid userId, IFormFile file)
+    {
+        var user = await _userRepository.GetTrackingUserById(userId);
+        if (user == null)
+            throw new NotFoundException($"User not found with id {userId}");
+
+        if (!string.IsNullOrEmpty(user.Avatar))
+            await _blobService.DeleteAsync(user.Avatar);
+
+        using var stream = file.OpenReadStream();
+        var url = await _blobService.UploadAsync(stream, file.FileName, file.ContentType);
+
+        user.Avatar = url;
+        await _userRepository.UpdateUser(user);
+
+        return url;
+    }
+
+    public async Task DeleteAvatarAsync(Guid userId)
+    {
+        var user = await _userRepository.GetTrackingUserById(userId);
+        if (user == null)
+            throw new NotFoundException($"User not found with id {userId}");
+
+        if (!string.IsNullOrEmpty(user.Avatar))
+        {
+            await _blobService.DeleteAsync(user.Avatar);
+            user.Avatar = string.Empty;
+            await _userRepository.UpdateUser(user);
+        }
     }
 
 }

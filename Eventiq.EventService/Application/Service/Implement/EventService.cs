@@ -198,6 +198,31 @@ public class EventService : IEventService
         };
     }
 
+    public async Task DeleteEventAsync(Guid userId, Guid orgId, Guid eventId)
+    {
+        var ev = await _uow.Events.GetByIdAsync(eventId);
+        EventGuards.EnsureExist(ev);
+
+        var bannerUrl = ev.EventBanner;
+
+        await _uow.BeginTransactionAsync();
+        try
+        {
+            var rows = await _uow.Events.DeleteAsync(eventId, orgId);
+            if (rows == 0)
+                throw new NotFoundException("Event not found or already deleted");
+            await _uow.CommitAsync();
+        }
+        catch
+        {
+            await _uow.RollbackAsync();
+            throw;
+        }
+
+        if (!string.IsNullOrEmpty(bannerUrl))
+            await _blobService.DeleteAsync(bannerUrl);
+    }
+
     private static EventQuickViewData ToQuickView(EventModel ev) =>
         new EventQuickViewData
         {
