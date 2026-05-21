@@ -1,3 +1,4 @@
+using Eventiq.SeatService;
 using Eventiq.SeatService.Extensions;
 using Eventiq.SeatService.Hubs;
 using Serilog;
