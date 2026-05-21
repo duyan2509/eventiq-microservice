@@ -1,6 +1,7 @@
 using Eventiq.UserService.Application.Dto;
 using Eventiq.UserService.Domain.Enums;
 using Eventiq.UserService.Model;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 
 namespace Eventiq.UserService.Application.Service;
@@ -23,7 +24,9 @@ public interface IUserService
     Task ForgotPassword(string email);
     Task<bool> ResetPassword(string token, string newPassword);
     Task<SwitchRoleRepsponse> SwitchToUser(Guid userId);
-    
+    Task<string> UpdateAvatarAsync(Guid userId, IFormFile file);
+    Task DeleteAvatarAsync(Guid userId);
+
 }
 
 

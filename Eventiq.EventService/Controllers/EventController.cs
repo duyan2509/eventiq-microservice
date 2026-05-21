@@ -73,6 +73,15 @@ public class EventController : ControllerBase
         return Ok(result);
     }
 
+    [Authorize(Roles = $"{nameof(AppRoles.Organization)},{nameof(AppRoles.Staff)}")]
+    [HttpDelete("{orgId:guid}/{eventId:guid}")]
+    public async Task<ActionResult> DeleteEvent(Guid orgId, Guid eventId)
+    {
+        var userId = GetUserId();
+        await _eventService.DeleteEventAsync(userId, orgId, eventId);
+        return NoContent();
+    }
+
     private Guid GetUserId()
     {
         var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
