@@ -12,147 +12,13 @@ public class SeatDesignService : ISeatDesignService
 {
     private readonly IUnitOfWork _uow;
     private readonly IMapper _mapper;
+    private readonly ILogger<SeatDesignService> _logger;
 
-    public SeatDesignService(IUnitOfWork uow, IMapper mapper)
+    public SeatDesignService(IUnitOfWork uow, IMapper mapper, ILogger<SeatDesignService> logger)
     {
         _uow = uow;
         _mapper = mapper;
-    }
-
-    // ========== Sections ==========
-
-    public async Task<SeatSectionResponse> AddSectionAsync(Guid seatMapId, Guid orgId, AddSectionDto dto)
-    {
-        var seatMap = await GetAndValidateSeatMap(seatMapId, orgId);
-
-        var section = _mapper.Map<SeatSection>(dto);
-        section.Id = Guid.NewGuid();
-        section.SeatMapId = seatMapId;
-
-        await _uow.Sections.AddAsync(section);
-        seatMap.IncrementVersion();
-        await _uow.SeatMaps.UpdateAsync(seatMap);
-        await _uow.SaveChangesAsync();
-
-        return _mapper.Map<SeatSectionResponse>(section);
-    }
-
-    public async Task<SeatSectionResponse> UpdateSectionAsync(Guid seatMapId, Guid orgId, UpdateSectionDto dto)
-    {
-        var seatMap = await GetAndValidateSeatMap(seatMapId, orgId);
-
-        var section = await _uow.Sections.GetByIdAsync(dto.SectionId);
-        SeatMapGuards.EnsureSectionExists(section);
-
-        if (dto.Label != null) section!.Label = dto.Label;
-        if (dto.SectionType.HasValue) section!.SectionType = dto.SectionType.Value;
-        if (dto.Geometry != null) section!.Geometry = dto.Geometry;
-        if (dto.Style != null) section!.Style = dto.Style;
-        if (dto.LegendId.HasValue) section!.LegendId = dto.LegendId;
-        if (dto.SortOrder.HasValue) section!.SortOrder = dto.SortOrder.Value;
-        section!.MarkUpdated();
-
-        await _uow.Sections.UpdateAsync(section);
-        seatMap.IncrementVersion();
-        await _uow.SeatMaps.UpdateAsync(seatMap);
-        await _uow.SaveChangesAsync();
-
-        return _mapper.Map<SeatSectionResponse>(section);
-    }
-
-    public async Task DeleteSectionAsync(Guid seatMapId, Guid orgId, Guid sectionId)
-    {
-        var seatMap = await GetAndValidateSeatMap(seatMapId, orgId);
-
-        var deleted = await _uow.Sections.DeleteAsync(sectionId);
-        if (!deleted) throw new NotFoundException("Section not found.");
-
-        seatMap.IncrementVersion();
-        await _uow.SeatMaps.UpdateAsync(seatMap);
-        await _uow.SaveChangesAsync();
-    }
-
-    // ========== Rows ==========
-
-    public async Task<SeatRowResponse> AddRowAsync(Guid seatMapId, Guid orgId, AddRowDto dto)
-    {
-        var seatMap = await GetAndValidateSeatMap(seatMapId, orgId);
-
-        var section = await _uow.Sections.GetByIdAsync(dto.SectionId);
-        SeatMapGuards.EnsureSectionExists(section);
-
-        var row = new SeatRow
-        {
-            Id = Guid.NewGuid(),
-            SectionId = dto.SectionId,
-            Label = dto.Label,
-            RowNumber = dto.RowNumber,
-            Curve = dto.Curve,
-            SeatSpacing = dto.SeatSpacing
-        };
-
-        await _uow.Rows.AddAsync(row);
-
-        // Auto-generate seats
-        if (dto.SeatCount > 0)
-        {
-            var prefix = dto.LabelPrefix ?? dto.Label;
-            var seats = new List<Seat>();
-            for (int i = 1; i <= dto.SeatCount; i++)
-            {
-                seats.Add(new Seat
-                {
-                    Id = Guid.NewGuid(),
-                    RowId = row.Id,
-                    Label = $"{prefix}{i}",
-                    SeatNumber = i,
-                    Status = SeatStatus.Available,
-                    SeatType = SeatType.Regular,
-                    Position = JsonSerializer.Serialize(new { x = (i - 1) * dto.SeatSpacing, y = 0 })
-                });
-            }
-            await _uow.Seats.AddRangeAsync(seats);
-            row.Seats = seats;
-        }
-
-        seatMap.IncrementVersion();
-        await _uow.SeatMaps.UpdateAsync(seatMap);
-        await _uow.SaveChangesAsync();
-
-        return _mapper.Map<SeatRowResponse>(row);
-    }
-
-    public async Task<SeatRowResponse> UpdateRowAsync(Guid seatMapId, Guid orgId, UpdateRowDto dto)
-    {
-        var seatMap = await GetAndValidateSeatMap(seatMapId, orgId);
-
-        var row = await _uow.Rows.GetByIdAsync(dto.RowId);
-        SeatMapGuards.EnsureRowExists(row);
-
-        if (dto.Label != null) row!.Label = dto.Label;
-        if (dto.RowNumber.HasValue) row!.RowNumber = dto.RowNumber.Value;
-        if (dto.Curve != null) row!.Curve = dto.Curve;
-        if (dto.SeatSpacing.HasValue) row!.SeatSpacing = dto.SeatSpacing.Value;
-        row!.MarkUpdated();
-
-        await _uow.Rows.UpdateAsync(row);
-        seatMap.IncrementVersion();
-        await _uow.SeatMaps.UpdateAsync(seatMap);
-        await _uow.SaveChangesAsync();
-
-        return _mapper.Map<SeatRowResponse>(row);
-    }
-
-    public async Task DeleteRowAsync(Guid seatMapId, Guid orgId, Guid rowId)
-    {
-        var seatMap = await GetAndValidateSeatMap(seatMapId, orgId);
-
-        var deleted = await _uow.Rows.DeleteAsync(rowId);
-        if (!deleted) throw new NotFoundException("Row not found.");
-
-        seatMap.IncrementVersion();
-        await _uow.SeatMaps.UpdateAsync(seatMap);
-        await _uow.SaveChangesAsync();
+        _logger = logger;
     }
 
     // ========== Seats ==========
@@ -161,12 +27,17 @@ public class SeatDesignService : ISeatDesignService
     {
         var seatMap = await GetAndValidateSeatMap(seatMapId, orgId);
 
-        var row = await _uow.Rows.GetByIdAsync(dto.RowId);
-        SeatMapGuards.EnsureRowExists(row);
-
-        var seat = _mapper.Map<Seat>(dto);
-        seat.Id = Guid.NewGuid();
-        seat.Status = SeatStatus.Available;
+        var seat = new Seat
+        {
+            Id = Guid.NewGuid(),
+            SeatMapId = seatMapId,
+            Label = dto.Label,
+            SeatNumber = dto.SeatNumber,
+            SeatType = dto.SeatType,
+            Status = SeatStatus.Available,
+            Position = dto.Position,
+            LegendId = dto.LegendId,
+        };
 
         await _uow.Seats.AddRangeAsync(new[] { seat });
         seatMap.IncrementVersion();
@@ -180,40 +51,65 @@ public class SeatDesignService : ISeatDesignService
     {
         var seatMap = await GetAndValidateSeatMap(seatMapId, orgId);
 
-        var updatedSeats = new List<Seat>();
+        // Load all target seats in a single query — no N+1
+        var seatIds = dto.Seats.Select(s => s.SeatId).ToList();
+        var seats = await _uow.Seats.GetByIdsAsync(seatIds);
+        var seatById = seats.ToDictionary(s => s.Id);
+
         foreach (var seatDto in dto.Seats)
         {
-            var seat = await _uow.Seats.GetByIdAsync(seatDto.SeatId);
-            SeatMapGuards.EnsureSeatExists(seat);
+            if (!seatById.TryGetValue(seatDto.SeatId, out var seat)) continue;
 
-            if (seatDto.Label != null) seat!.Label = seatDto.Label;
-            if (seatDto.SeatNumber.HasValue) seat!.SeatNumber = seatDto.SeatNumber.Value;
-            if (seatDto.Status.HasValue) seat!.Status = seatDto.Status.Value;
-            if (seatDto.SeatType.HasValue) seat!.SeatType = seatDto.SeatType.Value;
-            if (seatDto.Position != null) seat!.Position = seatDto.Position;
-            if (seatDto.LegendId.HasValue) seat!.LegendId = seatDto.LegendId;
-            if (seatDto.CustomProperties != null) seat!.CustomProperties = seatDto.CustomProperties;
-            seat!.MarkUpdated();
-
-            updatedSeats.Add(seat);
+            if (seatDto.Label != null) seat.Label = seatDto.Label;
+            if (seatDto.SeatNumber.HasValue) seat.SeatNumber = seatDto.SeatNumber.Value;
+            if (seatDto.Status.HasValue) seat.Status = seatDto.Status.Value;
+            if (seatDto.SeatType.HasValue) seat.SeatType = seatDto.SeatType.Value;
+            if (seatDto.Position != null) seat.Position = seatDto.Position;
+            if (seatDto.LegendId.HasValue) seat.LegendId = seatDto.LegendId;
+            if (seatDto.CustomProperties != null) seat.CustomProperties = seatDto.CustomProperties;
+            seat.MarkUpdated();
         }
 
-        await _uow.Seats.UpdateRangeAsync(updatedSeats);
+        await _uow.Seats.UpdateRangeAsync(seats);
         seatMap.IncrementVersion();
         await _uow.SeatMaps.UpdateAsync(seatMap);
         await _uow.SaveChangesAsync();
 
-        return _mapper.Map<List<SeatResponse>>(updatedSeats);
+        return _mapper.Map<List<SeatResponse>>(seats);
+    }
+
+    public async Task<List<SeatResponse>> SetSeatLegendAsync(Guid seatMapId, Guid orgId, List<Guid> seatIds, Guid? legendId)
+    {
+        var seatMap = await GetAndValidateSeatMap(seatMapId, orgId);
+
+        var seats = await _uow.Seats.GetByIdsAsync(seatIds);
+        foreach (var seat in seats)
+        {
+            seat.LegendId = legendId;
+            seat.MarkUpdated();
+        }
+
+        await _uow.Seats.UpdateRangeAsync(seats);
+        seatMap.IncrementVersion();
+        await _uow.SeatMaps.UpdateAsync(seatMap);
+        await _uow.SaveChangesAsync();
+
+        return _mapper.Map<List<SeatResponse>>(seats);
     }
 
     public async Task DeleteSeatsAsync(Guid seatMapId, Guid orgId, List<Guid> seatIds)
     {
+        _logger.LogInformation("DeleteSeats called: seatMapId={SeatMapId}, orgId={OrgId}, ids=[{Ids}]",
+            seatMapId, orgId, string.Join(",", seatIds));
+
         var seatMap = await GetAndValidateSeatMap(seatMapId, orgId);
 
         await _uow.Seats.DeleteRangeAsync(seatIds);
         seatMap.IncrementVersion();
         await _uow.SeatMaps.UpdateAsync(seatMap);
-        await _uow.SaveChangesAsync();
+        var saved = await _uow.SaveChangesAsync();
+
+        _logger.LogInformation("DeleteSeats saved {Count} rows", saved);
     }
 
     // ========== Objects ==========
@@ -297,7 +193,12 @@ public class SeatDesignService : ISeatDesignService
         return _mapper.Map<SeatMapVersionResponse>(version);
     }
 
-    // ========== Private Helpers ==========
+    public async Task<Guid> GetSeatMapOrgIdAsync(Guid seatMapId)
+    {
+        var seatMap = await _uow.SeatMaps.GetByIdAsync(seatMapId);
+        SeatMapGuards.EnsureExists(seatMap);
+        return seatMap!.OrganizationId;
+    }
 
     private async Task<SeatMap> GetAndValidateSeatMap(Guid seatMapId, Guid orgId)
     {
