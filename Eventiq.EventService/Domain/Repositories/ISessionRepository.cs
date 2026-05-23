@@ -14,6 +14,7 @@ public interface ISessionRepository
 
     Task<bool> CheckOverlappedAsync(Guid eventId, Guid sessionId, DateTime sessionStartTime, DateTime sessionEndTime);
     Task<List<Session>> GetAllByEventIdAsync(Guid eventId);
+    Task<SessionInternalModel?> GetSessionInternalAsync(Guid sessionId);
 }
 
 

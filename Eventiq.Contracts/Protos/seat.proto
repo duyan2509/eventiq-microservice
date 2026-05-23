@@ -1,0 +1,56 @@
+syntax = "proto3";
+
+option csharp_namespace = "Eventiq.Contracts.Grpc";
+
+package eventiq.seat;
+
+service SeatInternal {
+  rpc GetSeats (GetSeatsRequest) returns (GetSeatsResponse);
+  rpc MarkSold (MarkSoldRequest) returns (MarkSoldResponse);
+  rpc CheckSeatMapPublished (CheckSeatMapPublishedRequest) returns (CheckSeatMapPublishedResponse);
+  rpc CheckSeatMapDesign (CheckSeatMapDesignRequest) returns (CheckSeatMapDesignResponse);
+}
+
+message GetSeatsRequest {
+  repeated string seat_ids = 1;
+}
+
+message GetSeatsResponse {
+  repeated SeatInfo seats = 1;
+}
+
+message SeatInfo {
+  string seat_id = 1;
+  string seat_map_id = 2;
+  string label = 3;
+  string status = 4;
+  string legend_id = 5;
+  string held_by = 6;
+}
+
+message MarkSoldRequest {
+  repeated string seat_ids = 1;
+  string user_id = 2;
+}
+
+message MarkSoldResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+message CheckSeatMapPublishedRequest {
+  string event_id = 1;
+}
+
+message CheckSeatMapPublishedResponse {
+  bool is_published = 1;
+  string seat_map_id = 2;
+}
+
+message CheckSeatMapDesignRequest {
+  string event_id = 1;
+}
+
+message CheckSeatMapDesignResponse {
+  bool has_design = 1;
+}

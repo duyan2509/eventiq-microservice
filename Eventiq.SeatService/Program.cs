@@ -1,11 +1,13 @@
 using Eventiq.SeatService;
 using Eventiq.SeatService.Extensions;
+using Eventiq.SeatService.Grpc;
 using Eventiq.SeatService.Hubs;
 using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
+builder.Services.AddGrpc();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.AddApplicationServices();
@@ -26,6 +28,7 @@ app.UseMiddleware<GlobalExceptionMiddleware>();
 app.UseHttpsRedirection();
 app.UseSerilogRequestLogging();
 app.MapControllers();
+app.MapGrpcService<SeatInternalGrpcService>();
 app.MapHub<SeatDesignHub>("/hubs/seat-design");
 app.MapHub<SeatBookingHub>("/hubs/seat-booking");
 app.Run();

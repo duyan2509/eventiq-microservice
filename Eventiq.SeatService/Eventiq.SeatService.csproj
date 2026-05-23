@@ -27,6 +27,7 @@
         <PackageReference Include="Microsoft.AspNetCore.OutputCaching.StackExchangeRedis" Version="8.0.23" />
         <PackageReference Include="MassTransit" Version="8.5.8" />
         <PackageReference Include="MassTransit.RabbitMQ" Version="8.5.8" />
+        <PackageReference Include="Grpc.AspNetCore" Version="2.66.0" />
     </ItemGroup>
     <ItemGroup>
         <Content Include="..\.dockerignore">

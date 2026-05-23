@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+option csharp_namespace = "Eventiq.Contracts.Grpc";
+
+package eventiq.org;
+
+service OrgInternal {
+  rpc GetPaymentStatus (GetPaymentStatusRequest) returns (PaymentStatusInfo);
+  rpc GetPlatformConfig (PlatformConfigRequest) returns (PlatformConfigInfo);
+}
+
+message GetPaymentStatusRequest {
+  string org_id = 1;
+}
+
+message PaymentStatusInfo {
+  bool is_active = 1;
+  string stripe_account_id = 2;
+}
+
+message PlatformConfigRequest {}
+
+message PlatformConfigInfo {
+  double current_fee_rate = 1;
+  int32 payout_day_of_month = 2;
+}

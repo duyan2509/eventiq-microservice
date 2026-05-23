@@ -1,4 +1,5 @@
 using Eventiq.SeatService.Application.Service.Interface;
+using Eventiq.SeatService.Domain.Entity;
 using Eventiq.SeatService.Domain.Enum;
 using Eventiq.SeatService.Domain.Repositories;
 using Eventiq.SeatService.Infrastructure;
@@ -98,16 +99,43 @@ public class SeatReservationService : ISeatReservationService
         return true;
     }
 
-    public async Task MarkSoldAsync(IEnumerable<Guid> seatIds)
+    public async Task<MarkSoldResult> MarkSoldAsync(IReadOnlyList<Guid> seatIds, Guid userId)
     {
-        var ids = seatIds.ToList();
-        var seats = await Task.WhenAll(ids.Select(id => _seats.GetByIdAsync(id)));
-        var toSell = seats.Where(s => s != null).ToList();
+        if (seatIds.Count == 0)
+            return new MarkSoldResult(true);
+
+        var seats = await _seats.GetByIdsAsync(seatIds);
+
+        var toSell = new List<Seat>();
+        foreach (var id in seatIds)
+        {
+            var seat = seats.FirstOrDefault(s => s.Id == id);
+            if (seat == null)
+                return new MarkSoldResult(false, $"Seat {id} not found.");
+
+            switch (seat.Status)
+            {
+                case SeatStatus.Sold:
+                    // Already sold — idempotent success
+                    continue;
+                case SeatStatus.Holding when seat.HeldBy == userId:
+                    toSell.Add(seat);
+                    break;
+                case SeatStatus.Holding:
+                    return new MarkSoldResult(false, $"Seat {seat.Label} is held by another user.");
+                default:
+                    return new MarkSoldResult(false, $"Seat {seat.Label} is not held (status: {seat.Status}).");
+            }
+        }
+
+        if (toSell.Count == 0)
+            return new MarkSoldResult(true);
 
         foreach (var seat in toSell)
-            seat!.Sell();
+            seat.Sell();
 
-        await _seats.UpdateRangeAsync(toSell!);
+        await _seats.UpdateRangeAsync(toSell);
         await _uow.SaveChangesAsync();
+        return new MarkSoldResult(true);
     }
 }
