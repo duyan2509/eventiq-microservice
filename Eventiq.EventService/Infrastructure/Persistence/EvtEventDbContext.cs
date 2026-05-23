@@ -30,6 +30,7 @@ public sealed class EvtEventDbContext : DbContext
 
         modelBuilder.Entity<OrgPaymentInfo>(e =>
         {
+            e.ToTable("org_payment_info");
             e.HasKey(x => x.OrganizationId);
             e.Property(x => x.OrganizationId).ValueGeneratedNever();
         });

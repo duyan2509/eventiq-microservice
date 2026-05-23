@@ -220,9 +220,9 @@ namespace Eventiq.EventService.Infrastructure.Persistence.Migrations
                         .HasColumnName("updated_at");
 
                     b.HasKey("OrganizationId")
-                        .HasName("pk_org_payment_infos");
+                        .HasName("pk_org_payment_info");
 
-                    b.ToTable("org_payment_infos", "event_service");
+                    b.ToTable("org_payment_info", "event_service");
                 });
 
             modelBuilder.Entity("Eventiq.EventService.Domain.Entity.Session", b =>

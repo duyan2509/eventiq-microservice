@@ -19,10 +19,8 @@ public class SeatMapRepository : ISeatMapRepository
 
     public async Task<SeatMap?> GetByIdWithDetailsAsync(Guid id)
         => await _ctx.SeatMaps
-            .Include(m => m.Sections)
-                .ThenInclude(s => s.Rows)
-                    .ThenInclude(r => r.Seats)
-            .Include(m => m.Objects)
+            .Include(m => m.Seats.OrderBy(s => s.SeatNumber))
+            .Include(m => m.Objects.OrderBy(o => o.ZIndex))
             .AsSplitQuery()
             .FirstOrDefaultAsync(m => m.Id == id);
 
@@ -34,21 +32,29 @@ public class SeatMapRepository : ISeatMapRepository
 
     public async Task<SeatMap?> GetBySessionIdWithDetailsAsync(Guid sessionId)
         => await _ctx.SeatMaps
-            .Include(m => m.Sections.OrderBy(s => s.SortOrder))
-                .ThenInclude(s => s.Rows.OrderBy(r => r.RowNumber))
-                    .ThenInclude(r => r.Seats.OrderBy(s => s.SeatNumber))
+            .Include(m => m.Seats.OrderBy(s => s.SeatNumber))
             .Include(m => m.Objects.OrderBy(o => o.ZIndex))
             .AsSplitQuery()
             .FirstOrDefaultAsync(m => m.SessionId == sessionId);
 
     public async Task<SeatMap?> GetPublishedTemplateByChartIdAsync(Guid chartId)
         => await _ctx.SeatMaps
-            .Include(m => m.Sections).ThenInclude(s => s.Rows).ThenInclude(r => r.Seats)
+            .Include(m => m.Seats)
             .Include(m => m.Objects)
             .AsSplitQuery()
             .FirstOrDefaultAsync(m => m.ChartId == chartId
                 && m.SessionId == null
                 && m.Status == SeatMapStatus.Published);
+
+    public async Task<SeatMap?> GetTemplateByChartIdWithDetailsAsync(Guid chartId)
+        => await _ctx.SeatMaps
+            .Include(m => m.Seats)
+            .Include(m => m.Objects)
+            .AsSplitQuery()
+            .FirstOrDefaultAsync(m => m.ChartId == chartId && m.SessionId == null);
+
+    public async Task<bool> HasTemplateForEventAsync(Guid eventId)
+        => await _ctx.SeatMaps.AnyAsync(m => m.EventId == eventId && m.SessionId == null);
 
     public async Task<List<SeatMap>> GetByEventIdAsync(Guid eventId)
         => await _ctx.SeatMaps

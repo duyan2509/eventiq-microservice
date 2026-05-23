@@ -9,8 +9,6 @@ public class UnitOfWork : IUnitOfWork
     private IDbContextTransaction? _transaction;
 
     public ISeatMapRepository SeatMaps { get; }
-    public ISeatSectionRepository Sections { get; }
-    public ISeatRowRepository Rows { get; }
     public ISeatRepository Seats { get; }
     public ISeatObjectRepository Objects { get; }
     public ISeatMapVersionRepository Versions { get; }
@@ -18,16 +16,12 @@ public class UnitOfWork : IUnitOfWork
     public UnitOfWork(
         SeatDbContext ctx,
         ISeatMapRepository seatMaps,
-        ISeatSectionRepository sections,
-        ISeatRowRepository rows,
         ISeatRepository seats,
         ISeatObjectRepository objects,
         ISeatMapVersionRepository versions)
     {
         _ctx = ctx;
         SeatMaps = seatMaps;
-        Sections = sections;
-        Rows = rows;
         Seats = seats;
         Objects = objects;
         Versions = versions;

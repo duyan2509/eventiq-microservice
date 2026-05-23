@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Eventiq.EventService.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(EvtEventDbContext))]
-    [Migration("20260411040801_AddOrgPaymentInfo")]
-    partial class AddOrgPaymentInfo
+    [Migration("20260522155115_AddLegendTable")]
+    partial class AddLegendTable
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)

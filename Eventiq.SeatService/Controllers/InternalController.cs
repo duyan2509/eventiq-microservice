@@ -1,5 +1,4 @@
 using Eventiq.SeatService.Application.Service.Interface;
-using Eventiq.SeatService.Domain.Enum;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Eventiq.SeatService.Controllers;
@@ -21,6 +20,14 @@ public class InternalController : ControllerBase
         var hasSeatMap = await _seatMapService.HasPublishedTemplateForEventAsync(eventId);
         return Ok(new PublishedCheckResponse(hasSeatMap));
     }
+
+    [HttpGet("seat-maps/has-design")]
+    public async Task<ActionResult<HasDesignResponse>> HasSeatMapDesign([FromQuery] Guid eventId)
+    {
+        var hasDesign = await _seatMapService.HasSeatMapDesignAsync(eventId);
+        return Ok(new HasDesignResponse(hasDesign));
+    }
 }
 
 public record PublishedCheckResponse(bool HasSeatMap);
+public record HasDesignResponse(bool HasDesign);

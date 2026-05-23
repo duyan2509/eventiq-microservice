@@ -11,8 +11,6 @@ public sealed class SeatDbContext : DbContext
     }
 
     public DbSet<SeatMap> SeatMaps => Set<SeatMap>();
-    public DbSet<SeatSection> Sections => Set<SeatSection>();
-    public DbSet<SeatRow> Rows => Set<SeatRow>();
     public DbSet<Seat> Seats => Set<Seat>();
     public DbSet<SeatObject> Objects => Set<SeatObject>();
     public DbSet<SeatMapVersion> Versions => Set<SeatMapVersion>();
@@ -26,12 +24,10 @@ public sealed class SeatDbContext : DbContext
         modelBuilder.Entity<SeatMap>(e =>
         {
             e.HasKey(x => x.Id);
-            // One template per chart (session_id IS NULL)
             e.HasIndex(x => x.ChartId)
                 .IsUnique()
                 .HasFilter("session_id IS NULL")
                 .HasDatabaseName("ix_seat_maps_chart_id_template");
-            // One clone per (chart, session)
             e.HasIndex(x => new { x.ChartId, x.SessionId })
                 .IsUnique()
                 .HasFilter("session_id IS NOT NULL")
@@ -42,42 +38,22 @@ public sealed class SeatDbContext : DbContext
             e.Property(x => x.Status).HasConversion<string>();
         });
 
-        // === SeatSection ===
-        modelBuilder.Entity<SeatSection>(e =>
-        {
-            e.HasKey(x => x.Id);
-            e.HasOne(x => x.SeatMap)
-                .WithMany(m => m.Sections)
-                .HasForeignKey(x => x.SeatMapId)
-                .OnDelete(DeleteBehavior.Cascade);
-            e.Property(x => x.Geometry).HasColumnType("jsonb");
-            e.Property(x => x.Style).HasColumnType("jsonb");
-            e.Property(x => x.SectionType).HasConversion<string>();
-        });
-
-        // === SeatRow ===
-        modelBuilder.Entity<SeatRow>(e =>
-        {
-            e.HasKey(x => x.Id);
-            e.HasOne(x => x.Section)
-                .WithMany(s => s.Rows)
-                .HasForeignKey(x => x.SectionId)
-                .OnDelete(DeleteBehavior.Cascade);
-            e.Property(x => x.Curve).HasColumnType("jsonb");
-        });
-
         // === Seat ===
         modelBuilder.Entity<Seat>(e =>
         {
             e.HasKey(x => x.Id);
-            e.HasOne(x => x.Row)
-                .WithMany(r => r.Seats)
-                .HasForeignKey(x => x.RowId)
+            e.HasOne(x => x.SeatMap)
+                .WithMany(m => m.Seats)
+                .HasForeignKey(x => x.SeatMapId)
                 .OnDelete(DeleteBehavior.Cascade);
+            // Unique label per seat map (partial index excludes soft-deleted rows)
+            e.HasIndex(x => new { x.SeatMapId, x.Label })
+                .IsUnique()
+                .HasFilter("is_deleted = false")
+                .HasDatabaseName("ix_seats_seat_map_id_label");
             e.Property(x => x.Position).HasColumnType("jsonb");
             e.Property(x => x.CustomProperties).HasColumnType("jsonb");
             e.Property(x => x.Status).HasConversion<string>();
-            e.Property(x => x.SeatType).HasConversion<string>();
         });
 
         // === SeatObject ===

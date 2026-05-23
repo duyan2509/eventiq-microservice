@@ -72,4 +72,12 @@ public class MemberRepository:IMemberRepository
     {
         return await _members.AnyAsync(m => m.PermissionId == permissionId, cancellationToken);
     }
+
+    public async Task<MemberReponse?> GetByUserIdAndOrgIdAsync(Guid userId, Guid orgId, CancellationToken cancellationToken = default)
+    {
+        var member = await _members.AsNoTracking()
+            .Include(m => m.Permission)
+            .FirstOrDefaultAsync(m => m.UserId == userId && m.OrganizationId == orgId, cancellationToken);
+        return member == null ? null : _mapper.Map<MemberReponse>(member);
+    }
 }

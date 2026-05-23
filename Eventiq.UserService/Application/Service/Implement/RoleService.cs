@@ -62,4 +62,22 @@ public class RoleService:IRoleService
         RoleGuards.EnsureUserRoleExist(useRole);
         await _userRoleRepository.RemoveUserRole(useRole);
     }
+
+    public async Task UpdateOrgRoleAsync(Guid userId, Guid organizationId, string newRoleName)
+    {
+        var newRole = await _roleRepository.GetRoleByName(newRoleName);
+        RoleGuards.EnsureExist(newRole);
+
+        // Remove existing role for this org (regardless of which role it was)
+        var existing = await _userRoleRepository.GetUserRoleByUserIdNOrgId(userId, organizationId);
+        if (existing != null)
+            await _userRoleRepository.RemoveUserRole(existing);
+
+        await _userRoleRepository.AddUserRole(new UserRole
+        {
+            UserId = userId,
+            RoleId = newRole!.Id,
+            OrganizationId = organizationId
+        });
+    }
 }

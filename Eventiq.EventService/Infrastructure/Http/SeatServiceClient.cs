@@ -29,5 +29,21 @@ public class SeatServiceClient : ISeatServiceClient
         }
     }
 
+    public async Task<bool> HasSeatMapDesignAsync(Guid eventId)
+    {
+        try
+        {
+            var result = await _httpClient.GetFromJsonAsync<HasDesignResponse>(
+                $"api/internal/seat-maps/has-design?eventId={eventId}");
+            return result?.HasDesign == true;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to check seat map design for event {EventId}", eventId);
+            return false;
+        }
+    }
+
     private record PublishedCheckResponse(bool HasSeatMap);
+    private record HasDesignResponse(bool HasDesign);
 }

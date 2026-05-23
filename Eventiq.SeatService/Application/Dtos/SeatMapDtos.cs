@@ -36,130 +36,25 @@ public class SeatMapResponse
 
 public class SeatMapDetailResponse : SeatMapResponse
 {
-    public List<SeatSectionResponse> Sections { get; set; } = [];
+    public List<SeatResponse> Seats { get; set; } = [];
     public List<SeatObjectResponse> Objects { get; set; } = [];
 }
 
-// Layout-only response for the booking view — no seat statuses, safe to cache indefinitely.
+// Layout-only response for the booking view — no seat statuses, safe to cache.
 public class SeatMapLayoutResponse : SeatMapResponse
 {
-    public List<SeatSectionLayoutResponse> Sections { get; set; } = [];
-    public List<SeatObjectResponse> Objects { get; set; } = [];
-}
-
-public class SeatSectionLayoutResponse
-{
-    public Guid Id { get; set; }
-    public Guid SeatMapId { get; set; }
-    public string Label { get; set; } = string.Empty;
-    public string SectionType { get; set; } = string.Empty;
-    public string? Geometry { get; set; }
-    public string? Style { get; set; }
-    public Guid? LegendId { get; set; }
-    public int SortOrder { get; set; }
-    public List<SeatRowLayoutResponse> Rows { get; set; } = [];
-}
-
-public class SeatRowLayoutResponse
-{
-    public Guid Id { get; set; }
-    public Guid SectionId { get; set; }
-    public string Label { get; set; } = string.Empty;
-    public int RowNumber { get; set; }
-    public string? Curve { get; set; }
-    public int SeatSpacing { get; set; }
     public List<SeatLayoutResponse> Seats { get; set; } = [];
-}
-
-public class SeatLayoutResponse
-{
-    public Guid Id { get; set; }
-    public Guid RowId { get; set; }
-    public string Label { get; set; } = string.Empty;
-    public int SeatNumber { get; set; }
-    public string SeatType { get; set; } = string.Empty;
-    public string? Position { get; set; }
-    public Guid? LegendId { get; set; }
-    public string? CustomProperties { get; set; }
-}
-
-// ========== SeatSection DTOs ==========
-
-public class AddSectionDto
-{
-    public string Label { get; set; } = string.Empty;
-    public SectionType SectionType { get; set; } = SectionType.Rectangle;
-    public string? Geometry { get; set; }
-    public string? Style { get; set; }
-    public Guid? LegendId { get; set; }
-    public int SortOrder { get; set; }
-}
-
-public class UpdateSectionDto
-{
-    public Guid SectionId { get; set; }
-    public string? Label { get; set; }
-    public SectionType? SectionType { get; set; }
-    public string? Geometry { get; set; }
-    public string? Style { get; set; }
-    public Guid? LegendId { get; set; }
-    public int? SortOrder { get; set; }
-}
-
-public class SeatSectionResponse
-{
-    public Guid Id { get; set; }
-    public Guid SeatMapId { get; set; }
-    public string Label { get; set; } = string.Empty;
-    public string SectionType { get; set; } = string.Empty;
-    public string? Geometry { get; set; }
-    public string? Style { get; set; }
-    public Guid? LegendId { get; set; }
-    public int SortOrder { get; set; }
-    public List<SeatRowResponse> Rows { get; set; } = [];
-}
-
-// ========== SeatRow DTOs ==========
-
-public class AddRowDto
-{
-    public Guid SectionId { get; set; }
-    public string Label { get; set; } = string.Empty;
-    public int RowNumber { get; set; }
-    public string? Curve { get; set; }
-    public int SeatSpacing { get; set; } = 30;
-    public int SeatCount { get; set; }
-    public string? LabelPrefix { get; set; }
-}
-
-public class UpdateRowDto
-{
-    public Guid RowId { get; set; }
-    public string? Label { get; set; }
-    public int? RowNumber { get; set; }
-    public string? Curve { get; set; }
-    public int? SeatSpacing { get; set; }
-}
-
-public class SeatRowResponse
-{
-    public Guid Id { get; set; }
-    public Guid SectionId { get; set; }
-    public string Label { get; set; } = string.Empty;
-    public int RowNumber { get; set; }
-    public string? Curve { get; set; }
-    public int SeatSpacing { get; set; }
-    public List<SeatResponse> Seats { get; set; } = [];
+    public List<SeatObjectResponse> Objects { get; set; } = [];
 }
 
 // ========== Seat DTOs ==========
 
 public class AddSeatDto
 {
-    public Guid RowId { get; set; }
+    public Guid SeatMapId { get; set; }
     public string Label { get; set; } = string.Empty;
     public int SeatNumber { get; set; }
-    public SeatType SeatType { get; set; } = SeatType.Regular;
+    public int SeatType { get; set; } = 1;
     public string? Position { get; set; }
     public Guid? LegendId { get; set; }
 }
@@ -170,7 +65,7 @@ public class UpdateSeatDto
     public string? Label { get; set; }
     public int? SeatNumber { get; set; }
     public SeatStatus? Status { get; set; }
-    public SeatType? SeatType { get; set; }
+    public int? SeatType { get; set; }
     public string? Position { get; set; }
     public Guid? LegendId { get; set; }
     public string? CustomProperties { get; set; }
@@ -184,11 +79,23 @@ public class BatchUpdateSeatsDto
 public class SeatResponse
 {
     public Guid Id { get; set; }
-    public Guid RowId { get; set; }
+    public Guid SeatMapId { get; set; }
     public string Label { get; set; } = string.Empty;
     public int SeatNumber { get; set; }
     public string Status { get; set; } = string.Empty;
-    public string SeatType { get; set; } = string.Empty;
+    public int SeatType { get; set; }
+    public string? Position { get; set; }
+    public Guid? LegendId { get; set; }
+    public string? CustomProperties { get; set; }
+}
+
+public class SeatLayoutResponse
+{
+    public Guid Id { get; set; }
+    public Guid SeatMapId { get; set; }
+    public string Label { get; set; } = string.Empty;
+    public int SeatNumber { get; set; }
+    public int SeatType { get; set; }
     public string? Position { get; set; }
     public Guid? LegendId { get; set; }
     public string? CustomProperties { get; set; }
@@ -276,6 +183,4 @@ public class SeatMapStatsResponse
     public int HoldingSeats { get; set; }
     public int SoldSeats { get; set; }
     public int BlockedSeats { get; set; }
-    public int TotalSections { get; set; }
-    public int TotalRows { get; set; }
 }

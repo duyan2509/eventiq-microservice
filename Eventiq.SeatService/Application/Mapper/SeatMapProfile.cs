@@ -11,39 +11,17 @@ public class SeatMapProfile : Profile
         // SeatMap
         CreateMap<CreateSeatMapDto, SeatMap>();
         CreateMap<SeatMap, SeatMapResponse>()
-            .ForMember(d => d.Status, o => o.MapFrom(s => s.Status.ToString()))
-            .ForMember(d => d.SessionId, o => o.MapFrom(s => s.SessionId))
-            .ForMember(d => d.TotalSeats, o => o.MapFrom(s => s.TotalSeats));
+            .ForMember(d => d.Status, o => o.MapFrom(s => s.Status.ToString()));
         CreateMap<SeatMap, SeatMapDetailResponse>()
-            .ForMember(d => d.Status, o => o.MapFrom(s => s.Status.ToString()))
-            .ForMember(d => d.SessionId, o => o.MapFrom(s => s.SessionId))
-            .ForMember(d => d.TotalSeats, o => o.MapFrom(s => s.TotalSeats));
-
-        // Layout-only (booking view, no seat statuses)
+            .ForMember(d => d.Status, o => o.MapFrom(s => s.Status.ToString()));
         CreateMap<SeatMap, SeatMapLayoutResponse>()
-            .ForMember(d => d.Status, o => o.MapFrom(s => s.Status.ToString()))
-            .ForMember(d => d.SessionId, o => o.MapFrom(s => s.SessionId))
-            .ForMember(d => d.TotalSeats, o => o.MapFrom(s => s.TotalSeats));
-        CreateMap<SeatSection, SeatSectionLayoutResponse>()
-            .ForMember(d => d.SectionType, o => o.MapFrom(s => s.SectionType.ToString()));
-        CreateMap<SeatRow, SeatRowLayoutResponse>();
-        CreateMap<Seat, SeatLayoutResponse>()
-            .ForMember(d => d.SeatType, o => o.MapFrom(s => s.SeatType.ToString()));
-
-        // Section
-        CreateMap<AddSectionDto, SeatSection>();
-        CreateMap<SeatSection, SeatSectionResponse>()
-            .ForMember(d => d.SectionType, o => o.MapFrom(s => s.SectionType.ToString()));
-
-        // Row
-        CreateMap<AddRowDto, SeatRow>();
-        CreateMap<SeatRow, SeatRowResponse>();
+            .ForMember(d => d.Status, o => o.MapFrom(s => s.Status.ToString()));
 
         // Seat
         CreateMap<AddSeatDto, Seat>();
         CreateMap<Seat, SeatResponse>()
-            .ForMember(d => d.Status, o => o.MapFrom(s => s.Status.ToString()))
-            .ForMember(d => d.SeatType, o => o.MapFrom(s => s.SeatType.ToString()));
+            .ForMember(d => d.Status, o => o.MapFrom(s => s.Status.ToString()));
+        CreateMap<Seat, SeatLayoutResponse>();
 
         // SeatObject
         CreateMap<AddObjectDto, SeatObject>();

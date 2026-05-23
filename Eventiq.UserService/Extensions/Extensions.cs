@@ -49,6 +49,7 @@ public static class Extensions
             x.AddConsumer<OrganizationCreatedConsumer>();
             x.AddConsumer<StaffAcceptedConsumer>();
             x.AddConsumer<StaffRemovedConsumer>();
+            x.AddConsumer<StaffRoleChangedConsumer>();
             if (builder.Environment.IsDevelopment())
             {
                 x.UsingRabbitMq((context, cfg) =>

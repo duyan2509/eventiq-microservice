@@ -21,6 +21,7 @@ public class OrganizationProfileMapping:Profile
             .ForMember(dest =>dest.PermissionName, opt => opt.MapFrom(src => src.Permission.Name))
             .ForMember(dest=>dest.Status, opt => opt.MapFrom(src => src.Status.ToString()));
         CreateMap<Member, MemberReponse>()
-            .ForMember(dest => dest.PermissionName, opt => opt.MapFrom(src => src.Permission.Name));
+            .ForMember(dest => dest.PermissionName, opt => opt.MapFrom(src => src.Permission.Name))
+            .ForMember(dest => dest.IsDesigner, opt => opt.MapFrom(src => src.Permission.IsDesigner));
     }
 }

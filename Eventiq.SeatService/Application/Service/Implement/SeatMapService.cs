@@ -44,7 +44,6 @@ public class SeatMapService : ISeatMapService
 
     public async Task<SeatMapResponse> CreateAsync(Guid userId, Guid orgId, CreateSeatMapDto dto)
     {
-        // Check if a seat map already exists for this chart
         var existing = await _uow.SeatMaps.GetByChartIdAsync(dto.ChartId);
         if (existing != null)
             throw new ConflictException($"A seat map already exists for chart {dto.ChartId}.");
@@ -98,12 +97,9 @@ public class SeatMapService : ISeatMapService
         SeatMapGuards.EnsureExists(seatMap);
         SeatMapGuards.EnsureOwner(seatMap!, orgId);
 
-        var totalSeats = seatMap.Sections
-            .SelectMany(s => s.Rows)
-            .SelectMany(r => r.Seats)
-            .Count();
+        var totalSeats = seatMap!.Seats.Count;
 
-        seatMap!.Publish();
+        seatMap.Publish();
         seatMap.TotalSeats = totalSeats;
         await _uow.SeatMaps.UpdateAsync(seatMap);
         await _uow.SaveChangesAsync();
@@ -126,25 +122,23 @@ public class SeatMapService : ISeatMapService
         return maps.Any(m => m.SessionId == null && m.Status == SeatMapStatus.Published);
     }
 
+    public async Task<bool> HasSeatMapDesignAsync(Guid eventId)
+        => await _uow.SeatMaps.HasTemplateForEventAsync(eventId);
+
     public async Task<SeatMapStatsResponse> GetStatsAsync(Guid seatMapId)
     {
         var seatMap = await _uow.SeatMaps.GetByIdWithDetailsAsync(seatMapId);
         SeatMapGuards.EnsureExists(seatMap);
 
-        var allSeats = seatMap!.Sections
-            .SelectMany(s => s.Rows)
-            .SelectMany(r => r.Seats)
-            .ToList();
+        var seats = seatMap!.Seats;
 
         return new SeatMapStatsResponse
         {
-            TotalSeats = allSeats.Count,
-            AvailableSeats = allSeats.Count(s => s.Status == SeatStatus.Available),
-            HoldingSeats = allSeats.Count(s => s.Status == SeatStatus.Holding),
-            SoldSeats = allSeats.Count(s => s.Status == SeatStatus.Sold),
-            BlockedSeats = allSeats.Count(s => s.Status == SeatStatus.Blocked),
-            TotalSections = seatMap.Sections.Count,
-            TotalRows = seatMap.Sections.SelectMany(s => s.Rows).Count()
+            TotalSeats = seats.Count,
+            AvailableSeats = seats.Count(s => s.Status == SeatStatus.Available),
+            HoldingSeats = seats.Count(s => s.Status == SeatStatus.Holding),
+            SoldSeats = seats.Count(s => s.Status == SeatStatus.Sold),
+            BlockedSeats = seats.Count(s => s.Status == SeatStatus.Blocked),
         };
     }
 }

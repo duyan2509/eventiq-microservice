@@ -33,10 +33,16 @@ public static class ServiceExtensions
         builder.Services.AddSignalR(options =>
         {
             options.EnableDetailedErrors = builder.Environment.IsDevelopment();
-            options.MaximumReceiveMessageSize = 512 * 1024; // 512KB for large seat map operations
+            options.MaximumReceiveMessageSize = 512 * 1024;
             options.KeepAliveInterval = TimeSpan.FromSeconds(15);
             options.ClientTimeoutInterval = TimeSpan.FromSeconds(30);
-        }).AddStackExchangeRedis(redisConnectionString, options =>
+            options.MaximumParallelInvocationsPerClient = 4;
+        })
+        .AddJsonProtocol(options =>
+        {
+            options.PayloadSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
+        })
+        .AddStackExchangeRedis(redisConnectionString, options =>
         {
             options.Configuration.ChannelPrefix = StackExchange.Redis.RedisChannel.Literal("SeatDesign");
         });
@@ -103,6 +109,7 @@ public static class ServiceExtensions
             x.AddConsumer<ChartDeletedConsumer>();
             x.AddConsumer<StaffRemovedConsumer>();
             x.AddConsumer<EventApprovedConsumer>();
+            x.AddConsumer<SessionSeatMapCloneConsumer>();
 
             if (builder.Environment.IsDevelopment())
             {

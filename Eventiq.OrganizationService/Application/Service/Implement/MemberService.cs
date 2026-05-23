@@ -59,7 +59,23 @@ public class MemberService : IMemberService
         member.PermissionId = dto.PermissionId;
         await _memberRepository.UpdateAsync(member, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        if (member.UserId.HasValue)
+        {
+            await _publishEndpoint.Publish(new StaffRoleChanged
+            {
+                UserId = member.UserId.Value,
+                OrganizationId = orgId,
+                NewRoleName = permission.Name
+            }, cancellationToken);
+        }
+
         return _mapper.Map<MemberReponse>(member);
+    }
+
+    public async Task<MemberReponse?> GetMyMembershipAsync(Guid userId, Guid orgId, CancellationToken cancellationToken = default)
+    {
+        return await _memberRepository.GetByUserIdAndOrgIdAsync(userId, orgId, cancellationToken);
     }
 
     public async Task<bool> DeleteMemberAsync(Guid ownerId, Guid memberId, Guid orgId, CancellationToken cancellationToken = default)

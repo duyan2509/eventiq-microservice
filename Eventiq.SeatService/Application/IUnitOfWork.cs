@@ -5,8 +5,6 @@ namespace Eventiq.SeatService;
 public interface IUnitOfWork : IDisposable
 {
     ISeatMapRepository SeatMaps { get; }
-    ISeatSectionRepository Sections { get; }
-    ISeatRowRepository Rows { get; }
     ISeatRepository Seats { get; }
     ISeatObjectRepository Objects { get; }
     ISeatMapVersionRepository Versions { get; }
