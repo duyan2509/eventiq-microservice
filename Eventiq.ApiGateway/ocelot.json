@@ -259,6 +259,37 @@
       },
       "RouteIsCaseSensitive": false
     }
+    {
+      "DownstreamPathTemplate": "/api/stripe/webhook",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [{ "Host": "localhost", "Port": 5236 }],
+      "UpstreamPathTemplate": "/gateway/stripe/webhook",
+      "UpstreamHttpMethod": ["POST"]
+    },
+    {
+      "DownstreamPathTemplate": "/api/payments/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [{ "Host": "localhost", "Port": 5236 }],
+      "UpstreamPathTemplate": "/gateway/payments/{everything}",
+      "UpstreamHttpMethod": ["GET", "POST"],
+      "AddHeadersToRequest": { "Authorization": "{Authorization}" },
+      "AuthenticationOptions": {
+        "AuthenticationProviderKey": "Bearer",
+        "AllowedScopes": []
+      }
+    },
+    {
+      "DownstreamPathTemplate": "/api/tickets/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [{ "Host": "localhost", "Port": 5232 }],
+      "UpstreamPathTemplate": "/gateway/tickets/{everything}",
+      "UpstreamHttpMethod": ["GET", "POST"],
+      "AddHeadersToRequest": { "Authorization": "{Authorization}" },
+      "AuthenticationOptions": {
+        "AuthenticationProviderKey": "Bearer",
+        "AllowedScopes": []
+      }
+    }
   ],
   "GlobalConfiguration": {
     "BaseUrl": "http://localhost:5001"

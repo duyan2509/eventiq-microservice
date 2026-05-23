@@ -16,6 +16,7 @@ public sealed class EvtEventDbContext : DbContext
     public DbSet<Session> Sessions => Set<Session>();
     public DbSet<Chart> Charts => Set<Chart>();
     public DbSet<OrgPaymentInfo> OrgPaymentInfos => Set<OrgPaymentInfo>();
+    public DbSet<Ticket> Tickets => Set<Ticket>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -33,6 +34,15 @@ public sealed class EvtEventDbContext : DbContext
             e.ToTable("org_payment_info");
             e.HasKey(x => x.OrganizationId);
             e.Property(x => x.OrganizationId).ValueGeneratedNever();
+        });
+
+        modelBuilder.Entity<Ticket>(e =>
+        {
+            e.HasKey(x => x.Id);
+            e.HasIndex(x => x.OrderId);
+            e.HasIndex(x => x.SessionId);
+            e.HasIndex(x => x.SeatId);
+            e.Property(x => x.Price).HasPrecision(18, 2);
         });
 
         foreach (var entityType in modelBuilder.Model.GetEntityTypes())

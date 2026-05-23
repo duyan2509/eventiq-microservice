@@ -7,6 +7,8 @@ package eventiq.event;
 service EventInternal {
   rpc GetSession (GetSessionRequest) returns (SessionInfo);
   rpc GetLegends (GetLegendsRequest) returns (GetLegendsResponse);
+  rpc IssueTickets (IssueTicketsRequest) returns (IssueTicketsResponse);
+  rpc GetTicketsByOrder (GetTicketsByOrderRequest) returns (GetTicketsByOrderResponse);
 }
 
 message GetSessionRequest {
@@ -35,4 +37,45 @@ message LegendInfo {
   string legend_id = 1;
   string name = 2;
   double price = 3;
+}
+
+message IssueTicketsRequest {
+  string order_id = 1;
+  string session_id = 2;
+  repeated TicketSeatInfo seats = 3;
+}
+
+message TicketSeatInfo {
+  string seat_id = 1;
+  string seat_label = 2;
+  string legend_name = 3;
+  double price = 4;
+}
+
+message IssueTicketsResponse {
+  bool success = 1;
+  repeated IssuedTicketInfo tickets = 2;
+}
+
+message IssuedTicketInfo {
+  string ticket_id = 1;
+  string seat_label = 2;
+  string qr_code = 3;
+}
+
+message GetTicketsByOrderRequest {
+  string order_id = 1;
+}
+
+message GetTicketsByOrderResponse {
+  repeated TicketDetail tickets = 1;
+}
+
+message TicketDetail {
+  string ticket_id = 1;
+  string seat_label = 2;
+  string legend_name = 3;
+  double price = 4;
+  string qr_code = 5;
+  bool is_checked_in = 6;
 }

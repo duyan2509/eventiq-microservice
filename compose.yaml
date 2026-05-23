@@ -147,6 +147,20 @@ services:
   #     retries: 5
   #   networks:
   #     - eventiq-net
+  payment-service:
+    image: payment-service
+    build:
+      context: .
+      dockerfile: Eventiq.PaymentService/Dockerfile
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://+:8085
+      ConnectionStrings__Postgres: "Host=ep-twilight-meadow-a1idagy9-pooler.ap-southeast-1.aws.neon.tech;Database=neondb;Username=neondb_owner;Password=xxx;SSL Mode=Require;Search Path=payment_service"
+    volumes:
+      - ./keys:/app/keys:ro
+    networks:
+      - eventiq-net
+
   contracts:
     image:  contracts
     build:

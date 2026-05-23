@@ -7,6 +7,7 @@ $services = @(
     @{ Name = "OrganizationService"; Path = "Eventiq.OrganizationService"; Port = 5230 },
     @{ Name = "EventService";        Path = "Eventiq.EventService";        Port = 5232 },
     @{ Name = "SeatService";         Path = "Eventiq.SeatService";         Port = 5234 },
+    @{ Name = "PaymentService";      Path = "Eventiq.PaymentService";      Port = 5236 },
     @{ Name = "ApiGateway";          Path = "Eventiq.ApiGateway";          Port = 5001 }
 )
 
@@ -26,3 +27,4 @@ Write-Host "  UserService     -> http://localhost:5228"
 Write-Host "  OrgService      -> http://localhost:5230"
 Write-Host "  EventService    -> http://localhost:5232"
 Write-Host "  SeatService     -> http://localhost:5234"
+Write-Host "  PaymentService  -> http://localhost:5236"
