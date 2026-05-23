@@ -11,4 +11,5 @@ public interface IOrganizationRepository
 
     Task AddAsync(Organization organization, CancellationToken cancellationToken = default);
     Task UpdateAsync(Organization organization, CancellationToken cancellationToken = default);
+    Task<List<Organization>> GetConfiguredOrgsAsync(CancellationToken cancellationToken = default);
 }

@@ -24,6 +24,8 @@ public static class DependencyInjection
         services.AddScoped<IMemberRepository, MemberRepository>();
         services.AddScoped<IInvitationRepository, InvitationRepository>();
         services.AddScoped<IPermissionRepository, PermissionRepository>();
+        services.AddScoped<IPlatformConfigRepository, PlatformConfigRepository>();
+        services.AddScoped<IPayoutLogRepository, PayoutLogRepository>();
         return services;
     }
 }

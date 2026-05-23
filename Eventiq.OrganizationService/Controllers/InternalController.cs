@@ -1,5 +1,7 @@
+using Eventiq.OrganizationService.Application.Service;
 using Eventiq.OrganizationService.Domain.Enum;
 using Eventiq.OrganizationService.Domain.Repositories;
+using Eventiq.OrganizationService.Dtos;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Eventiq.OrganizationService.Controllers;
@@ -12,11 +14,16 @@ namespace Eventiq.OrganizationService.Controllers;
 public class InternalController : ControllerBase
 {
     private readonly IOrganizationRepository _orgRepo;
+    private readonly IPlatformConfigService _configService;
     private readonly ILogger<InternalController> _logger;
 
-    public InternalController(IOrganizationRepository orgRepo, ILogger<InternalController> logger)
+    public InternalController(
+        IOrganizationRepository orgRepo,
+        IPlatformConfigService configService,
+        ILogger<InternalController> logger)
     {
         _orgRepo = orgRepo;
+        _configService = configService;
         _logger = logger;
     }
 
@@ -34,8 +41,12 @@ public class InternalController : ControllerBase
         var isActive = org.PaymentStatus == PaymentStatus.Configured;
         _logger.LogInformation("Internal payment-status check for org {OrgId}: IsActive={IsActive}", orgId, isActive);
 
-        return Ok(new PaymentStatusResult(isActive));
+        return Ok(new PaymentStatusResult(isActive, org.StripeAccountId));
     }
+
+    [HttpGet("platform-config")]
+    public async Task<ActionResult<InternalPlatformConfigResponse>> GetPlatformConfig(CancellationToken ct)
+        => Ok(await _configService.GetInternalAsync(ct));
 }
 
-public record PaymentStatusResult(bool IsActive);
+public record PaymentStatusResult(bool IsActive, string? StripeAccountId);

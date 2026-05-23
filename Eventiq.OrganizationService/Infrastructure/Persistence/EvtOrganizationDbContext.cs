@@ -15,6 +15,8 @@ public sealed class EvtOrganizationDbContext : DbContext
     public DbSet<Invitation> Invitations => Set<Invitation>();
     public DbSet<Member> Members => Set<Member>();
     public DbSet<Permission> Permissions => Set<Permission>();
+    public DbSet<PlatformConfig> PlatformConfigs => Set<PlatformConfig>();
+    public DbSet<PayoutLog> PayoutLogs => Set<PayoutLog>();
 
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -68,6 +70,19 @@ public sealed class EvtOrganizationDbContext : DbContext
                 .HasForeignKey(x => x.PermissionId)
                 .OnDelete(DeleteBehavior.Restrict);
         });
+        modelBuilder.Entity<PlatformConfig>(e =>
+        {
+            e.HasKey(x => x.Id);
+            e.Property(x => x.CurrentFeeRate).HasColumnType("decimal(5,4)");
+            e.Property(x => x.PendingFeeRate).HasColumnType("decimal(5,4)");
+        });
+
+        modelBuilder.Entity<PayoutLog>(e =>
+        {
+            e.HasKey(x => x.Id);
+            e.Property(x => x.Id).ValueGeneratedOnAdd();
+        });
+
         modelBuilder.AddInboxStateEntity();
         modelBuilder.AddOutboxMessageEntity();
         modelBuilder.AddOutboxStateEntity();

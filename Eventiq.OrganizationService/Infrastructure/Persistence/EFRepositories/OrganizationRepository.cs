@@ -82,4 +82,12 @@ public class OrganizationRepository : IOrganizationRepository
         _organizations.Update(organization);
         return Task.CompletedTask;
     }
+
+    public async Task<List<Organization>> GetConfiguredOrgsAsync(CancellationToken cancellationToken = default)
+    {
+        return await _organizations
+            .AsNoTracking()
+            .Where(o => o.PaymentStatus == Domain.Enum.PaymentStatus.Configured)
+            .ToListAsync(cancellationToken);
+    }
 }
