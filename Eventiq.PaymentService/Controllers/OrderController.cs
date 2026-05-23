@@ -1,3 +1,4 @@
+using Eventiq.PaymentService.Application.Dto;
 using Eventiq.PaymentService.Application.Service.Interface;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -21,6 +22,6 @@ public class OrderController : ControllerBase
     {
         var userId = Guid.Parse(User.FindFirst("sub")!.Value);
         var orders = await _orderService.GetMyOrdersAsync(userId);
-        return Ok(orders);
+        return Ok(orders.Select(OrderResponse.From));
     }
 }

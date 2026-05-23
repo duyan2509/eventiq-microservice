@@ -1,3 +1,4 @@
+using Eventiq.EventService.Application.Dto;
 using Eventiq.EventService.Application.Service.Interface;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -20,7 +21,7 @@ public class TicketController : ControllerBase
     public async Task<IActionResult> GetByOrder(Guid orderId)
     {
         var tickets = await _ticketService.GetByOrderAsync(orderId);
-        return Ok(tickets);
+        return Ok(tickets.Select(TicketResponse.From));
     }
 
     [HttpPost("{ticketId:guid}/checkin")]
