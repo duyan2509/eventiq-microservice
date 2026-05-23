@@ -17,4 +17,6 @@ public class Order : BaseEntity
     public string SessionName { get; set; } = string.Empty;
     public DateTime SessionDate { get; set; }
     public DateTime? PaidAt { get; set; }
+
+    public ICollection<OrderItem> Items { get; set; } = new List<OrderItem>();
 }

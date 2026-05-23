@@ -1,4 +1,5 @@
 using Eventiq.PaymentService.Domain.Entity;
+using MassTransit;
 using Microsoft.EntityFrameworkCore;
 
 namespace Eventiq.PaymentService.Infrastructure.Persistence;
@@ -8,6 +9,7 @@ public sealed class PaymentDbContext : DbContext
     public PaymentDbContext(DbContextOptions<PaymentDbContext> options) : base(options) { }
 
     public DbSet<Order> Orders => Set<Order>();
+    public DbSet<OrderItem> OrderItems => Set<OrderItem>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -24,6 +26,21 @@ public sealed class PaymentDbContext : DbContext
             e.Property(x => x.TotalAmount).HasPrecision(18, 2);
             e.Property(x => x.PlatformFee).HasPrecision(18, 2);
         });
+
+        modelBuilder.Entity<OrderItem>(e =>
+        {
+            e.HasKey(x => x.Id);
+            e.HasOne(x => x.Order)
+                .WithMany(o => o.Items)
+                .HasForeignKey(x => x.OrderId)
+                .OnDelete(DeleteBehavior.Cascade);
+            e.HasIndex(x => x.OrderId);
+            e.Property(x => x.Price).HasPrecision(18, 2);
+        });
+
+        modelBuilder.AddInboxStateEntity();
+        modelBuilder.AddOutboxMessageEntity();
+        modelBuilder.AddOutboxStateEntity();
 
         foreach (var entityType in modelBuilder.Model.GetEntityTypes())
         {
