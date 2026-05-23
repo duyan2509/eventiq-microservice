@@ -51,7 +51,6 @@ public class SeatDesignService : ISeatDesignService
     {
         var seatMap = await GetAndValidateSeatMap(seatMapId, orgId);
 
-        // Load all target seats in a single query — no N+1
         var seatIds = dto.Seats.Select(s => s.SeatId).ToList();
         var seats = await _uow.Seats.GetByIdsAsync(seatIds);
         var seatById = seats.ToDictionary(s => s.Id);

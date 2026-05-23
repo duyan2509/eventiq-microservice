@@ -12,7 +12,7 @@ namespace Eventiq.EventService.Infrastructure.Persistence.Migrations
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.CreateTable(
-                name: "org_payment_infos",
+                name: "org_payment_info",
                 schema: "event_service",
                 columns: table => new
                 {
@@ -23,7 +23,7 @@ namespace Eventiq.EventService.Infrastructure.Persistence.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("pk_org_payment_infos", x => x.organization_id);
+                    table.PrimaryKey("pk_org_payment_info", x => x.organization_id);
                 });
         }
 
@@ -31,7 +31,7 @@ namespace Eventiq.EventService.Infrastructure.Persistence.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
-                name: "org_payment_infos",
+                name: "org_payment_info",
                 schema: "event_service");
         }
     }

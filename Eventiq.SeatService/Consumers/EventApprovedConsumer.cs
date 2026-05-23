@@ -1,5 +1,4 @@
 using Eventiq.Contracts;
-using Eventiq.SeatService.Domain.Entity;
 using Eventiq.SeatService.Domain.Enum;
 using MassTransit;
 
@@ -9,11 +8,16 @@ public class EventApprovedConsumer : IConsumer<EventApproved>
 {
     private readonly ILogger<EventApprovedConsumer> _logger;
     private readonly IUnitOfWork _uow;
+    private readonly IPublishEndpoint _publishEndpoint;
 
-    public EventApprovedConsumer(ILogger<EventApprovedConsumer> logger, IUnitOfWork uow)
+    public EventApprovedConsumer(
+        ILogger<EventApprovedConsumer> logger,
+        IUnitOfWork uow,
+        IPublishEndpoint publishEndpoint)
     {
         _logger = logger;
         _uow = uow;
+        _publishEndpoint = publishEndpoint;
     }
 
     public async Task Consume(ConsumeContext<EventApproved> context)
@@ -23,133 +27,44 @@ public class EventApprovedConsumer : IConsumer<EventApproved>
             "EventApproved received: EventId={EventId}, Sessions={Count}",
             msg.EventId, msg.Sessions.Length);
 
-        try
+        // Publish all templates first (one per unique chart) so clone consumers find them ready
+        var processedCharts = new HashSet<Guid>();
+        foreach (var pair in msg.Sessions)
         {
-            foreach (var pair in msg.Sessions)
+            if (!processedCharts.Add(pair.ChartId)) continue;
+
+            var template = await _uow.SeatMaps.GetTemplateByChartIdWithDetailsAsync(pair.ChartId);
+            if (template == null)
             {
-                var template = await _uow.SeatMaps.GetPublishedTemplateByChartIdAsync(pair.ChartId);
-                if (template == null)
-                {
-                    _logger.LogWarning(
-                        "No published template for ChartId={ChartId}, skipping session {SessionId}",
-                        pair.ChartId, pair.SessionId);
-                    continue;
-                }
+                _logger.LogWarning(
+                    "No seat map template for ChartId={ChartId}, skipping", pair.ChartId);
+                continue;
+            }
 
-                // Skip if clone already exists (idempotency)
-                var existing = await _uow.SeatMaps.GetBySessionIdAsync(pair.SessionId);
-                if (existing != null)
-                {
-                    _logger.LogInformation(
-                        "Clone already exists for SessionId={SessionId}, skipping", pair.SessionId);
-                    continue;
-                }
-
-                var clone = CloneSeatMap(template, pair.SessionId);
-                await _uow.SeatMaps.AddAsync(clone);
-
+            if (template.Status != SeatMapStatus.Published)
+            {
+                template.Publish();
+                await _uow.SeatMaps.UpdateAsync(template);
                 _logger.LogInformation(
-                    "Cloned SeatMap {CloneId} for SessionId={SessionId} from template {TemplateId}",
-                    clone.Id, pair.SessionId, template.Id);
+                    "Published template {TemplateId} for ChartId={ChartId}", template.Id, pair.ChartId);
             }
-
-            await _uow.SaveChangesAsync();
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error processing EventApproved for EventId={EventId}", msg.EventId);
-            throw; // Let MassTransit retry
-        }
-    }
-
-    private static SeatMap CloneSeatMap(SeatMap template, Guid sessionId)
-    {
-        var totalSeats = template.Sections
-            .SelectMany(s => s.Rows)
-            .SelectMany(r => r.Seats)
-            .Count();
-
-        var clone = new SeatMap
-        {
-            Id = Guid.NewGuid(),
-            ChartId = template.ChartId,
-            EventId = template.EventId,
-            OrganizationId = template.OrganizationId,
-            SessionId = sessionId,
-            Name = template.Name,
-            Status = SeatMapStatus.Published,
-            Version = 1,
-            TotalSeats = totalSeats,
-            CanvasSettings = template.CanvasSettings,
-            CreatedAt = DateTime.UtcNow
-        };
-
-        foreach (var section in template.Sections)
-        {
-            var clonedSection = new SeatSection
-            {
-                Id = Guid.NewGuid(),
-                SeatMapId = clone.Id,
-                Label = section.Label,
-                SectionType = section.SectionType,
-                Geometry = section.Geometry,
-                Style = section.Style,
-                LegendId = section.LegendId,
-                SortOrder = section.SortOrder,
-                CreatedAt = DateTime.UtcNow
-            };
-
-            foreach (var row in section.Rows)
-            {
-                var clonedRow = new SeatRow
-                {
-                    Id = Guid.NewGuid(),
-                    SectionId = clonedSection.Id,
-                    Label = row.Label,
-                    RowNumber = row.RowNumber,
-                    Curve = row.Curve,
-                    SeatSpacing = row.SeatSpacing,
-                    CreatedAt = DateTime.UtcNow
-                };
-
-                foreach (var seat in row.Seats)
-                {
-                    clonedRow.Seats.Add(new Seat
-                    {
-                        Id = Guid.NewGuid(),
-                        RowId = clonedRow.Id,
-                        Label = seat.Label,
-                        SeatNumber = seat.SeatNumber,
-                        SeatType = seat.SeatType,
-                        Status = SeatStatus.Available,
-                        Position = seat.Position,
-                        LegendId = seat.LegendId,
-                        CustomProperties = seat.CustomProperties,
-                        CreatedAt = DateTime.UtcNow
-                    });
-                }
-
-                clonedSection.Rows.Add(clonedRow);
-            }
-
-            clone.Sections.Add(clonedSection);
         }
 
-        foreach (var obj in template.Objects)
+        await _uow.SaveChangesAsync();
+
+        // Enqueue one clone job per session — processed independently in background
+        foreach (var pair in msg.Sessions)
         {
-            clone.Objects.Add(new SeatObject
+            await _publishEndpoint.Publish(new SessionSeatMapCloneRequested
             {
-                Id = Guid.NewGuid(),
-                SeatMapId = clone.Id,
-                ObjectType = obj.ObjectType,
-                Label = obj.Label,
-                Geometry = obj.Geometry,
-                Style = obj.Style,
-                ZIndex = obj.ZIndex,
-                CreatedAt = DateTime.UtcNow
+                SessionId = pair.SessionId,
+                ChartId = pair.ChartId,
+                EventId = msg.EventId
             });
         }
 
-        return clone;
+        _logger.LogInformation(
+            "Enqueued {Count} SessionSeatMapCloneRequested messages for EventId={EventId}",
+            msg.Sessions.Length, msg.EventId);
     }
 }

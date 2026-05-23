@@ -13,20 +13,19 @@ public class SeatMap : BaseEntity
     public Guid? SessionId { get; set; }
     public string Name { get; set; } = string.Empty;
     public SeatMapStatus Status { get; set; } = SeatMapStatus.Draft;
-    
+
     /// <summary>
     /// JSONB: { width, height, zoom, backgroundColor }
     /// </summary>
     public string? CanvasSettings { get; set; }
-    
+
     /// <summary>
     /// Optimistic concurrency version for collaborative editing.
-    /// Incremented on each change.
     /// </summary>
     public int Version { get; set; } = 1;
     public int TotalSeats { get; set; }
 
-    public virtual ICollection<SeatSection> Sections { get; set; } = new List<SeatSection>();
+    public virtual ICollection<Seat> Seats { get; set; } = new List<Seat>();
     public virtual ICollection<SeatObject> Objects { get; set; } = new List<SeatObject>();
     public virtual ICollection<SeatMapVersion> Versions { get; set; } = new List<SeatMapVersion>();
 

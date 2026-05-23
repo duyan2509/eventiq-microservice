@@ -41,8 +41,6 @@ public static class DependencyInjection
 
         // Repositories
         services.AddScoped<ISeatMapRepository, SeatMapRepository>();
-        services.AddScoped<ISeatSectionRepository, SeatSectionRepository>();
-        services.AddScoped<ISeatRowRepository, SeatRowRepository>();
         services.AddScoped<ISeatRepository, SeatRepository>();
         services.AddScoped<ISeatObjectRepository, SeatObjectRepository>();
         services.AddScoped<ISeatMapVersionRepository, SeatMapVersionRepository>();

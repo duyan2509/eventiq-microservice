@@ -37,6 +37,21 @@ public class MemberController : ControllerBase
         return Ok(result);
     }
 
+    [Authorize(Roles = nameof(AppRoles.Staff))]
+    [HttpGet("me")]
+    public async Task<ActionResult<MemberReponse>> GetMyMembership(
+        Guid orgId,
+        CancellationToken cancellationToken = default)
+    {
+        var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (string.IsNullOrEmpty(userIdStr) || !Guid.TryParse(userIdStr, out var userId))
+            throw new UnauthorizedException("User id is required");
+
+        var result = await _memberService.GetMyMembershipAsync(userId, orgId, cancellationToken);
+        if (result == null) return NotFound();
+        return Ok(result);
+    }
+
     [Authorize(Roles = nameof(AppRoles.Organization))]
     [HttpPatch("{memberId:guid}/permission")]
     public async Task<ActionResult<MemberReponse>> ChangeMemberPermission(

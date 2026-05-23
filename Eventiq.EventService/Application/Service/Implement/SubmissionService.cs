@@ -49,12 +49,12 @@ public class SubmissionService : ISubmissionService
         var hasPayment = await _orgPayment.HasActivePaymentAsync(orgId);
         if (!hasPayment)
             throw new BusinessException(
-                "Tổ chức chưa liên kết tài khoản thanh toán. Vui lòng kết nối Stripe trước khi gửi duyệt sự kiện.");
+                "Organization has no active payment account. Please connect Stripe before submitting the event.");
 
-        var hasSeatMap = await _seatServiceClient.HasPublishedSeatMapAsync(eventId);
+        var hasSeatMap = await _seatServiceClient.HasSeatMapDesignAsync(eventId);
         if (!hasSeatMap)
             throw new BusinessException(
-                "Sự kiện chưa có sơ đồ chỗ ngồi đã xuất bản. Vui lòng tạo và xuất bản sơ đồ trước khi gửi duyệt.");
+                "Event has no seat map design. Please design a seat map before submitting.");
 
         try
         {

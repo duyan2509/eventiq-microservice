@@ -23,18 +23,6 @@ public static class SeatMapGuards
             throw new BusinessException("Seat map must be in Draft status to edit.");
     }
 
-    public static void EnsureSectionExists(SeatSection? section)
-    {
-        if (section == null)
-            throw new NotFoundException("Section not found.");
-    }
-
-    public static void EnsureRowExists(SeatRow? row)
-    {
-        if (row == null)
-            throw new NotFoundException("Row not found.");
-    }
-
     public static void EnsureSeatExists(Seat? seat)
     {
         if (seat == null)

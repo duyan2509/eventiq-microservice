@@ -6,7 +6,7 @@ public class MemberReponse
     public Guid UserId { get; set; }
     public string Email { get; set; }
     public string PermissionName { get; set; }
-    
+    public bool IsDesigner { get; set; }
 }
 
 public class ChangePermission

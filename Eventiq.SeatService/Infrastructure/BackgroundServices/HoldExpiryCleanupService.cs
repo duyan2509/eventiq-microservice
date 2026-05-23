@@ -41,9 +41,8 @@ public class HoldExpiryCleanupService : BackgroundService
 
             await uow.SaveChangesAsync();
 
-            // Group by seatMapId so we broadcast one message per seat map.
             var bySeatMap = expired
-                .GroupBy(s => s.Row.Section.SeatMapId)
+                .GroupBy(s => s.SeatMapId)
                 .ToList();
 
             foreach (var group in bySeatMap)

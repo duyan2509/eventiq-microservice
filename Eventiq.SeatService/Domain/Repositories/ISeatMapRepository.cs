@@ -8,6 +8,8 @@ public interface ISeatMapRepository
     Task<SeatMap?> GetByIdWithDetailsAsync(Guid id);
     Task<SeatMap?> GetByChartIdAsync(Guid chartId);
     Task<SeatMap?> GetPublishedTemplateByChartIdAsync(Guid chartId);
+    Task<SeatMap?> GetTemplateByChartIdWithDetailsAsync(Guid chartId);
+    Task<bool> HasTemplateForEventAsync(Guid eventId);
     Task<SeatMap?> GetBySessionIdAsync(Guid sessionId);
     Task<SeatMap?> GetBySessionIdWithDetailsAsync(Guid sessionId);
     Task<List<SeatMap>> GetByEventIdAsync(Guid eventId);

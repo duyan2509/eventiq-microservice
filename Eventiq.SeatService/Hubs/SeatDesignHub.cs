@@ -231,7 +231,7 @@ public class SeatDesignHub : Hub
     {
         var userId = GetUserId();
         var email = Context.User?.FindFirst("email")?.Value ?? "";
-        var name = Context.User?.FindFirst("name")?.Value ?? Context.User?.FindFirst(ClaimTypes.Name)?.Value ?? "Unknown";
+        var name = Context.User?.FindFirst("name")?.Value ?? Context.User?.FindFirst(ClaimTypes.Name)?.Value ?? email;
         var hash = userId.GetHashCode();
         var colors = new[] { "#FF6B6B", "#4ECDC4", "#45B7D1", "#96CEB4", "#FFEAA7", "#DDA0DD", "#98D8C8", "#F7DC6F" };
         return new UserPresenceDto { UserId = userId, Email = email, DisplayName = name, AvatarColor = colors[Math.Abs(hash) % colors.Length] };

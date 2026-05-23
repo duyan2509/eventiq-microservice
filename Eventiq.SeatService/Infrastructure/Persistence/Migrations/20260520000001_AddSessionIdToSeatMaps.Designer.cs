@@ -3,6 +3,7 @@ using System;
 using Eventiq.SeatService.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Eventiq.SeatService.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(SeatDbContext))]
-    partial class SeatDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260520000001_AddSessionIdToSeatMaps")]
+    partial class AddSessionIdToSeatMaps
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -42,14 +45,6 @@ namespace Eventiq.SeatService.Infrastructure.Persistence.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("deleted_at");
 
-                    b.Property<Guid?>("HeldBy")
-                        .HasColumnType("uuid")
-                        .HasColumnName("held_by");
-
-                    b.Property<DateTime?>("HeldUntil")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("held_until");
-
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("boolean")
                         .HasColumnName("is_deleted");
@@ -67,21 +62,21 @@ namespace Eventiq.SeatService.Infrastructure.Persistence.Migrations
                         .HasColumnType("jsonb")
                         .HasColumnName("position");
 
-                    b.Property<Guid>("SeatMapId")
+                    b.Property<Guid>("RowId")
                         .HasColumnType("uuid")
-                        .HasColumnName("seat_map_id");
+                        .HasColumnName("row_id");
 
                     b.Property<int>("SeatNumber")
                         .HasColumnType("integer")
                         .HasColumnName("seat_number");
 
-                    b.Property<int>("SeatType")
-                        .HasColumnType("integer")
+                    b.Property<string>("SeatType")
+                        .IsRequired()
+                        .HasColumnType("text")
                         .HasColumnName("seat_type");
 
                     b.Property<string>("Status")
                         .IsRequired()
-                        .HasConversion<string>()
                         .HasColumnType("text")
                         .HasColumnName("status");
 
@@ -92,13 +87,8 @@ namespace Eventiq.SeatService.Infrastructure.Persistence.Migrations
                     b.HasKey("Id")
                         .HasName("pk_seats");
 
-                    b.HasIndex("SeatMapId")
-                        .HasDatabaseName("ix_seats_seat_map_id");
-
-                    b.HasIndex("SeatMapId", "Label")
-                        .IsUnique()
-                        .HasDatabaseName("ix_seats_seat_map_id_label")
-                        .HasFilter("is_deleted = false");
+                    b.HasIndex("RowId")
+                        .HasDatabaseName("ix_seats_row_id");
 
                     b.ToTable("seats", "seat_service");
                 });
@@ -149,7 +139,6 @@ namespace Eventiq.SeatService.Infrastructure.Persistence.Migrations
 
                     b.Property<string>("Status")
                         .IsRequired()
-                        .HasConversion<string>()
                         .HasColumnType("text")
                         .HasColumnName("status");
 
@@ -269,7 +258,6 @@ namespace Eventiq.SeatService.Infrastructure.Persistence.Migrations
 
                     b.Property<string>("ObjectType")
                         .IsRequired()
-                        .HasConversion<string>()
                         .HasColumnType("text")
                         .HasColumnName("object_type");
 
@@ -298,16 +286,131 @@ namespace Eventiq.SeatService.Infrastructure.Persistence.Migrations
                     b.ToTable("objects", "seat_service");
                 });
 
+            modelBuilder.Entity("Eventiq.SeatService.Domain.Entity.SeatRow", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("Curve")
+                        .HasColumnType("jsonb")
+                        .HasColumnName("curve");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("deleted_at");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_deleted");
+
+                    b.Property<string>("Label")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("label");
+
+                    b.Property<int>("RowNumber")
+                        .HasColumnType("integer")
+                        .HasColumnName("row_number");
+
+                    b.Property<int>("SeatSpacing")
+                        .HasColumnType("integer")
+                        .HasColumnName("seat_spacing");
+
+                    b.Property<Guid>("SectionId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("section_id");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.HasKey("Id")
+                        .HasName("pk_rows");
+
+                    b.HasIndex("SectionId")
+                        .HasDatabaseName("ix_rows_section_id");
+
+                    b.ToTable("rows", "seat_service");
+                });
+
+            modelBuilder.Entity("Eventiq.SeatService.Domain.Entity.SeatSection", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("deleted_at");
+
+                    b.Property<string>("Geometry")
+                        .HasColumnType("jsonb")
+                        .HasColumnName("geometry");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_deleted");
+
+                    b.Property<string>("Label")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("label");
+
+                    b.Property<Guid?>("LegendId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("legend_id");
+
+                    b.Property<Guid>("SeatMapId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("seat_map_id");
+
+                    b.Property<string>("SectionType")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("section_type");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("integer")
+                        .HasColumnName("sort_order");
+
+                    b.Property<string>("Style")
+                        .HasColumnType("jsonb")
+                        .HasColumnName("style");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.HasKey("Id")
+                        .HasName("pk_sections");
+
+                    b.HasIndex("SeatMapId")
+                        .HasDatabaseName("ix_sections_seat_map_id");
+
+                    b.ToTable("sections", "seat_service");
+                });
+
             modelBuilder.Entity("Eventiq.SeatService.Domain.Entity.Seat", b =>
                 {
-                    b.HasOne("Eventiq.SeatService.Domain.Entity.SeatMap", "SeatMap")
+                    b.HasOne("Eventiq.SeatService.Domain.Entity.SeatRow", "Row")
                         .WithMany("Seats")
-                        .HasForeignKey("SeatMapId")
+                        .HasForeignKey("RowId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
-                        .HasConstraintName("fk_seats_seat_maps_seat_map_id");
+                        .HasConstraintName("fk_seats_rows_row_id");
 
-                    b.Navigation("SeatMap");
+                    b.Navigation("Row");
                 });
 
             modelBuilder.Entity("Eventiq.SeatService.Domain.Entity.SeatMapVersion", b =>
@@ -334,13 +437,47 @@ namespace Eventiq.SeatService.Infrastructure.Persistence.Migrations
                     b.Navigation("SeatMap");
                 });
 
+            modelBuilder.Entity("Eventiq.SeatService.Domain.Entity.SeatRow", b =>
+                {
+                    b.HasOne("Eventiq.SeatService.Domain.Entity.SeatSection", "Section")
+                        .WithMany("Rows")
+                        .HasForeignKey("SectionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_rows_sections_section_id");
+
+                    b.Navigation("Section");
+                });
+
+            modelBuilder.Entity("Eventiq.SeatService.Domain.Entity.SeatSection", b =>
+                {
+                    b.HasOne("Eventiq.SeatService.Domain.Entity.SeatMap", "SeatMap")
+                        .WithMany("Sections")
+                        .HasForeignKey("SeatMapId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_sections_seat_maps_seat_map_id");
+
+                    b.Navigation("SeatMap");
+                });
+
             modelBuilder.Entity("Eventiq.SeatService.Domain.Entity.SeatMap", b =>
                 {
                     b.Navigation("Objects");
 
-                    b.Navigation("Seats");
+                    b.Navigation("Sections");
 
                     b.Navigation("Versions");
+                });
+
+            modelBuilder.Entity("Eventiq.SeatService.Domain.Entity.SeatRow", b =>
+                {
+                    b.Navigation("Seats");
+                });
+
+            modelBuilder.Entity("Eventiq.SeatService.Domain.Entity.SeatSection", b =>
+                {
+                    b.Navigation("Rows");
                 });
 #pragma warning restore 612, 618
         }
