@@ -9,7 +9,7 @@ public interface ISubmissionService
     Task<SubmissionResponse> SubmitEventAsync(Guid userId, Guid orgId, Guid eventId);
     Task<SubmissionResponse> AcceptEventAsync(Guid userId, string adminEmail, Guid eventId, UpdateSubmissioDto dto);
     Task<SubmissionResponse> RejectEventAsync(Guid userId, string adminEmail, Guid eventId, UpdateSubmissioDto dto);
-    Task<SubmissionResponse> CancelEventAsync(Guid userId, string adminEmail, Guid eventId, UpdateSubmissioDto dto);
+    Task<SubmissionResponse> CancelEventAsync(Guid userId, string userEmail, Guid orgId, Guid eventId, UpdateSubmissioDto dto);
 }
 
 

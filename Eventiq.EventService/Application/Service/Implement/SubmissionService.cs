@@ -101,7 +101,7 @@ public class SubmissionService : ISubmissionService
                 EventId = eventId,
                 AdminId = userId,
                 AdminEmail = adminEmail,
-                Message = dto.Message,
+                Message = string.IsNullOrWhiteSpace(dto.Message) ? "Approved" : dto.Message,
                 Status = EventStatus.Approved
             };
             await _uow.Submissions.AddAsync(eventId, submission);
@@ -154,20 +154,21 @@ public class SubmissionService : ISubmissionService
         }
     }
 
-    public async Task<SubmissionResponse> CancelEventAsync(Guid userId, string adminEmail, Guid eventId, UpdateSubmissioDto dto)
+    public async Task<SubmissionResponse> CancelEventAsync(Guid userId, string userEmail, Guid orgId, Guid eventId, UpdateSubmissioDto dto)
     {
         try
         {
             await _uow.BeginTransactionAsync();
             var evt = await _uow.Events.GetByIdAsync(eventId);
             EventGuards.EnsureExist(evt);
+            EventGuards.EnsureOwner(evt, orgId);
             EventGuards.EnsureStatus(evt, EventStatus.Pending);
             var submission = new Submission
             {
                 EventId = eventId,
                 AdminId = userId,
-                AdminEmail = adminEmail,
-                Message = dto.Message,
+                AdminEmail = userEmail,
+                Message = string.IsNullOrWhiteSpace(dto.Message) ? "Cancelled by organization" : dto.Message,
                 Status = EventStatus.Cancelled
             };
             await _uow.Submissions.AddAsync(eventId, submission);

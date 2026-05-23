@@ -6,7 +6,8 @@ public interface IRefreshTokenService
 {
     Task<string> GenerateRefreshToken(
         string userId,
-        Guid? organizationId = null
+        Guid? organizationId = null,
+        string? orgName = null
     );
 
     bool ValidateRefreshToken(RefreshTokenModel? refreshToken);

@@ -100,7 +100,7 @@ public class UserService:IUserService
         var accessToken = _jwt.GenerateAccessToken(user.Id, role.ToString(), claims);
         var oldRefreshToken = await _refresh.GetRefreshTokenModelByUserId(Guid.Parse(user.Id));
         await _refresh.RevokeRefreshToken(oldRefreshToken.Token);
-        var newRefreshToken = await _refresh.GenerateRefreshToken(user.Id, organizationId);
+        var newRefreshToken = await _refresh.GenerateRefreshToken(user.Id, organizationId, orgName);
 
         return new SwitchRoleRepsponse(
             accessToken,
@@ -143,6 +143,8 @@ public class UserService:IUserService
                 // Org still valid — keep the same org context
                 roleName = userRole.Role.Name;
                 claims["orgId"] = token.OrganizationId.Value.ToString();
+                if (!string.IsNullOrEmpty(token.OrgName))
+                    claims["orgName"] = token.OrgName;
             }
             else
             {
@@ -161,7 +163,7 @@ public class UserService:IUserService
             token.UserId.ToString(), roleName, claims
         );
         await _refresh.RevokeRefreshToken(refreshToken);
-        var newRefreshToken = await _refresh.GenerateRefreshToken(user.Id, orgIdForNewToken);
+        var newRefreshToken = await _refresh.GenerateRefreshToken(user.Id, orgIdForNewToken, token.OrgName);
         return new RefreshResponse(
             accessToken,
             newRefreshToken

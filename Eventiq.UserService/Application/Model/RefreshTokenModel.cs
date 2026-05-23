@@ -6,5 +6,5 @@ public class RefreshTokenModel
     public Guid UserId { get; set; }
     public DateTime Expires { get; set; }
     public Guid? OrganizationId { get; set; }
-
+    public string? OrgName { get; set; }
 }

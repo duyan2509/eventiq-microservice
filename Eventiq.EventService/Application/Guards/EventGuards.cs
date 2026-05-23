@@ -5,26 +5,27 @@ namespace Eventiq.EventService.Guards;
 
 public static class EventGuards
 {
-    public static void EnsureExist(EventModel e)
+    public static void EnsureExist(EventModel? e)
     {
         if(e==null)
             throw new NotFoundException("Not found event");
     }
 
-    public static void EnsureOwner(EventModel evt, Guid orgId)
+    public static void EnsureOwner(EventModel? evt, Guid orgId)
     {
-        if(evt.OrganizationId!=orgId)
+        if(evt?.OrganizationId!=orgId)
             throw new ForbiddenException("You are not the owner of this event");
     }
 
-    public static void EnsureDraft(EventModel evt)
+    public static void EnsureDraft(EventModel? evt)
     {
-        if(evt.Status!=EventStatus.Draft)
+        if(evt?.Status!=EventStatus.Draft)
             throw new BusinessException("Only draft events are supported");
     }
-    public static void EnsureStatus(EventModel evt, EventStatus status)
+
+    public static void EnsureStatus(EventModel? evt, EventStatus status)
     {
-        if(evt.Status!=status)
+        if(evt?.Status!=status)
             throw new BusinessException($"Your event is not in {status} status");
     }
 }

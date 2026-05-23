@@ -49,7 +49,8 @@ public class EventController : ControllerBase
         IFormFile? banner)
     {
         var userId = GetUserId();
-        var result = await _eventService.CreateEventAsync(userId, orgId, dto, banner);
+        var orgName = User.FindFirstValue("orgName") ?? string.Empty;
+        var result = await _eventService.CreateEventAsync(userId, orgId, orgName, dto, banner);
         return Ok(result);
     }
 

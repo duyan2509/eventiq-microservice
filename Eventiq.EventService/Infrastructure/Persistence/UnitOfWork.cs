@@ -67,6 +67,6 @@ public class UnitOfWork:IUnitOfWork
     public void Dispose()
     {
         _transaction?.Dispose();
-        _connection?.Dispose();
+        _transaction = null;
     }
 }

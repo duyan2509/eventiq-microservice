@@ -2,9 +2,7 @@ using AutoMapper;
 using Eventiq.EventService.Domain.Entity;
 using Eventiq.EventService.Domain.Repositories;
 using Eventiq.EventService.Dtos;
-using Eventiq.EventService.Extensions;
 using Eventiq.EventService.Guards;
-using Microsoft.EntityFrameworkCore;
 
 namespace Eventiq.EventService.Application.Service;
 
@@ -41,16 +39,17 @@ public class LegendService : ILegendService
             EventGuards.EnsureExist(evt);
             EventGuards.EnsureOwner(evt, orgId);
             var legend = _mapper.Map<Legend>(dto);
+            legend.Id = Guid.NewGuid();
             legend.EventId = evt.Id;
             await _uow.Legends.AddAsync(legend);
             await _uow.CommitAsync();
 
             return _mapper.Map<LegendResponse>(legend);
         }
-        catch (DbUpdateException ex) when (ex.IsUniqueConstraintViolation())
+        catch (Npgsql.PostgresException ex) when (ex.SqlState == "23505")
         {
             await _uow.RollbackAsync();
-            throw new BusinessException($"Event have already has legend name {dto.Name}");
+            throw new BusinessException($"Event already has a legend named '{dto.Name}'");
         }
         catch
         {
@@ -78,10 +77,10 @@ public class LegendService : ILegendService
 
             return _mapper.Map<LegendResponse>(updatedLegend);
         }
-        catch (DbUpdateException ex) when (ex.IsUniqueConstraintViolation())
+        catch (Npgsql.PostgresException ex) when (ex.SqlState == "23505")
         {
             await _uow.RollbackAsync();
-            throw new BusinessException($"Event have already has legend name {dto.Name}");
+            throw new BusinessException($"Event already has a legend named '{dto.Name}'");
         }
         catch
         {

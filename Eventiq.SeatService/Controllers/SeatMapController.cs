@@ -97,7 +97,7 @@ public class SeatMapController : ControllerBase
 
     private Guid GetOrgId()
     {
-        var orgClaim = User.FindFirst("org_id")?.Value;
+        var orgClaim = User.FindFirst("orgId")?.Value;
         return Guid.TryParse(orgClaim, out var orgId) ? orgId : throw new UnauthorizedException("Organization not found in token.");
     }
 }

@@ -14,9 +14,11 @@ public class EventProfileMapping : Profile
         CreateMap<SubmissionModel, SubmissionResponse>();
 
         CreateMap<LegendModel, LegendResponse>();
+        CreateMap<Legend, LegendResponse>();
         CreateMap<CreateLegendDto, Legend>();
         CreateMap<CreateChartDto, Chart>();
         CreateMap<ChartModel, ChartResponse>();
+        CreateMap<Chart, ChartResponse>();
         CreateMap<CreateSessionDto, Session> ();
         CreateMap<SessionModel, SessionResponse>();
         CreateMap<Session, SessionResponse>();

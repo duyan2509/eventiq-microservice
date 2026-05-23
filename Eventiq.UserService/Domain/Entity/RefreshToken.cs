@@ -7,5 +7,6 @@ public class RefreshToken:BaseEntity
     public Guid UserId { get; set; }
     public virtual User User { get; set; }
     public Guid? OrganizationId { get; set; }
+    public string? OrgName { get; set; }
 }
 

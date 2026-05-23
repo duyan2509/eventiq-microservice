@@ -14,7 +14,7 @@ public class RefreshTokenService:IRefreshTokenService
         _refreshTokenRepository = refreshTokenRepository;
     }
 
-    public async Task<string> GenerateRefreshToken(string userId, Guid? organizationId = null)
+    public async Task<string> GenerateRefreshToken(string userId, Guid? organizationId = null, string? orgName = null)
     {
         var token = Convert.ToBase64String(
             RandomNumberGenerator.GetBytes(64)
@@ -24,7 +24,8 @@ public class RefreshTokenService:IRefreshTokenService
             UserId = Guid.Parse(userId),
             Token = token,
             Expires = DateTime.UtcNow.AddDays(5),
-            OrganizationId = organizationId
+            OrganizationId = organizationId,
+            OrgName = orgName
         };
         await _refreshTokenRepository.AddRefreshToken(refresToken);
         return token;

@@ -43,7 +43,7 @@ public class EventService : IEventService
         };
     }
 
-    public async Task<EventQuickViewData> CreateEventAsync(Guid userId, Guid orgId, CreateEventDto dto, IFormFile? banner = null)
+    public async Task<EventQuickViewData> CreateEventAsync(Guid userId, Guid orgId, string orgName, CreateEventDto dto, IFormFile? banner = null)
     {
         // Upload banner to Azure Blob Storage if provided
         string? bannerUrl = null;
@@ -57,7 +57,7 @@ public class EventService : IEventService
         {
             Id = Guid.NewGuid(),
             OrganizationId = orgId,
-            OrganizationName = string.Empty,
+            OrganizationName = orgName,
             OranizationAvatar = null,
             EventBanner = bannerUrl,
             Name = dto.Name,
