@@ -1,16 +1,16 @@
-using System.Net.Http.Json;
+using Eventiq.Contracts.Grpc;
 using Eventiq.EventService.Application.Service;
 
 namespace Eventiq.EventService.Infrastructure.Http;
 
 public class SeatServiceClient : ISeatServiceClient
 {
-    private readonly HttpClient _httpClient;
+    private readonly SeatInternal.SeatInternalClient _grpcClient;
     private readonly ILogger<SeatServiceClient> _logger;
 
-    public SeatServiceClient(HttpClient httpClient, ILogger<SeatServiceClient> logger)
+    public SeatServiceClient(SeatInternal.SeatInternalClient grpcClient, ILogger<SeatServiceClient> logger)
     {
-        _httpClient = httpClient;
+        _grpcClient = grpcClient;
         _logger = logger;
     }
 
@@ -18,9 +18,9 @@ public class SeatServiceClient : ISeatServiceClient
     {
         try
         {
-            var result = await _httpClient.GetFromJsonAsync<PublishedCheckResponse>(
-                $"api/internal/seat-maps/published?eventId={eventId}");
-            return result?.HasSeatMap == true;
+            var response = await _grpcClient.CheckSeatMapPublishedAsync(
+                new CheckSeatMapPublishedRequest { EventId = eventId.ToString() });
+            return response.IsPublished;
         }
         catch (Exception ex)
         {
@@ -33,9 +33,9 @@ public class SeatServiceClient : ISeatServiceClient
     {
         try
         {
-            var result = await _httpClient.GetFromJsonAsync<HasDesignResponse>(
-                $"api/internal/seat-maps/has-design?eventId={eventId}");
-            return result?.HasDesign == true;
+            var response = await _grpcClient.CheckSeatMapDesignAsync(
+                new CheckSeatMapDesignRequest { EventId = eventId.ToString() });
+            return response.HasDesign;
         }
         catch (Exception ex)
         {
@@ -43,7 +43,4 @@ public class SeatServiceClient : ISeatServiceClient
             return false;
         }
     }
-
-    private record PublishedCheckResponse(bool HasSeatMap);
-    private record HasDesignResponse(bool HasDesign);
 }

@@ -140,6 +140,19 @@ public class LegendRepository : BaseRepository, ILegendRepository
             );
     }
 
+    public async Task<List<Legend>> GetByIdsAsync(IEnumerable<Guid> legendIds)
+    {
+        var ids = legendIds.ToArray();
+        if (ids.Length == 0) return new List<Legend>();
+
+        const string sql = @"
+            SELECT id, name, color, price, event_id
+            FROM legends
+            WHERE id = ANY(@Ids) AND is_deleted = false";
+        var result = await _connection.QueryAsync<Legend>(sql, new { Ids = ids }, _transaction);
+        return result.ToList();
+    }
+
     public async Task<int> DeleteAsync(Guid eventId, Guid orgId, Guid legendId)
     {
         var sql = @"

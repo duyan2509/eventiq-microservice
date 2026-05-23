@@ -1,11 +1,13 @@
 using Eventiq.OrganizationService;
 using Eventiq.OrganizationService.Extensions;
+using Eventiq.OrganizationService.Grpc;
 using Eventiq.OrganizationService.Infrastructure.Persistence;
 using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
+builder.Services.AddGrpc();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.AddApplicationServices();
@@ -23,4 +25,5 @@ app.UseMiddleware<GlobalExceptionMiddleware>();
 app.UseHttpsRedirection();
 app.UseSerilogRequestLogging();
 app.MapControllers();
+app.MapGrpcService<OrgInternalGrpcService>();
 app.Run();

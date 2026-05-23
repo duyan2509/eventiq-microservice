@@ -164,6 +164,26 @@ public class SessionRepository : BaseRepository, ISessionRepository
         return result.ToList();
     }
 
+    public async Task<SessionInternalModel?> GetSessionInternalAsync(Guid sessionId)
+    {
+        const string sql = @"
+            SELECT s.id AS SessionId,
+                   s.name AS SessionName,
+                   s.start_time AS StartTime,
+                   s.end_time AS EndTime,
+                   s.event_id AS EventId,
+                   e.name AS EventName,
+                   e.organization_id AS OrgId
+            FROM sessions s
+            JOIN events e ON e.id = s.event_id
+            WHERE s.id = @SessionId
+              AND s.is_deleted = false
+              AND e.is_deleted = false
+            LIMIT 1";
+        return await _connection.QueryFirstOrDefaultAsync<SessionInternalModel>(
+            sql, new { SessionId = sessionId }, _transaction);
+    }
+
     public async Task<bool> CheckOverlappedAsync(Guid eventId, Guid sessionId, DateTime sessionStartTime, DateTime sessionEndTime)
     {
         var sql = $@"

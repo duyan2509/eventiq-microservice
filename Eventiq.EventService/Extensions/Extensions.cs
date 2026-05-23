@@ -18,11 +18,12 @@ public static class Extensions
     {
         builder.Host.UseEventiqSerilog();
         builder.Services.AddHttpClient();
-        builder.Services.AddHttpClient<ISeatServiceClient, SeatServiceClient>(client =>
+        var seatServiceUrl = builder.Configuration["InternalServices:SeatServiceBaseUrl"] ?? "http://localhost:5234";
+        builder.Services.AddGrpcClient<Eventiq.Contracts.Grpc.SeatInternal.SeatInternalClient>(o =>
         {
-            var baseUrl = builder.Configuration["InternalServices:SeatServiceBaseUrl"] ?? "http://localhost:5234";
-            client.BaseAddress = new Uri(baseUrl);
+            o.Address = new Uri(seatServiceUrl);
         });
+        builder.Services.AddScoped<ISeatServiceClient, SeatServiceClient>();
         builder.Services.AddServices(builder.Configuration)
             .AddInfrastructure(builder.Configuration);
         builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());

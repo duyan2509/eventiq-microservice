@@ -12,4 +12,5 @@ public interface ILegendRepository
 
     Task<LegendModel?> UpdatePartialAsync(Guid legendId, Guid eventId, UpdateLegendDto dto);
     Task<int> DeleteAsync(Guid eventId, Guid orgId, Guid legendId);
+    Task<List<Legend>> GetByIdsAsync(IEnumerable<Guid> legendIds);
 }
