@@ -1,7 +1,13 @@
 """Build a NetworkX graph of the 5 service schemas.
 
 Nodes are fully-qualified table names (`<schema>.<table>` or
-`<schema>."<Table>"`). Edges carry join column metadata in `col_a`/`col_b`.
+`<schema>."<Table>"`). Edge data:
+
+    edge['cols'] = {<node_u>: <col_on_u>, <node_v>: <col_on_v>}
+
+Keying columns by node (rather than positional col_a/col_b) lets
+downstream code emit JOIN hints in the right direction regardless of
+the path traversal order.
 """
 from __future__ import annotations
 
@@ -63,7 +69,7 @@ def build_graph(
             continue
         g.add_node(table_a)
         g.add_node(table_b)
-        g.add_edge(table_a, table_b, col_a=col_a, col_b=col_b)
+        g.add_edge(table_a, table_b, cols={table_a: col_a, table_b: col_b})
     return g
 
 
