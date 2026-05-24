@@ -2,10 +2,15 @@
 schema graph, entity extraction, and prompt context."""
 
 SYSTEM_TABLES = frozenset({
+    # PascalCase variants (user_service, org_service)
     "InboxState",
     "OutboxState",
     "OutboxMessage",
     "__EFMigrationsHistory",
+    # snake_case variants (event_service, seat_service, payment_service)
+    "inbox_state",
+    "outbox_state",
+    "outbox_message",
 })
 
 
