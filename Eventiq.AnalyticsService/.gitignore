@@ -6,3 +6,4 @@ __pycache__/
 *.pyo
 .pytest_cache/
 schema_dump.json
+test_questions_report.json
