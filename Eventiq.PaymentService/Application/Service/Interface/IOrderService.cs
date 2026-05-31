@@ -7,4 +7,5 @@ public interface IOrderService
 {
     Task<List<Order>> GetMyOrdersAsync(Guid userId);
     Task<List<TicketDetailDto>> GetTicketsByOrderAsync(Guid orderId, Guid userId);
+    Task<List<Order>> GetAllOrdersAsync(int page, int size);
 }

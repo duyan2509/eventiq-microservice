@@ -25,6 +25,7 @@ public static class Extensions
         builder.Services.AddScoped<ICheckoutService, CheckoutService>();
         builder.Services.AddScoped<IWebhookService, WebhookService>();
         builder.Services.AddScoped<IOrderService, OrderService>();
+        builder.Services.AddScoped<IAnalyticsService, AnalyticsService>();
 
         // gRPC clients
         var eventServiceUrl = builder.Configuration["InternalServices:EventServiceBaseUrl"] ?? "http://localhost:5332";

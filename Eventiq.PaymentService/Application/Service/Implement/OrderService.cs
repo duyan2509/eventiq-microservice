@@ -28,6 +28,15 @@ public class OrderService : IOrderService
             .ToListAsync();
     }
 
+    public async Task<List<Order>> GetAllOrdersAsync(int page, int size)
+    {
+        return await _dbContext.Orders
+            .OrderByDescending(o => o.CreatedAt)
+            .Skip((page - 1) * size)
+            .Take(size)
+            .ToListAsync();
+    }
+
     public async Task<List<TicketDetailDto>> GetTicketsByOrderAsync(Guid orderId, Guid userId)
     {
         var order = await _dbContext.Orders

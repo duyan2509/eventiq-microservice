@@ -32,4 +32,12 @@ public class OrderController : ControllerBase
         var tickets = await _orderService.GetTicketsByOrderAsync(orderId, userId);
         return Ok(tickets);
     }
+
+    [HttpGet("all")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> GetAllOrders([FromQuery] int page = 1, [FromQuery] int size = 20)
+    {
+        var orders = await _orderService.GetAllOrdersAsync(page, size);
+        return Ok(orders.Select(OrderResponse.From));
+    }
 }
