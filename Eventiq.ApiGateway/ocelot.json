@@ -72,6 +72,13 @@
       ]
     },
     {
+      "DownstreamPathTemplate": "/api/auth/verify-reset-token",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [{ "Host": "localhost", "Port": 5228 }],
+      "UpstreamPathTemplate": "/gateway/auth/verify-reset-token",
+      "UpstreamHttpMethod": ["GET"]
+    },
+    {
       "DownstreamPathTemplate": "/api/auth/{everything}",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [

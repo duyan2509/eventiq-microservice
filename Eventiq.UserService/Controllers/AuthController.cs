@@ -124,6 +124,14 @@ public class AuthController : ControllerBase
         return Ok(new { message = "If the email exists, a reset link has been sent." });
     }
 
+    [HttpGet("verify-reset-token")]
+    public async Task<ActionResult> VerifyResetToken([FromQuery] string token)
+    {
+        var valid = await _userService.VerifyResetToken(token);
+        if (!valid) return BadRequest(new { message = "Token is invalid or expired." });
+        return Ok(new { valid = true });
+    }
+
     [HttpPost("reset-password")]
     public async Task<ActionResult<bool>> ResetPassword([FromBody] ResetPasswordRequest dto)
     {

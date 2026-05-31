@@ -19,7 +19,7 @@ public class PasswordResetRequestedConsumer(
         var model = new PasswordResetTemplateModel
         {
             EmailAddress = message.EmailAddress,
-            ResetToken = message.ResetToken,
+            ResetUrl = message.ResetUrl,
             ExpireAt = message.ExpireAt
         };
 

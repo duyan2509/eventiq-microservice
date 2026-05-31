@@ -29,6 +29,7 @@ public class UserService:IUserService
     private readonly IPublishEndpoint _publishEndpoint;
     private readonly IBlobService _blobService;
     private readonly IBanBlacklistService? _blacklist;
+    private readonly IConfiguration _config;
 
     public UserService(
         IJwtService jwt,
@@ -41,6 +42,7 @@ public class UserService:IUserService
         IPublishEndpoint publishEndpoint,
         IBlobService blobService,
         IMapper mapper,
+        IConfiguration config,
         IBanBlacklistService? blacklist = null)
     {
         _jwt = jwt;
@@ -53,6 +55,7 @@ public class UserService:IUserService
         _publishEndpoint = publishEndpoint;
         _blobService = blobService;
         _mapper = mapper;
+        _config = config;
         _blacklist = blacklist;
     }
     public async Task<LoginResponse> Login(LoginDto dto)
@@ -284,54 +287,58 @@ public class UserService:IUserService
         var user = await _userRepository.GetUserByEmail(email);
         if (user == null)
             throw new NotFoundException($"User not found with email {email}");
-        
-        // Remove old tokens for this user
+
         await _passwordResetTokenRepository.RemoveTokensByUserId(Guid.Parse(user.Id));
 
-        // Generate a new token
-        var resetToken = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32));
+        // Raw token goes to user via email; only the SHA-256 hash is stored.
+        var rawToken = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32));
+        var tokenHash = PasswordHash.SHA256Hash(rawToken);
         var expires = DateTime.UtcNow.AddMinutes(30);
 
-        var passwordResetToken = new PasswordResetToken
+        await _passwordResetTokenRepository.AddToken(new PasswordResetToken
         {
-            Token = resetToken,
+            TokenHash = tokenHash,
             Expires = expires,
             UserId = Guid.Parse(user.Id),
-        };
+        });
 
-        await _passwordResetTokenRepository.AddToken(passwordResetToken);
+        var frontendBase = _config["Frontend:BaseUrl"] ?? "http://localhost:5173";
+        var resetUrl = $"{frontendBase}/reset-password?token={Uri.EscapeDataString(rawToken)}";
 
-        // Publish event to EmailService
         await _publishEndpoint.Publish(new PasswordResetRequested
         {
             EmailAddress = email,
-            ResetToken = resetToken,
+            ResetUrl = resetUrl,
             ExpireAt = expires
         });
     }
 
-    public async Task<bool> ResetPassword(string token, string newPassword)
+    public async Task<bool> VerifyResetToken(string rawToken)
     {
-        var resetToken = await _passwordResetTokenRepository.GetByToken(token);
-        if (resetToken == null)
-            throw new NotFoundException("Invalid or expired reset token");
-        
-        if (DateTime.UtcNow > resetToken.Expires)
-        {
-            await _passwordResetTokenRepository.RemoveToken(resetToken);
-            throw new BadRequestException("Reset token has expired");
-        }
+        var tokenHash = PasswordHash.SHA256Hash(rawToken);
+        var record = await _passwordResetTokenRepository.GetByTokenHash(tokenHash);
+        if (record == null || record.IsUsed || DateTime.UtcNow > record.Expires)
+            return false;
+        return true;
+    }
 
-        var user = await _userRepository.GetTrackingUserById(resetToken.UserId);
-        if (user == null)
-            throw new NotFoundException($"User not found");
+    public async Task<bool> ResetPassword(string rawToken, string newPassword)
+    {
+        var tokenHash = PasswordHash.SHA256Hash(rawToken);
+        var record = await _passwordResetTokenRepository.GetByTokenHash(tokenHash);
+        if (record == null)
+            throw new NotFoundException("Invalid or expired reset token");
+        if (record.IsUsed)
+            throw new BadRequestException("Reset token has already been used");
+        if (DateTime.UtcNow > record.Expires)
+            throw new BadRequestException("Reset token has expired");
+
+        var user = await _userRepository.GetTrackingUserById(record.UserId);
+        if (user == null) throw new NotFoundException("User not found");
 
         user.PasswordHash = PasswordHash.SHA256Hash(newPassword);
         await _userRepository.UpdateUser(user);
-
-        // Clean up used token
-        await _passwordResetTokenRepository.RemoveToken(resetToken);
-
+        await _passwordResetTokenRepository.RemoveToken(record);
         return true;
     }
 

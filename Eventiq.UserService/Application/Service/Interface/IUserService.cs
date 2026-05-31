@@ -22,7 +22,8 @@ public interface IUserService
     Task<UserDto> ChangePassword(Guid userId, ChangePasswordRequest dto);
     Task<SwitchRoleRepsponse> SwitchRole(Guid userId, Guid organizationId, string? orgName = null);
     Task ForgotPassword(string email);
-    Task<bool> ResetPassword(string token, string newPassword);
+    Task<bool> VerifyResetToken(string rawToken);
+    Task<bool> ResetPassword(string rawToken, string newPassword);
     Task<SwitchRoleRepsponse> SwitchToUser(Guid userId);
     Task<string> UpdateAvatarAsync(Guid userId, IFormFile file);
     Task DeleteAvatarAsync(Guid userId);

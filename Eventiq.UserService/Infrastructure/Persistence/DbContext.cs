@@ -79,7 +79,7 @@ public sealed class EvtUserDbContext : DbContext
         modelBuilder.Entity<PasswordResetToken>(e =>
         {
             e.HasKey(x => x.Id);
-            e.HasIndex(x => x.Token).IsUnique();
+            e.HasIndex(x => x.TokenHash).IsUnique();
         });
 
         foreach (var entityType in modelBuilder.Model.GetEntityTypes())
