@@ -2,6 +2,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using Eventiq.EventService.Application.Service;
 using Eventiq.EventService.Consumers;
+using Eventiq.EventService.Infrastructure.Persistence;
 using Eventiq.EventService.Helper;
 using Eventiq.EventService.Infrastructure;
 using Eventiq.EventService.Infrastructure.Http;
@@ -59,6 +60,17 @@ public static class Extensions
         builder.Services.AddMassTransit(x =>
         {
             x.AddConsumer<PaymentConfiguredConsumer>();
+            x.AddConsumer<PaymentCompletedConsumer>(c =>
+            {
+                c.UseMessageRetry(r =>
+                    r.Exponential(5, TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(5)));
+            });
+
+            x.AddEntityFrameworkOutbox<EvtEventDbContext>(o =>
+            {
+                o.UsePostgres();
+                o.UseBusOutbox();
+            });
 
             if (builder.Environment.IsDevelopment())
                 x.UsingRabbitMq((context, cfg) =>

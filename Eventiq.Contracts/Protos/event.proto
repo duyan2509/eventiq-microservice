@@ -78,4 +78,6 @@ message TicketDetail {
   double price = 4;
   string qr_code = 5;
   bool is_checked_in = 6;
+  string issued_at = 7;
+  string checked_in_at = 8;
 }

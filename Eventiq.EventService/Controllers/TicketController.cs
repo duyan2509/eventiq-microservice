@@ -24,12 +24,22 @@ public class TicketController : ControllerBase
         return Ok(tickets.Select(TicketResponse.From));
     }
 
-    [HttpPost("{ticketId:guid}/checkin")]
-    [Authorize(Roles = "Staff,OrgOwner")]
-    public async Task<IActionResult> CheckIn(Guid ticketId)
+    [HttpGet("events/{eventId:guid}/checkins")]
+    [Authorize(Roles = "Staff,Organization")]
+    public async Task<IActionResult> GetEventCheckIns(Guid eventId)
+    {
+        var items = await _ticketService.GetCheckedInByEventAsync(eventId);
+        return Ok(items);
+    }
+
+    [HttpPost("checkin")]
+    [Authorize(Roles = "Staff,Organization")]
+    public async Task<IActionResult> CheckIn([FromBody] CheckInRequest req)
     {
         var staffId = Guid.Parse(User.FindFirst("sub")!.Value);
-        await _ticketService.CheckInAsync(ticketId, staffId);
-        return Ok();
+        var ticket = await _ticketService.CheckInAsync(req.Token, staffId);
+        return Ok(TicketResponse.From(ticket));
     }
 }
+
+public record CheckInRequest(string Token);

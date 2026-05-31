@@ -20,7 +20,7 @@ public class SessionController : ControllerBase
         _logger = logger;
     }
 
-    [Authorize(Roles = $"{nameof(AppRoles.Organization)},{nameof(AppRoles.Staff)}")]
+    [AllowAnonymous]
     [HttpGet]
     public async Task<ActionResult<PaginatedResult<SessionResponse>>> GetAllSessions(
         Guid eventId,
@@ -72,7 +72,7 @@ public class SessionController : ControllerBase
 
     private Guid GetUserId()
     {
-        var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var userIdStr = User.FindFirstValue("sub");
         if (string.IsNullOrEmpty(userIdStr) || !Guid.TryParse(userIdStr, out var userId))
             throw new UnauthorizedException("User id is required");
         return userId;

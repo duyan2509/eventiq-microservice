@@ -86,7 +86,7 @@ public class EventController : ControllerBase
 
     private Guid GetUserId()
     {
-        var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var userIdStr = User.FindFirstValue("sub");
         if (string.IsNullOrEmpty(userIdStr) || !Guid.TryParse(userIdStr, out var userId))
             throw new UnauthorizedException("User id is required");
         return userId;
@@ -94,7 +94,7 @@ public class EventController : ControllerBase
 
     private Guid GetUserIdOrDefault()
     {
-        var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var userIdStr = User.FindFirstValue("sub");
         if (!string.IsNullOrEmpty(userIdStr) && Guid.TryParse(userIdStr, out var userId))
             return userId;
         return Guid.Empty;

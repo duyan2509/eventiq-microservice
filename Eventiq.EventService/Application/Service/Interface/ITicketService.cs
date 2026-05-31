@@ -6,5 +6,15 @@ public interface ITicketService
 {
     Task<List<Ticket>> IssueAsync(Guid orderId, Guid sessionId, List<(Guid SeatId, string SeatLabel, string LegendName, decimal Price)> seats);
     Task<List<Ticket>> GetByOrderAsync(Guid orderId);
-    Task CheckInAsync(Guid ticketId, Guid staffUserId);
+    Task<List<EventCheckInItem>> GetCheckedInByEventAsync(Guid eventId);
+    Task<Ticket> CheckInAsync(string signedToken, Guid staffUserId);
 }
+
+public record EventCheckInItem(
+    Guid TicketId,
+    string SeatLabel,
+    string LegendName,
+    decimal Price,
+    string SessionName,
+    DateTime SessionStart,
+    DateTime CheckedInAt);

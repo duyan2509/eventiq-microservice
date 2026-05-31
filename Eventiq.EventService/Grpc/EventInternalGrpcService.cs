@@ -108,7 +108,9 @@ public class EventInternalGrpcService : EventInternal.EventInternalBase
                 LegendName = t.LegendName,
                 Price = (double)t.Price,
                 QrCode = t.QRCode,
-                IsCheckedIn = t.IsCheckedIn
+                IsCheckedIn = t.IsCheckedIn,
+                IssuedAt = t.IssuedAt.ToString("O"),
+                CheckedInAt = t.CheckedInAt?.ToString("O") ?? string.Empty
             });
         return response;
     }

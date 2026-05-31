@@ -1,5 +1,6 @@
 using Eventiq.EventService.Application.Service.Implement;
 using Eventiq.EventService.Application.Service.Interface;
+using Eventiq.EventService.Application.Utility;
 using Eventiq.EventService.Infrastructure.Http;
 using Eventiq.EventService.Infrastructure.Persistence;
 
@@ -16,6 +17,7 @@ public static class DependencyInjection
         services.AddScoped<IChartService, ChartService>();
         services.AddScoped<ITicketService, TicketService>();
         services.AddScoped<IUnitOfWork, UnitOfWork>();
+        services.AddSingleton<TicketSigner>();
 
         return services;
     }
