@@ -111,6 +111,7 @@ public static class ServiceExtensions
             x.AddConsumer<StaffRemovedConsumer>();
             x.AddConsumer<EventApprovedConsumer>();
             x.AddConsumer<SessionSeatMapCloneConsumer>();
+            x.AddConsumer<PaymentCompletedConsumer>();
 
             if (builder.Environment.IsDevelopment())
             {

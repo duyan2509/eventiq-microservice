@@ -99,6 +99,38 @@ public class SeatReservationService : ISeatReservationService
         return true;
     }
 
+    public async Task<HoldStatusResult> GetHoldStatusAsync(Guid seatMapId, IReadOnlyList<Guid> seatIds, Guid userId)
+    {
+        if (seatIds.Count == 0)
+            return new HoldStatusResult(false, Error: "No seats specified.");
+
+        var seats = await _seats.GetByIdsAsync(seatIds);
+        if (seats.Count != seatIds.Count)
+            return new HoldStatusResult(false, Error: "Some seats not found.");
+
+        foreach (var seat in seats)
+        {
+            if (seat.SeatMapId != seatMapId)
+                return new HoldStatusResult(false, Error: $"Seat {seat.Label} does not belong to this seat map.");
+
+            if (seat.Status != SeatStatus.Holding)
+                return new HoldStatusResult(false, Error: $"Seat {seat.Label} is no longer held.");
+
+            if (seat.HeldBy != userId)
+                return new HoldStatusResult(false, Error: $"Seat {seat.Label} is held by another user.");
+
+            if (seat.HeldUntil == null || seat.HeldUntil < DateTime.UtcNow)
+                return new HoldStatusResult(false, Error: $"Hold on seat {seat.Label} has expired.");
+        }
+
+        var heldUntil = seats.Min(s => s.HeldUntil!.Value);
+        var info = seats
+            .Select(s => new HeldSeatInfo(s.Id, s.Label, s.SeatNumber, s.LegendId))
+            .ToList();
+
+        return new HoldStatusResult(true, HeldUntil: heldUntil, Seats: info);
+    }
+
     public async Task<MarkSoldResult> MarkSoldAsync(IReadOnlyList<Guid> seatIds, Guid userId)
     {
         if (seatIds.Count == 0)

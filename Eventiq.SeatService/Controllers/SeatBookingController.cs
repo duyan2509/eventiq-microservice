@@ -22,6 +22,27 @@ public class SeatBookingController : ControllerBase
         _broadcaster = broadcaster;
     }
 
+    [HttpGet("hold")]
+    public async Task<IActionResult> GetHoldStatus(Guid seatMapId, [FromQuery] string seatIds)
+    {
+        var userId = GetUserId();
+        var ids = (seatIds ?? string.Empty)
+            .Split(',', StringSplitOptions.RemoveEmptyEntries)
+            .Select(s => Guid.TryParse(s, out var g) ? g : Guid.Empty)
+            .Where(g => g != Guid.Empty)
+            .ToList();
+
+        var result = await _reservation.GetHoldStatusAsync(seatMapId, ids, userId);
+        if (!result.Valid)
+            return Conflict(new { error = result.Error });
+
+        return Ok(new
+        {
+            heldUntil = result.HeldUntil,
+            seats = result.Seats
+        });
+    }
+
     [HttpPost("hold")]
     public async Task<IActionResult> Hold(Guid seatMapId, [FromBody] HoldSeatsRequest request)
     {
