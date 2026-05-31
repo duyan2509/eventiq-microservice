@@ -21,11 +21,11 @@ public class PasswordResetTokenRepository : IPasswordResetTokenRepository
         await _context.SaveChangesAsync();
     }
 
-    public async Task<PasswordResetToken?> GetByToken(string token)
+    public async Task<PasswordResetToken?> GetByTokenHash(string tokenHash)
     {
         return await _tokens
             .Include(t => t.User)
-            .FirstOrDefaultAsync(t => t.Token == token);
+            .FirstOrDefaultAsync(t => t.TokenHash == tokenHash && !t.IsUsed);
     }
 
     public async Task RemoveToken(PasswordResetToken token)
