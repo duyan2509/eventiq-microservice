@@ -41,7 +41,7 @@ public class OrganizationController : ControllerBase
         Guid id,
         CancellationToken cancellationToken = default)
     {
-        var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var userIdStr = User.FindFirstValue("sub");
         Guid? requesterId = Guid.TryParse(userIdStr, out var parsedId) ? parsedId : null;
 
         var item = await _organizationService.GetByIdAsync(id, requesterId, cancellationToken);
@@ -56,7 +56,7 @@ public class OrganizationController : ControllerBase
         [FromQuery] int size = 10,
         CancellationToken cancellationToken = default)
     {
-        var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var userIdStr = User.FindFirstValue("sub");
         if (string.IsNullOrEmpty(userIdStr) || !Guid.TryParse(userIdStr, out var userId))
             throw new UnauthorizedException("User id is required");
 
@@ -73,7 +73,7 @@ public class OrganizationController : ControllerBase
         [FromBody] OrganizationDto dto,
         CancellationToken cancellationToken = default)
     {
-        var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var userIdStr = User.FindFirstValue("sub");
         if (string.IsNullOrEmpty(userIdStr) || !Guid.TryParse(userIdStr, out var userId))
             throw new UnauthorizedException("User id is required");
 
@@ -92,7 +92,7 @@ public class OrganizationController : ControllerBase
         [FromBody] UpdateOrganizationDto dto,
         CancellationToken cancellationToken = default)
     {
-        var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var userIdStr = User.FindFirstValue("sub");
         if (string.IsNullOrEmpty(userIdStr) || !Guid.TryParse(userIdStr, out var userId))
             throw new UnauthorizedException("User id is required");
 

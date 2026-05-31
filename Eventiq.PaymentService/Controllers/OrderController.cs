@@ -24,4 +24,12 @@ public class OrderController : ControllerBase
         var orders = await _orderService.GetMyOrdersAsync(userId);
         return Ok(orders.Select(OrderResponse.From));
     }
+
+    [HttpGet("{orderId:guid}/tickets")]
+    public async Task<IActionResult> GetTickets(Guid orderId)
+    {
+        var userId = Guid.Parse(User.FindFirst("sub")!.Value);
+        var tickets = await _orderService.GetTicketsByOrderAsync(orderId, userId);
+        return Ok(tickets);
+    }
 }

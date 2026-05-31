@@ -22,7 +22,7 @@ public class UserController:ControllerBase
     [HttpPatch("{userId}/ban")]
     public async Task<ActionResult> BanUser([FromRoute] Guid userId,[FromBody] BanUserRequest dto)
     {
-        var adminIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var adminIdStr = User.FindFirstValue("sub");
         if (string.IsNullOrEmpty(adminIdStr) || !Guid.TryParse(adminIdStr, out var parsedAdminId))
             throw new UnauthorizedException("User id is required");
         var rs = await _userService.BanUser(parsedAdminId,userId, dto);
@@ -31,7 +31,7 @@ public class UserController:ControllerBase
     [HttpPatch("{userId}/unban")]
     public async Task<ActionResult> UnBanUser([FromRoute] Guid userId,[FromBody] BanUserRequest dto)
     {
-        var adminIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var adminIdStr = User.FindFirstValue("sub");
         if (string.IsNullOrEmpty(adminIdStr) || !Guid.TryParse(adminIdStr, out var parsedAdminId))
             throw new UnauthorizedException("User id is required");
         var rs = await _userService.UnbanUser(parsedAdminId,userId);

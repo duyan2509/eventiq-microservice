@@ -1,11 +1,164 @@
+using Eventiq.Contracts.Grpc;
 using Eventiq.PaymentService.Application.Service.Interface;
+using Eventiq.PaymentService.Domain.Entity;
+using Eventiq.PaymentService.Domain.Enums;
+using Eventiq.PaymentService.Infrastructure.Persistence;
+using Microsoft.EntityFrameworkCore;
+using Stripe;
+using Stripe.Checkout;
 
 namespace Eventiq.PaymentService.Application.Service.Implement;
 
 public class CheckoutService : ICheckoutService
 {
-    public Task<string> CreateAsync(Guid userId, Guid sessionId, List<Guid> seatIds)
+    private readonly PaymentDbContext _dbContext;
+    private readonly EventInternal.EventInternalClient _eventClient;
+    private readonly SeatInternal.SeatInternalClient _seatClient;
+    private readonly OrgInternal.OrgInternalClient _orgClient;
+    private readonly IConfiguration _config;
+
+    public CheckoutService(
+        PaymentDbContext dbContext,
+        EventInternal.EventInternalClient eventClient,
+        SeatInternal.SeatInternalClient seatClient,
+        OrgInternal.OrgInternalClient orgClient,
+        IConfiguration config)
     {
-        throw new NotImplementedException();
+        _dbContext = dbContext;
+        _eventClient = eventClient;
+        _seatClient = seatClient;
+        _orgClient = orgClient;
+        _config = config;
+    }
+
+    public async Task<string> CreateAsync(Guid userId, Guid sessionId, List<Guid> seatIds)
+    {
+        // 1. Validate seats are still Holding by this user
+        var seatRequest = new GetSeatsRequest();
+        seatRequest.SeatIds.AddRange(seatIds.Select(id => id.ToString()));
+        var seatsResponse = await _seatClient.GetSeatsAsync(seatRequest);
+
+        foreach (var seat in seatsResponse.Seats)
+        {
+            if (seat.Status != "Holding" || seat.HeldBy != userId.ToString())
+                throw new BusinessException($"Seat {seat.Label} is no longer held by current user");
+        }
+
+        // 2. Get legend prices from EventService
+        var legendIds = seatsResponse.Seats
+            .Where(s => !string.IsNullOrEmpty(s.LegendId))
+            .Select(s => s.LegendId)
+            .Distinct()
+            .ToList();
+
+        var legendRequest = new GetLegendsRequest();
+        legendRequest.LegendIds.AddRange(legendIds);
+        var legendResponse = await _eventClient.GetLegendsAsync(legendRequest);
+        var legendMap = legendResponse.Legends.ToDictionary(l => l.LegendId);
+
+        // 3. Get session + event info
+        var sessionInfo = await _eventClient.GetSessionAsync(
+            new GetSessionRequest { SessionId = sessionId.ToString() });
+
+        // 4. Get org Stripe account + platform fee rate
+        var paymentStatus = await _orgClient.GetPaymentStatusAsync(
+            new GetPaymentStatusRequest { OrgId = sessionInfo.OrgId });
+        if (!paymentStatus.IsActive)
+            throw new BusinessException("Organization Stripe account is not configured");
+
+        var platformConfig = await _orgClient.GetPlatformConfigAsync(new());
+
+        // 5. Idempotency: return existing open Stripe session if available
+        var existingOrder = await _dbContext.Orders
+            .FirstOrDefaultAsync(o => o.UserId == userId && o.SessionId == sessionId
+                                      && o.Status == OrderStatus.Pending);
+        if (existingOrder != null)
+        {
+            StripeConfiguration.ApiKey = _config["Stripe:SecretKey"];
+            var existing = await new SessionService().GetAsync(existingOrder.StripeSessionId);
+            if (existing.Status == "open")
+                return existing.Url;
+
+            existingOrder.Status = OrderStatus.Failed;
+            await _dbContext.SaveChangesAsync();
+        }
+
+        // 6. Build seat snapshot + totals
+        var items = seatsResponse.Seats.Select(seat =>
+        {
+            var legend = legendMap.GetValueOrDefault(seat.LegendId);
+            return new OrderItem
+            {
+                SeatId = Guid.Parse(seat.SeatId),
+                SeatLabel = seat.Label,
+                LegendName = legend?.Name ?? string.Empty,
+                Price = legend != null ? (decimal)legend.Price : 0m
+            };
+        }).ToList();
+
+        var total = items.Sum(i => i.Price);
+        var platformFee = Math.Round(total * (decimal)platformConfig.CurrentFeeRate, 2);
+
+        // 7. Save Order (before Stripe call to get orderId for metadata)
+        var order = new Order
+        {
+            UserId = userId,
+            OrgId = Guid.Parse(sessionInfo.OrgId),
+            SessionId = sessionId,
+            Status = OrderStatus.Pending,
+            TotalAmount = total,
+            PlatformFee = platformFee,
+            EventName = sessionInfo.EventName,
+            SessionName = sessionInfo.SessionName,
+            SessionDate = DateTime.Parse(sessionInfo.StartTime, null, System.Globalization.DateTimeStyles.AdjustToUniversal | System.Globalization.DateTimeStyles.AssumeUniversal),
+            Items = items
+        };
+
+        // 8. Create Stripe Checkout Session
+        StripeConfiguration.ApiKey = _config["Stripe:SecretKey"];
+        var frontendBase = _config["Frontend:BaseUrl"] ?? "http://localhost:5173";
+        // Per-Order idempotency: same Order retry returns same Stripe session;
+        // a new Order (e.g. after the previous one expired) gets a fresh key.
+        var idempotencyKey = order.Id.ToString();
+
+        var options = new SessionCreateOptions
+        {
+            PaymentMethodTypes = ["card"],
+            LineItems = items.Select(item => new SessionLineItemOptions
+            {
+                PriceData = new SessionLineItemPriceDataOptions
+                {
+                    Currency = "usd",
+                    UnitAmount = (long)(item.Price * 100), // cents
+                    ProductData = new SessionLineItemPriceDataProductDataOptions
+                    {
+                        Name = $"{item.SeatLabel} - {item.LegendName}"
+                    }
+                },
+                Quantity = 1
+            }).ToList(),
+            Mode = "payment",
+            SuccessUrl = $"{frontendBase}/payment/success?session_id={{CHECKOUT_SESSION_ID}}",
+            CancelUrl = $"{frontendBase}/payment/cancel",
+            ClientReferenceId = userId.ToString(),
+            Metadata = new Dictionary<string, string> { ["order_id"] = order.Id.ToString() },
+            PaymentIntentData = new SessionPaymentIntentDataOptions
+            {
+                ApplicationFeeAmount = (long)(platformFee * 100), // cents
+                TransferData = new SessionPaymentIntentDataTransferDataOptions
+                {
+                    Destination = paymentStatus.StripeAccountId
+                }
+            }
+        };
+
+        var session = await new SessionService().CreateAsync(options,
+            new RequestOptions { IdempotencyKey = idempotencyKey });
+
+        order.StripeSessionId = session.Id;
+        _dbContext.Orders.Add(order);
+        await _dbContext.SaveChangesAsync();
+
+        return session.Url;
     }
 }

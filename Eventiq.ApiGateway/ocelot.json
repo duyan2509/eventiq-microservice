@@ -258,7 +258,7 @@
         "AllowedScopes": []
       },
       "RouteIsCaseSensitive": false
-    }
+    },
     {
       "DownstreamPathTemplate": "/api/stripe/webhook",
       "DownstreamScheme": "http",

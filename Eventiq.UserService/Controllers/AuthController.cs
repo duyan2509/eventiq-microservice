@@ -46,7 +46,7 @@ public class AuthController : ControllerBase
     [HttpGet("me")]
     public async Task<ActionResult<UserDto>> GetMe()
     {
-        var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var userIdStr = User.FindFirstValue("sub");
         var role = User.FindFirstValue(ClaimTypes.Role);
         var orgId = User.FindFirstValue("orgId");
         var orgName = User.FindFirstValue("orgName");
@@ -70,7 +70,7 @@ public class AuthController : ControllerBase
     [HttpPost("role")]
     public async Task<ActionResult> SwitchRole([FromBody] SwitchRoleRequest dto)
     {
-        var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var userIdStr = User.FindFirstValue("sub");
         if (string.IsNullOrEmpty(userIdStr) || !Guid.TryParse(userIdStr, out var parsedUserId))
             throw new UnauthorizedException("User id is required");
         var rs = await _userService.SwitchRole(parsedUserId, dto.OrganizationId, dto.OrganizationName);
@@ -110,7 +110,7 @@ public class AuthController : ControllerBase
     [HttpPatch("change-password")]
     public async Task<ActionResult<UserDto>> ChangePassword([FromBody] ChangePasswordRequest dto)
     {
-        var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var userIdStr = User.FindFirstValue("sub");
         if (string.IsNullOrEmpty(userIdStr) || !Guid.TryParse(userIdStr, out var parsedUserId))
             throw new UnauthorizedException("User id is required");
         var rs = await _userService.ChangePassword(parsedUserId, dto);
@@ -135,7 +135,7 @@ public class AuthController : ControllerBase
     [HttpPost("switch-to-user")]
     public async Task<ActionResult> SwitchToUser()
     {
-        var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var userIdStr = User.FindFirstValue("sub");
         if (string.IsNullOrEmpty(userIdStr) || !Guid.TryParse(userIdStr, out var parsedUserId))
             throw new UnauthorizedException("User id is required");
 
@@ -148,7 +148,7 @@ public class AuthController : ControllerBase
     [HttpPatch("avatar")]
     public async Task<ActionResult<string>> UpdateAvatar(IFormFile file)
     {
-        var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var userIdStr = User.FindFirstValue("sub");
         if (string.IsNullOrEmpty(userIdStr) || !Guid.TryParse(userIdStr, out var parsedUserId))
             throw new UnauthorizedException("User id is required");
 
@@ -160,7 +160,7 @@ public class AuthController : ControllerBase
     [HttpDelete("avatar")]
     public async Task<ActionResult> DeleteAvatar()
     {
-        var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var userIdStr = User.FindFirstValue("sub");
         if (string.IsNullOrEmpty(userIdStr) || !Guid.TryParse(userIdStr, out var parsedUserId))
             throw new UnauthorizedException("User id is required");
 

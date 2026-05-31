@@ -2,6 +2,8 @@ using Eventiq.PaymentService;
 using Eventiq.PaymentService.Extensions;
 using Serilog;
 
+AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
+
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();

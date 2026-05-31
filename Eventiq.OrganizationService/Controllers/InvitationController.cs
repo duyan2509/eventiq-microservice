@@ -29,7 +29,7 @@ public class InvitationController : ControllerBase
         [FromBody] CreateInvitationDto dto,
         CancellationToken cancellationToken = default)
     {
-        var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var userIdStr = User.FindFirstValue("sub");
         if (string.IsNullOrEmpty(userIdStr) || !Guid.TryParse(userIdStr, out var userId))
             throw new UnauthorizedException("User id is required");
 
@@ -53,7 +53,7 @@ public class InvitationController : ControllerBase
         [FromQuery] int size = 10,
         CancellationToken cancellationToken = default)
     {
-        var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var userIdStr = User.FindFirstValue("sub");
         if (string.IsNullOrEmpty(userIdStr) || !Guid.TryParse(userIdStr, out var userId))
             throw new UnauthorizedException("User id is required");
 
@@ -71,7 +71,7 @@ public class InvitationController : ControllerBase
         Guid invitationId,
         CancellationToken cancellationToken = default)
     {
-        var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var userIdStr = User.FindFirstValue("sub");
         if (string.IsNullOrEmpty(userIdStr) || !Guid.TryParse(userIdStr, out var userId))
             throw new UnauthorizedException("User id is required");
 
@@ -120,7 +120,7 @@ public class UserInvitationController : ControllerBase
         Guid invitationId,
         CancellationToken cancellationToken = default)
     {
-        var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var userIdStr = User.FindFirstValue("sub");
         if (string.IsNullOrEmpty(userIdStr) || !Guid.TryParse(userIdStr, out var userId))
             throw new UnauthorizedException("User id is required");
 
@@ -135,7 +135,7 @@ public class UserInvitationController : ControllerBase
         Guid invitationId,
         CancellationToken cancellationToken = default)
     {
-        var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var userIdStr = User.FindFirstValue("sub");
         if (string.IsNullOrEmpty(userIdStr) || !Guid.TryParse(userIdStr, out var userId))
             throw new UnauthorizedException("User id is required");
 

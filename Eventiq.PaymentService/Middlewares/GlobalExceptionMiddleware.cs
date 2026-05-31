@@ -34,7 +34,12 @@ public class GlobalExceptionMiddleware
         var statusCode = HttpStatusCode.InternalServerError;
         var message = exception.Message;
 
-        switch (exception)
+        if (exception is AppException appEx)
+        {
+            statusCode = (HttpStatusCode)appEx.StatusCode;
+            message = appEx.Message;
+        }
+        else switch (exception)
         {
             case SecurityTokenException:
             case InvalidCredentialException:

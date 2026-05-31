@@ -43,7 +43,7 @@ public class MemberController : ControllerBase
         Guid orgId,
         CancellationToken cancellationToken = default)
     {
-        var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var userIdStr = User.FindFirstValue("sub");
         if (string.IsNullOrEmpty(userIdStr) || !Guid.TryParse(userIdStr, out var userId))
             throw new UnauthorizedException("User id is required");
 
@@ -60,7 +60,7 @@ public class MemberController : ControllerBase
         [FromBody] ChangePermission dto,
         CancellationToken cancellationToken = default)
     {
-        var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var userIdStr = User.FindFirstValue("sub");
         if (string.IsNullOrEmpty(userIdStr) || !Guid.TryParse(userIdStr, out var userId))
             throw new UnauthorizedException("User id is required");
 
@@ -75,7 +75,7 @@ public class MemberController : ControllerBase
         Guid memberId,
         CancellationToken cancellationToken = default)
     {
-        var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var userIdStr = User.FindFirstValue("sub");
         if (string.IsNullOrEmpty(userIdStr) || !Guid.TryParse(userIdStr, out var userId))
             throw new UnauthorizedException("User id is required");
 

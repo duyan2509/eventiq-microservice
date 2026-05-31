@@ -27,16 +27,26 @@ public static class Extensions
         builder.Services.AddScoped<IOrderService, OrderService>();
 
         // gRPC clients
-        var eventServiceUrl = builder.Configuration["InternalServices:EventServiceBaseUrl"] ?? "http://localhost:5232";
-        var seatServiceUrl = builder.Configuration["InternalServices:SeatServiceBaseUrl"] ?? "http://localhost:5234";
-        var orgServiceUrl = builder.Configuration["InternalServices:OrgServiceBaseUrl"] ?? "http://localhost:5230";
+        var eventServiceUrl = builder.Configuration["InternalServices:EventServiceBaseUrl"] ?? "http://localhost:5332";
+        var seatServiceUrl = builder.Configuration["InternalServices:SeatServiceBaseUrl"] ?? "http://localhost:5334";
+        var orgServiceUrl = builder.Configuration["InternalServices:OrgServiceBaseUrl"] ?? "http://localhost:5330";
+
+        static SocketsHttpHandler GrpcHandler() => new()
+        {
+            EnableMultipleHttp2Connections = true,
+            KeepAlivePingDelay = TimeSpan.FromSeconds(60),
+            KeepAlivePingTimeout = TimeSpan.FromSeconds(30),
+        };
 
         builder.Services.AddGrpcClient<Eventiq.Contracts.Grpc.EventInternal.EventInternalClient>(o =>
-            o.Address = new Uri(eventServiceUrl));
+            o.Address = new Uri(eventServiceUrl))
+            .ConfigureChannel(o => o.HttpHandler = GrpcHandler());
         builder.Services.AddGrpcClient<Eventiq.Contracts.Grpc.SeatInternal.SeatInternalClient>(o =>
-            o.Address = new Uri(seatServiceUrl));
+            o.Address = new Uri(seatServiceUrl))
+            .ConfigureChannel(o => o.HttpHandler = GrpcHandler());
         builder.Services.AddGrpcClient<Eventiq.Contracts.Grpc.OrgInternal.OrgInternalClient>(o =>
-            o.Address = new Uri(orgServiceUrl));
+            o.Address = new Uri(orgServiceUrl))
+            .ConfigureChannel(o => o.HttpHandler = GrpcHandler());
 
         JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
         var publicKeyPath = builder.Configuration["Jwt:PublicKeyPath"];
@@ -66,6 +76,12 @@ public static class Extensions
 
         builder.Services.AddMassTransit(x =>
         {
+            x.AddEntityFrameworkOutbox<PaymentDbContext>(o =>
+            {
+                o.UsePostgres();
+                o.UseBusOutbox();
+            });
+
             if (builder.Environment.IsDevelopment())
                 x.UsingRabbitMq((context, cfg) =>
                 {

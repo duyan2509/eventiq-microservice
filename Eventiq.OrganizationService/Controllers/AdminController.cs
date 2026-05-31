@@ -27,7 +27,7 @@ public class AdminController : ControllerBase
     public async Task<ActionResult<PlatformConfigResponse>> Update(
         [FromBody] UpdatePlatformConfigRequest request, CancellationToken ct)
     {
-        var adminId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+        var adminId = Guid.Parse(User.FindFirstValue("sub")!);
         return Ok(await _configService.UpdateAsync(adminId, request, ct));
     }
 }

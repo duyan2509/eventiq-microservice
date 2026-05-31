@@ -27,3 +27,13 @@ public record OrderItemResponse(Guid SeatId, string SeatLabel, string LegendName
 {
     public static OrderItemResponse From(OrderItem i) => new(i.SeatId, i.SeatLabel, i.LegendName, i.Price);
 }
+
+public record TicketDetailDto(
+    string Id,
+    string SeatLabel,
+    string LegendName,
+    decimal Price,
+    string QrCode,
+    bool IsCheckedIn,
+    DateTime IssuedAt,
+    DateTime? CheckedInAt);

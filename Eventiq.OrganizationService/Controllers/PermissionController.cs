@@ -30,7 +30,7 @@ public class PermissionController : ControllerBase
         [FromQuery] int size = 10,
         CancellationToken cancellationToken = default)
     {
-        var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var userIdStr = User.FindFirstValue("sub");
         if (string.IsNullOrEmpty(userIdStr) || !Guid.TryParse(userIdStr, out var userId))
             throw new UnauthorizedException("User id is required");
 
@@ -48,7 +48,7 @@ public class PermissionController : ControllerBase
         [FromBody] PermissionDto dto,
         CancellationToken cancellationToken = default)
     {
-        var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var userIdStr = User.FindFirstValue("sub");
         if (string.IsNullOrEmpty(userIdStr) || !Guid.TryParse(userIdStr, out var userId))
             throw new UnauthorizedException("User id is required");
 
@@ -64,7 +64,7 @@ public class PermissionController : ControllerBase
         [FromBody] UpdatePermissionDto dto,
         CancellationToken cancellationToken = default)
     {
-        var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var userIdStr = User.FindFirstValue("sub");
         if (string.IsNullOrEmpty(userIdStr) || !Guid.TryParse(userIdStr, out var userId))
             throw new UnauthorizedException("User id is required");
 
@@ -79,7 +79,7 @@ public class PermissionController : ControllerBase
         Guid permissionId,
         CancellationToken cancellationToken = default)
     {
-        var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var userIdStr = User.FindFirstValue("sub");
         if (string.IsNullOrEmpty(userIdStr) || !Guid.TryParse(userIdStr, out var userId))
             throw new UnauthorizedException("User id is required");
 
