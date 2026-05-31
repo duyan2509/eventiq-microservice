@@ -8,6 +8,7 @@ using AppRoles = Eventiq.UserService.Domain.Enums.AppRoles;
 using Eventiq.UserService.Domain.Repositories;
 using Eventiq.UserService.Guards;
 using Eventiq.UserService.Helper;
+using Eventiq.UserService.Infrastructure.Cache;
 using Eventiq.UserService.Model;
 using MassTransit;
 using Microsoft.AspNetCore.Http;
@@ -27,6 +28,7 @@ public class UserService:IUserService
     private readonly IPasswordResetTokenRepository _passwordResetTokenRepository;
     private readonly IPublishEndpoint _publishEndpoint;
     private readonly IBlobService _blobService;
+    private readonly IBanBlacklistService? _blacklist;
 
     public UserService(
         IJwtService jwt,
@@ -38,7 +40,8 @@ public class UserService:IUserService
         IPasswordResetTokenRepository passwordResetTokenRepository,
         IPublishEndpoint publishEndpoint,
         IBlobService blobService,
-        IMapper mapper)
+        IMapper mapper,
+        IBanBlacklistService? blacklist = null)
     {
         _jwt = jwt;
         _refresh = refresh;
@@ -50,6 +53,7 @@ public class UserService:IUserService
         _publishEndpoint = publishEndpoint;
         _blobService = blobService;
         _mapper = mapper;
+        _blacklist = blacklist;
     }
     public async Task<LoginResponse> Login(LoginDto dto)
     {
@@ -218,39 +222,48 @@ public class UserService:IUserService
     public async Task<bool> BanUser(Guid adminId, Guid userId, BanUserRequest dto)
     {
         var user = await _userRepository.GetTrackingUserById(userId);
-        if(user==null)
+        if (user == null)
             throw new NotFoundException($"User not found with id {userId}");
-        if(user.IsBanned)
-            throw new Exception("User is banned");
+        if (user.IsBanned)
+            throw new Exception("User is already banned");
         var admin = await _userRepository.GetUserById(adminId);
         UserGuards.EnsureAdmin(admin);
         user.IsBanned = true;
-        await  _userRepository.UpdateUser(user);
+        await _userRepository.UpdateUser(user);
         await _banHistoryRepository.AddBanHistory(new BanHistory
         {
             Reason = dto.BanReason,
             UserId = userId,
             BannedById = adminId,
         });
+        // Invalidate all refresh tokens so the user cannot get new access tokens
+        var currentToken = await _refresh.GetRefreshTokenModelByUserId(userId);
+        if (currentToken != null)
+            await _refresh.RevokeRefreshToken(currentToken.Token);
+        // Mark userId in Redis blacklist — every subsequent JWT request will be rejected
+        if (_blacklist != null)
+            await _blacklist.BanAsync(userId);
         return true;
     }
 
     public async Task<bool> UnbanUser(Guid adminId, Guid userId)
     {
         var user = await _userRepository.GetTrackingUserById(userId);
-        if(user==null)
+        if (user == null)
             throw new NotFoundException($"User not found with id {userId}");
- 
         var admin = await _userRepository.GetUserById(adminId);
         UserGuards.EnsureAdmin(admin);
         user.IsBanned = false;
-        await  _userRepository.UpdateUser(user);
+        await _userRepository.UpdateUser(user);
         await _banHistoryRepository.AddBanHistory(new BanHistory
         {
             Reason = "Unban",
             UserId = userId,
             BannedById = adminId,
         });
+        // Remove from Redis blacklist — user can login again
+        if (_blacklist != null)
+            await _blacklist.UnbanAsync(userId);
         return true;
     }
 

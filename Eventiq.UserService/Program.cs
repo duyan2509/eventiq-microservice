@@ -3,6 +3,7 @@ using Eventiq.UserService;
 using Eventiq.UserService.Application.Dto;
 using Eventiq.UserService.Extensions;
 using Eventiq.UserService.Infrastructure.Persistence;
+using Eventiq.UserService.Middlewares;
 using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -29,6 +30,7 @@ app.UseHttpsRedirection();
 app.UseSerilogRequestLogging();
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseMiddleware<BanCheckMiddleware>();
 app.MapControllers();
 using (var scope = app.Services.CreateScope())
 {

@@ -95,6 +95,18 @@
       }
     },
     {
+      "DownstreamPathTemplate": "/api/users",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [{ "Host": "localhost", "Port": 5228 }],
+      "UpstreamHttpMethod": ["GET"],
+      "UpstreamPathTemplate": "/gateway/users",
+      "AddHeadersToRequest": { "Authorization": "{Authorization}" },
+      "AuthenticationOptions": {
+        "AuthenticationProviderKey": "Bearer",
+        "AllowedScopes": []
+      }
+    },
+    {
       "DownstreamPathTemplate": "/api/users/{everything}",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
@@ -284,6 +296,30 @@
       "DownstreamHostAndPorts": [{ "Host": "localhost", "Port": 5232 }],
       "UpstreamPathTemplate": "/gateway/tickets/{everything}",
       "UpstreamHttpMethod": ["GET", "POST"],
+      "AddHeadersToRequest": { "Authorization": "{Authorization}" },
+      "AuthenticationOptions": {
+        "AuthenticationProviderKey": "Bearer",
+        "AllowedScopes": []
+      }
+    },
+    {
+      "DownstreamPathTemplate": "/api/admin/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [{ "Host": "localhost", "Port": 5230 }],
+      "UpstreamPathTemplate": "/gateway/admin/{everything}",
+      "UpstreamHttpMethod": ["GET", "PUT", "POST"],
+      "AddHeadersToRequest": { "Authorization": "{Authorization}" },
+      "AuthenticationOptions": {
+        "AuthenticationProviderKey": "Bearer",
+        "AllowedScopes": []
+      }
+    },
+    {
+      "DownstreamPathTemplate": "/api/analytics/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [{ "Host": "localhost", "Port": 5236 }],
+      "UpstreamPathTemplate": "/gateway/analytics/{everything}",
+      "UpstreamHttpMethod": ["GET"],
       "AddHeadersToRequest": { "Authorization": "{Authorization}" },
       "AuthenticationOptions": {
         "AuthenticationProviderKey": "Bearer",

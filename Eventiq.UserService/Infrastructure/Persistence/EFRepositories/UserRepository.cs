@@ -78,21 +78,30 @@ public class UserRepository:IUserRepository
         if (page < 1) page = 1;
         if (size < 1) size = 1;
 
-        var query = _users.AsNoTracking();
+        var query = _users
+            .AsNoTracking()
+            .Include(u => u.UserRoles).ThenInclude(ur => ur.Role)
+            .AsQueryable();
+
         if (!string.IsNullOrEmpty(email))
-            query = query.Where(u => u.Email.Contains(email));
-        int total = query.Count();
-        var data =new List<UserResponse>();
-        if ((page-1) * size < total)
-            data = await  query.Skip((page - 1) * size).Take(size)
-                .Select(u=>new UserResponse
+            query = query.Where(u => EF.Functions.ILike(u.Email, $"%{email}%"));
+
+        int total = await query.CountAsync();
+        var data = new List<UserResponse>();
+        if ((page - 1) * size < total)
+            data = await query
+                .OrderBy(u => u.Email)
+                .Skip((page - 1) * size)
+                .Take(size)
+                .Select(u => new UserResponse
                 {
                     Id = u.Id.ToString(),
                     Email = u.Email,
                     IsBanned = u.IsBanned,
-                    Roles = u.UserRoles.Select(ur=>ur.Role.Name).ToList(),
+                    Roles = u.UserRoles.Select(ur => ur.Role.Name).Distinct().ToList(),
                 })
                 .ToListAsync();
+
         return new PaginatedResult<UserResponse>
         {
             Data = data,

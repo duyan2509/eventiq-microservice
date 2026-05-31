@@ -1,14 +1,16 @@
 using Eventiq.UserService.Application.Service;
 using Eventiq.UserService.Domain.Repositories;
 using Eventiq.UserService.Infrastructure.Blob;
+using Eventiq.UserService.Infrastructure.Cache;
 using Eventiq.UserService.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
+using StackExchange.Redis;
 
 namespace Eventiq.UserService.Infrastructure;
 
 public static class DependencyInjection
 {
-    public static IServiceCollection AddInfrastructure(this IServiceCollection services,IConfiguration config)
+    public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration config)
     {
         services.AddDbContext<EvtUserDbContext>(opt =>
         {
@@ -21,6 +23,14 @@ public static class DependencyInjection
                 }
             );
         });
+
+        var redisConn = config["Redis"];
+        if (!string.IsNullOrEmpty(redisConn))
+        {
+            services.AddSingleton<IConnectionMultiplexer>(_ => ConnectionMultiplexer.Connect(redisConn));
+            services.AddSingleton<IBanBlacklistService, RedisBanBlacklistService>();
+        }
+
         services.AddScoped<IUserRepository, UserRepository>();
         services.AddScoped<IRefreshTokenRepository, RefreshRepository>();
         services.AddScoped<IBanHistoryRepository, BanHistoryRepository>();
@@ -30,5 +40,4 @@ public static class DependencyInjection
         services.AddScoped<IBlobService, AzureBlobService>();
         return services;
     }
-    
 }
