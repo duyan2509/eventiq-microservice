@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using Eventiq.SeatService.Application;
+using Eventiq.SeatService.Application.Dtos;
 using Eventiq.SeatService.Application.Service.Interface;
 using Eventiq.SeatService.Domain.Repositories;
 using Microsoft.AspNetCore.Authorization;
@@ -19,17 +20,25 @@ public class SeatBookingHub : Hub
         _logger = logger;
     }
 
+    // Join the live-update group. No longer sends the full status snapshot —
+    // statuses are requested per viewport region via GetRegionStatuses.
     public async Task JoinSeatMap(Guid seatMapId)
     {
         await Groups.AddToGroupAsync(Context.ConnectionId, GroupName(seatMapId));
-
-        // Send current seat statuses as initial snapshot.
-        var seats = await _seats.GetBySeatMapIdAsync(seatMapId);
-        var snapshot = seats.Select(s => new SeatStatusUpdate(s.Id, s.Status.ToString(), s.HeldUntil));
-
-        await Clients.Caller.SendAsync("InitialSeatStatuses", snapshot);
-
         _logger.LogInformation("User {UserId} joined booking view for seat map {SeatMapId}", GetUserId(), seatMapId);
+    }
+
+    // Send current statuses for seats within a bounding box (the caller's viewport).
+    // Invoked on initial load and whenever the client pans/zooms into new territory.
+    // A null bbox returns statuses for every seat (zoom-out / small maps).
+    public async Task GetRegionStatuses(Guid seatMapId, BboxDto? bbox)
+    {
+        var seats = bbox is null
+            ? await _seats.GetBySeatMapIdAsync(seatMapId)
+            : await _seats.GetByBboxAsync(seatMapId, bbox.X1, bbox.Y1, bbox.X2, bbox.Y2);
+
+        var snapshot = seats.Select(s => new SeatStatusUpdate(s.Id, s.Status.ToString(), s.HeldUntil));
+        await Clients.Caller.SendAsync("InitialSeatStatuses", snapshot);
     }
 
     public async Task LeaveSeatMap(Guid seatMapId)

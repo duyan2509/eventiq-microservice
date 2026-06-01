@@ -19,6 +19,14 @@ public class Seat : BaseEntity
     /// JSONB: { x, y } canvas coordinates
     /// </summary>
     public string? Position { get; set; }
+
+    /// <summary>
+    /// STORED generated columns derived from <see cref="Position"/> JSONB.
+    /// Read-only — populated by Postgres so seats can be filtered by bounding box.
+    /// </summary>
+    public double? PositionX { get; private set; }
+    public double? PositionY { get; private set; }
+
     public Guid? LegendId { get; set; }
     public string? CustomProperties { get; set; }
 

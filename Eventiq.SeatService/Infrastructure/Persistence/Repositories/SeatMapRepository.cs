@@ -24,6 +24,16 @@ public class SeatMapRepository : ISeatMapRepository
             .AsSplitQuery()
             .FirstOrDefaultAsync(m => m.Id == id);
 
+    public async Task<SeatMap?> GetByIdWithObjectsAsync(Guid id)
+        => await _ctx.SeatMaps
+            .Include(m => m.Objects.OrderBy(o => o.ZIndex))
+            .FirstOrDefaultAsync(m => m.Id == id);
+
+    public async Task<SeatMap?> GetBySessionIdWithObjectsAsync(Guid sessionId)
+        => await _ctx.SeatMaps
+            .Include(m => m.Objects.OrderBy(o => o.ZIndex))
+            .FirstOrDefaultAsync(m => m.SessionId == sessionId);
+
     public async Task<SeatMap?> GetByChartIdAsync(Guid chartId)
         => await _ctx.SeatMaps.FirstOrDefaultAsync(m => m.ChartId == chartId);
 

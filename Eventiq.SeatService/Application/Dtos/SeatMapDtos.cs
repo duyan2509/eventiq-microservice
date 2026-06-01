@@ -47,6 +47,30 @@ public class SeatMapLayoutResponse : SeatMapResponse
     public List<SeatObjectResponse> Objects { get; set; } = [];
 }
 
+// Bounding box in canvas coordinates.
+public class BboxDto
+{
+    public double X1 { get; set; }
+    public double Y1 { get; set; }
+    public double X2 { get; set; }
+    public double Y2 { get; set; }
+}
+
+// Metadata-only response (no seats) — used to bootstrap both the design editor
+// and the booking view before seats are streamed in by bounding box.
+public class SeatMapMetaResponse : SeatMapResponse
+{
+    public List<SeatObjectResponse> Objects { get; set; } = [];
+    public BboxDto FullBbox { get; set; } = new();
+}
+
+// A viewport chunk of seats (layout only, no statuses) for the booking view.
+public class SeatLayoutChunkResponse
+{
+    public List<SeatLayoutResponse> Seats { get; set; } = [];
+    public BboxDto Bbox { get; set; } = new();
+}
+
 // ========== Seat DTOs ==========
 
 public class AddSeatDto

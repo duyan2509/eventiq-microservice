@@ -28,6 +28,7 @@ public class SeatMapController : ControllerBase
         return Ok(result);
     }
 
+    // Design: seat map metadata (objects + bounds, no seats).
     [HttpGet("{id:guid}")]
     public async Task<IActionResult> GetById(Guid id)
     {
@@ -35,11 +36,35 @@ public class SeatMapController : ControllerBase
         return Ok(result);
     }
 
-    [HttpGet("sessions/{sessionId:guid}")]
-    [OutputCache(PolicyName = OutputCachePolicies.SeatMapLayout)]
-    public async Task<IActionResult> GetBySessionId(Guid sessionId)
+    // Design: all seats for a seat map (loaded in one call by the editor).
+    [HttpGet("{id:guid}/seats")]
+    public async Task<IActionResult> GetSeats(Guid id)
     {
-        var result = await _seatMapService.GetBySessionIdAsync(sessionId);
+        var result = await _seatMapService.GetSeatsAsync(id);
+        return Ok(result);
+    }
+
+    // Booking: layout metadata (objects + full bounding box + total seats).
+    [HttpGet("sessions/{sessionId:guid}/meta")]
+    [OutputCache(PolicyName = OutputCachePolicies.SeatMapLayout)]
+    public async Task<IActionResult> GetSessionMeta(Guid sessionId)
+    {
+        var result = await _seatMapService.GetSessionMetaAsync(sessionId);
+        return Ok(result);
+    }
+
+    // Booking: a viewport chunk of seats. Omit the bbox to fetch all seats (zoom-out).
+    [HttpGet("sessions/{sessionId:guid}/seats")]
+    [OutputCache(PolicyName = OutputCachePolicies.SeatMapSeats)]
+    public async Task<IActionResult> GetSessionSeats(
+        Guid sessionId,
+        [FromQuery] double? x1, [FromQuery] double? y1,
+        [FromQuery] double? x2, [FromQuery] double? y2)
+    {
+        BboxDto? bbox = (x1.HasValue && y1.HasValue && x2.HasValue && y2.HasValue)
+            ? new BboxDto { X1 = x1.Value, Y1 = y1.Value, X2 = x2.Value, Y2 = y2.Value }
+            : null;
+        var result = await _seatMapService.GetSessionSeatsAsync(sessionId, bbox);
         return Ok(result);
     }
 

@@ -28,18 +28,50 @@ public class SeatMapService : ISeatMapService
         return _mapper.Map<List<SeatMapResponse>>(seatMaps);
     }
 
-    public async Task<SeatMapDetailResponse> GetByIdAsync(Guid id)
+    public async Task<SeatMapMetaResponse> GetByIdAsync(Guid id)
     {
-        var seatMap = await _uow.SeatMaps.GetByIdWithDetailsAsync(id);
+        var seatMap = await _uow.SeatMaps.GetByIdWithObjectsAsync(id);
         SeatMapGuards.EnsureExists(seatMap);
-        return _mapper.Map<SeatMapDetailResponse>(seatMap!);
+        return await BuildMetaAsync(seatMap!);
     }
 
-    public async Task<SeatMapLayoutResponse> GetBySessionIdAsync(Guid sessionId)
+    public async Task<List<SeatResponse>> GetSeatsAsync(Guid seatMapId)
     {
-        var seatMap = await _uow.SeatMaps.GetBySessionIdWithDetailsAsync(sessionId);
+        var seats = await _uow.Seats.GetBySeatMapIdAsync(seatMapId);
+        return _mapper.Map<List<SeatResponse>>(seats);
+    }
+
+    public async Task<SeatMapMetaResponse> GetSessionMetaAsync(Guid sessionId)
+    {
+        var seatMap = await _uow.SeatMaps.GetBySessionIdWithObjectsAsync(sessionId);
         SeatMapGuards.EnsureExists(seatMap);
-        return _mapper.Map<SeatMapLayoutResponse>(seatMap!);
+        return await BuildMetaAsync(seatMap!);
+    }
+
+    public async Task<SeatLayoutChunkResponse> GetSessionSeatsAsync(Guid sessionId, BboxDto? bbox)
+    {
+        var seatMap = await _uow.SeatMaps.GetBySessionIdAsync(sessionId);
+        SeatMapGuards.EnsureExists(seatMap);
+
+        var seats = bbox is null
+            ? await _uow.Seats.GetBySeatMapIdAsync(seatMap!.Id)
+            : await _uow.Seats.GetByBboxAsync(seatMap!.Id, bbox.X1, bbox.Y1, bbox.X2, bbox.Y2);
+
+        return new SeatLayoutChunkResponse
+        {
+            Seats = _mapper.Map<List<SeatLayoutResponse>>(seats),
+            Bbox = bbox ?? new BboxDto(),
+        };
+    }
+
+    // Builds a metadata response (objects already loaded) and fills bounds + total seat count.
+    private async Task<SeatMapMetaResponse> BuildMetaAsync(Domain.Entity.SeatMap seatMap)
+    {
+        var meta = _mapper.Map<SeatMapMetaResponse>(seatMap);
+        var bounds = await _uow.Seats.GetSeatBoundsAsync(seatMap.Id);
+        meta.FullBbox = new BboxDto { X1 = bounds.MinX, Y1 = bounds.MinY, X2 = bounds.MaxX, Y2 = bounds.MaxY };
+        meta.TotalSeats = bounds.Total;
+        return meta;
     }
 
     public async Task<SeatMapResponse> CreateAsync(Guid userId, Guid orgId, CreateSeatMapDto dto)

@@ -16,6 +16,9 @@ public class SeatMapProfile : Profile
             .ForMember(d => d.Status, o => o.MapFrom(s => s.Status.ToString()));
         CreateMap<SeatMap, SeatMapLayoutResponse>()
             .ForMember(d => d.Status, o => o.MapFrom(s => s.Status.ToString()));
+        CreateMap<SeatMap, SeatMapMetaResponse>()
+            .ForMember(d => d.Status, o => o.MapFrom(s => s.Status.ToString()))
+            .ForMember(d => d.FullBbox, o => o.Ignore());
 
         // Seat
         CreateMap<AddSeatDto, Seat>();

@@ -63,6 +63,14 @@ public static class DependencyInjection
                 builder.Expire(TimeSpan.FromHours(1))
                        .SetVaryByRouteValue("sessionId")
                        .Tag(OutputCachePolicies.SeatMapLayoutTag));
+
+            // Viewport seat chunks — vary by both session and bbox query string.
+            // Shares the layout tag so publishing a seat map evicts all chunks too.
+            options.AddPolicy(OutputCachePolicies.SeatMapSeats, builder =>
+                builder.Expire(TimeSpan.FromMinutes(5))
+                       .SetVaryByRouteValue("sessionId")
+                       .SetVaryByQuery("x1", "y1", "x2", "y2")
+                       .Tag(OutputCachePolicies.SeatMapLayoutTag));
         });
 
         // Redlock

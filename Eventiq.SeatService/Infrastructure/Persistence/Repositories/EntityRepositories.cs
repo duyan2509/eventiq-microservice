@@ -24,6 +24,36 @@ public class SeatRepository : ISeatRepository
             .OrderBy(s => s.SeatNumber)
             .ToListAsync();
 
+    public async Task<List<Seat>> GetByBboxAsync(Guid seatMapId, double x1, double y1, double x2, double y2)
+        => await _ctx.Seats
+            .Where(s => s.SeatMapId == seatMapId
+                && s.PositionX >= x1 && s.PositionX <= x2
+                && s.PositionY >= y1 && s.PositionY <= y2)
+            .OrderBy(s => s.SeatNumber)
+            .ToListAsync();
+
+    public async Task<SeatBounds> GetSeatBoundsAsync(Guid seatMapId)
+    {
+        var agg = await _ctx.Seats
+            .Where(s => s.SeatMapId == seatMapId && s.PositionX != null && s.PositionY != null)
+            .GroupBy(_ => 1)
+            .Select(g => new
+            {
+                MinX = g.Min(s => s.PositionX!.Value),
+                MinY = g.Min(s => s.PositionY!.Value),
+                MaxX = g.Max(s => s.PositionX!.Value),
+                MaxY = g.Max(s => s.PositionY!.Value),
+            })
+            .FirstOrDefaultAsync();
+
+        // Total counts every seat, including those without a position.
+        var total = await _ctx.Seats.CountAsync(s => s.SeatMapId == seatMapId);
+
+        return agg is null
+            ? new SeatBounds(0, 0, 0, 0, total)
+            : new SeatBounds(agg.MinX, agg.MinY, agg.MaxX, agg.MaxY, total);
+    }
+
     public async Task AddRangeAsync(IEnumerable<Seat> seats)
     {
         await _ctx.Seats.AddRangeAsync(seats);

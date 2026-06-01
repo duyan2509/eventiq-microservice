@@ -54,6 +54,16 @@ public sealed class SeatDbContext : DbContext
             e.Property(x => x.Position).HasColumnType("jsonb");
             e.Property(x => x.CustomProperties).HasColumnType("jsonb");
             e.Property(x => x.Status).HasConversion<string>();
+
+            // STORED generated columns derived from the Position JSONB — enable bbox filtering.
+            // Postgres backfills these for all existing rows when the column is added.
+            e.Property(x => x.PositionX)
+                .HasComputedColumnSql("((position ->> 'x'))::double precision", stored: true);
+            e.Property(x => x.PositionY)
+                .HasComputedColumnSql("((position ->> 'y'))::double precision", stored: true);
+            e.HasIndex(x => new { x.SeatMapId, x.PositionX, x.PositionY })
+                .HasFilter("is_deleted = false")
+                .HasDatabaseName("ix_seats_map_position");
         });
 
         // === SeatObject ===
