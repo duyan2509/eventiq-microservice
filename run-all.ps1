@@ -20,11 +20,22 @@ foreach ($svc in $services) {
     Start-Sleep -Seconds 2
 }
 
+# Start Python AnalyticsService (Text2SQL pipeline) on :5238
+$analyticsPath = Join-Path $root "Eventiq.AnalyticsService"
+$venvPy = Join-Path $analyticsPath ".venv\Scripts\python.exe"
+if (Test-Path $venvPy) {
+    Write-Host "Starting AnalyticsService on :5238..." -ForegroundColor Cyan
+    Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd '$analyticsPath'; & '$venvPy' -m uvicorn src.api:app --host 0.0.0.0 --port 5238"
+} else {
+    Write-Host "Skipped AnalyticsService (.venv not found)" -ForegroundColor Yellow
+}
+
 Write-Host ""
 Write-Host "All services started." -ForegroundColor Green
-Write-Host "  ApiGateway      -> http://localhost:5001"
-Write-Host "  UserService     -> http://localhost:5228"
-Write-Host "  OrgService      -> http://localhost:5230"
-Write-Host "  EventService    -> http://localhost:5232"
-Write-Host "  SeatService     -> http://localhost:5234"
-Write-Host "  PaymentService  -> http://localhost:5236"
+Write-Host "  ApiGateway        -> http://localhost:5001"
+Write-Host "  UserService       -> http://localhost:5228"
+Write-Host "  OrgService        -> http://localhost:5230"
+Write-Host "  EventService      -> http://localhost:5232"
+Write-Host "  SeatService       -> http://localhost:5234"
+Write-Host "  PaymentService    -> http://localhost:5236"
+Write-Host "  AnalyticsService  -> http://localhost:5238"

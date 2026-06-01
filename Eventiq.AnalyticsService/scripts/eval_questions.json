@@ -1,0 +1,142 @@
+[
+  {
+    "id": 1,
+    "question": "Có bao nhiêu user mới tháng này?",
+    "expected_tables": ["user_service.\"Users\""],
+    "expected_method": "graph",
+    "difficulty": "easy"
+  },
+  {
+    "id": 2,
+    "question": "Doanh thu theo tháng năm nay",
+    "expected_tables": ["payment_service.orders"],
+    "expected_method": "graph",
+    "difficulty": "easy"
+  },
+  {
+    "id": 3,
+    "question": "Top 5 sự kiện bán nhiều vé nhất",
+    "expected_tables": ["event_service.events", "event_service.sessions", "event_service.tickets"],
+    "expected_method": "graph",
+    "difficulty": "medium"
+  },
+  {
+    "id": 4,
+    "question": "Tỉ lệ vé đã check-in của các sự kiện",
+    "expected_tables": ["event_service.events", "event_service.sessions", "event_service.tickets"],
+    "expected_method": "graph",
+    "difficulty": "medium"
+  },
+  {
+    "id": 5,
+    "question": "Sự kiện nào có doanh thu cao nhất tuần qua",
+    "expected_tables": ["event_service.events", "event_service.sessions", "payment_service.orders"],
+    "expected_method": "graph",
+    "difficulty": "hard"
+  },
+  {
+    "id": 6,
+    "question": "Tổng ghế đã bán theo từng sự kiện",
+    "expected_tables": ["event_service.events", "event_service.sessions", "seat_service.seat_maps", "seat_service.seats"],
+    "expected_method": "graph",
+    "difficulty": "hard"
+  },
+  {
+    "id": 7,
+    "question": "Org nào doanh thu cao nhất quý này",
+    "expected_tables": ["org_service.\"Organizations\"", "payment_service.orders"],
+    "expected_method": "graph",
+    "difficulty": "medium"
+  },
+  {
+    "id": 8,
+    "question": "Số lượng staff được mời tham gia mỗi org",
+    "expected_tables": ["org_service.\"Organizations\"", "org_service.\"Invitations\""],
+    "expected_method": "graph",
+    "difficulty": "easy"
+  },
+  {
+    "id": 9,
+    "question": "Sự kiện đang chờ duyệt",
+    "expected_tables": ["event_service.events"],
+    "expected_method": "graph",
+    "difficulty": "easy"
+  },
+  {
+    "id": 10,
+    "question": "Khách hàng chi tiêu nhiều nhất top 10",
+    "expected_tables": ["user_service.\"Users\"", "payment_service.orders"],
+    "expected_method": "graph",
+    "difficulty": "medium"
+  },
+  {
+    "id": 11,
+    "question": "Phí platform đã thu trong tháng",
+    "expected_tables": ["payment_service.orders"],
+    "expected_method": "graph",
+    "difficulty": "easy"
+  },
+  {
+    "id": 12,
+    "question": "Tỉ lệ ghế VIP đã bán",
+    "expected_tables": ["seat_service.seats", "event_service.legends"],
+    "expected_method": "keyword_fallback",
+    "difficulty": "hard"
+  },
+  {
+    "id": 13,
+    "question": "So sánh doanh thu Q1 vs Q2 năm nay",
+    "expected_tables": ["payment_service.orders"],
+    "expected_method": "graph",
+    "difficulty": "medium"
+  },
+  {
+    "id": 14,
+    "question": "Sự kiện có nhiều session nhất",
+    "expected_tables": ["event_service.events", "event_service.sessions"],
+    "expected_method": "graph",
+    "difficulty": "easy"
+  },
+  {
+    "id": 15,
+    "question": "User bị ban gần đây",
+    "expected_tables": ["user_service.\"Users\"", "user_service.\"BanHistories\""],
+    "expected_method": "graph",
+    "difficulty": "easy"
+  },
+  {
+    "id": 16,
+    "question": "Số ghế template chưa được publish",
+    "expected_tables": ["seat_service.seat_maps"],
+    "expected_method": "keyword_fallback",
+    "difficulty": "hard"
+  },
+  {
+    "id": 17,
+    "question": "Doanh thu trung bình mỗi vé",
+    "expected_tables": ["event_service.tickets", "payment_service.orders"],
+    "expected_method": "graph",
+    "difficulty": "medium"
+  },
+  {
+    "id": 18,
+    "question": "Legend nào được dùng nhiều nhất trong các sơ đồ ghế",
+    "expected_tables": ["event_service.legends", "seat_service.seats"],
+    "expected_method": "graph",
+    "difficulty": "medium"
+  },
+  {
+    "id": 19,
+    "question": "Org nào chưa connect Stripe",
+    "expected_tables": ["org_service.\"Organizations\""],
+    "expected_method": "keyword_fallback",
+    "difficulty": "medium"
+  },
+  {
+    "id": 20,
+    "question": "Số order Failed trong tuần qua",
+    "expected_tables": ["payment_service.orders"],
+    "expected_method": "graph",
+    "difficulty": "easy"
+  }
+]
