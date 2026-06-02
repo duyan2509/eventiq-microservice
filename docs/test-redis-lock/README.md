@@ -2,22 +2,38 @@
 
 Proves the Redlock-protected seat hold is race-free under heavy contention.
 
-> Script `redis-lock-test.js` is **not yet written** — this folder documents the
-> target design + metrics to collect. (Tracked in `remaining_work.md` Test 2.)
+Script: [`../../k6/redis-lock-test/redis-lock-test.js`](../../k6/redis-lock-test/redis-lock-test.js).
+Needs the seed (`data/seed_load_test_data.sql`) so `SESSION_ID`'s seat map has ≥ N Available seats.
 
-## Setup
-- 1 event, **100 seats** seeded `Available`.
-- **500 VUs** concurrently `POST /seat-maps/{id}/seats/hold` over the **same 100
-  overlapping seats** (each VU requests a random/overlapping subset).
+## Run
+```powershell
+cd k6/redis-lock-test
+k6 run redis-lock-test.js                 # defaults: CONTENDED=100, VUS=500
+k6 run -e CONTENDED=100 -e VUS=500 redis-lock-test.js
+```
+The script self-resets (releases the contended seats) in setup + teardown, so it is re-runnable.
+
+## Setup (what the script does)
+- Resolves the booking seat map for `SESSION_ID` and its first **N=100** seats.
+- **500 VUs**, one hold each, seat = `seatIds[(VU-1) % N]` → every seat contended by 5 VUs.
 
 ## Assertions / metrics
-| Assertion | Expected |
+Script counters (printed in the summary + `results/redis-lock-summary.json`):
+
+| Metric / check | Expected |
 |---|---|
-| total `200 OK` (successful holds) | exactly **100** |
-| total `409 Conflict` | exactly **400** |
-| DB rows in `Holding` for those seats | **100, no duplicates** |
-| hold p95 latency | record |
-| Redlock keys `seat-lock:*` | short-lived, released after hold |
+| `lock_success` (200 OK) | exactly **100** (threshold: `count<=100`) |
+| `lock_conflict` (409) | **400** (threshold: `count>=400`) |
+| `lock_other` (unexpected) | **0** (threshold: `count==0`) |
+| `lock_hold_duration` p95 | record |
+| DB rows `Holding` for those seats | **100, no duplicates** (verify by SQL below) |
+| Redis keys `seat-lock:*` | short-lived, released after each hold |
+
+DB verification after a run:
+```sql
+SELECT count(*) FROM seat_service.seats
+WHERE seat_map_id='d0000000-0000-0000-0000-0000000000bb' AND status='Holding';  -- must equal 100
+```
 
 ## Lock vs no-lock comparison (the contribution)
 Run twice and tabulate:
