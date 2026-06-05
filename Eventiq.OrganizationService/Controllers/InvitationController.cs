@@ -102,7 +102,7 @@ public class UserInvitationController : ControllerBase
         [FromQuery] int size = 10,
         CancellationToken cancellationToken = default)
     {
-        var email = User.FindFirstValue(ClaimTypes.Email);
+        var email = User.FindFirstValue(ClaimTypes.Email) ?? User.FindFirstValue("email");
         if (string.IsNullOrEmpty(email))
             throw new UnauthorizedException("User email is required");
 
