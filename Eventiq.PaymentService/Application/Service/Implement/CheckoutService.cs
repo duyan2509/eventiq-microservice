@@ -68,17 +68,29 @@ public class CheckoutService : ICheckoutService
 
         var platformConfig = await _orgClient.GetPlatformConfigAsync(new());
 
-        // 5. Idempotency: return existing open Stripe session if available
+        // 5. Idempotency: reuse the existing open Stripe session ONLY when it covers the
+        //    exact same seats. A stale Pending order (e.g. user backed out then picked
+        //    different seats) must be abandoned, otherwise the old session's seats/total
+        //    would be shown instead of the new selection.
         var existingOrder = await _dbContext.Orders
+            .Include(o => o.Items)
             .FirstOrDefaultAsync(o => o.UserId == userId && o.SessionId == sessionId
                                       && o.Status == OrderStatus.Pending);
         if (existingOrder != null)
         {
             StripeConfiguration.ApiKey = _config["Stripe:SecretKey"];
+
+            var existingSeatIds = existingOrder.Items.Select(i => i.SeatId).OrderBy(x => x).ToList();
+            var requestedSeatIds = seatIds.OrderBy(x => x).ToList();
+            var sameSeats = existingSeatIds.SequenceEqual(requestedSeatIds);
+
             var existing = await new SessionService().GetAsync(existingOrder.StripeSessionId);
-            if (existing.Status == "open")
+            if (sameSeats && existing.Status == "open")
                 return existing.Url;
 
+            // Different seats (or no longer open): abandon the stale checkout so it can't be paid.
+            if (existing.Status == "open")
+                await new SessionService().ExpireAsync(existingOrder.StripeSessionId);
             existingOrder.Status = OrderStatus.Failed;
             await _dbContext.SaveChangesAsync();
         }
