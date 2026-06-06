@@ -19,4 +19,7 @@ RUN dotnet publish "./Eventiq.UserService.csproj" -c $BUILD_CONFIGURATION -o /ap
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
+# RSA key pair: UserService signs tokens (private) and validates them (public)
+# Jwt__PrivateKeyPath=/app/keys/private.key  Jwt__PublicKeyPath=/app/keys/public.key
+COPY keys/ ./keys/
 ENTRYPOINT ["dotnet", "Eventiq.UserService.dll"]

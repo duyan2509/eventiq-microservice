@@ -21,6 +21,11 @@
     </Content>
   </ItemGroup>
 
+  <!-- Ship every ocelot config variant (incl. ocelot.Production.json) to the output/publish dir -->
+  <ItemGroup>
+    <Content Update="ocelot*.json" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
+
   <ItemGroup>
     <ProjectReference Include="..\Eventiq.Logging\Eventiq.Logging.csproj" />
   </ItemGroup>
