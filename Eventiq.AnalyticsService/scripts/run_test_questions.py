@@ -52,6 +52,7 @@ def main() -> int:
         text = q["question"]
         expected_tables = q["expected_tables"]
         expected_method = q["expected_method"]
+        expected_chart = q.get("expected_chart_type")
 
         try:
             out = run_pipeline(text, g, SCHEMA)
@@ -73,6 +74,13 @@ def main() -> int:
         ran_ok = (not crashed) and out["error"] is None
         tables_ok = _tables_match(out["relevant_tables"], expected_tables)
         method_ok = out["schema_linking_method"] == expected_method
+        # Only score chart type for questions that returned rows — an
+        # empty result always falls back to "table" regardless of intent.
+        chart_ok = (
+            expected_chart is not None
+            and len(out["result"]) > 0
+            and out["chart_type"] == expected_chart
+        )
         pascal_violations = _PASCAL_UNQUOTED.findall(sql)
 
         result = {
@@ -87,6 +95,8 @@ def main() -> int:
             "rows": len(out["result"]),
             "retries": out["retries"],
             "chart": out["chart_type"],
+            "expected_chart": expected_chart,
+            "chart_ok": chart_ok,
             "pascal_violations": pascal_violations,
             "error": out["error"],
             "sql": sql,
@@ -97,11 +107,12 @@ def main() -> int:
         status = "OK " if ran_ok else "ERR"
         tables_mark = "T" if tables_ok else "."
         method_mark = "M" if method_ok else "."
+        chart_mark = "C" if chart_ok else "."
         pascal_mark = "!" if pascal_violations else " "
         print(
-            f"  [{status}] #{qid:02d} {tables_mark}{method_mark}{pascal_mark} "
+            f"  [{status}] #{qid:02d} {tables_mark}{method_mark}{chart_mark}{pascal_mark} "
             f"method={out['schema_linking_method']:<17s} rows={len(out['result']):>3d} "
-            f"retries={out['retries']}  {text[:60]}"
+            f"chart={out['chart_type']:<7s} retries={out['retries']}  {text[:50]}"
         )
 
     # ----- aggregate -----
@@ -109,6 +120,9 @@ def main() -> int:
     n_ran_ok = sum(r["ran_ok"] for r in results)
     n_tables_ok = sum(r["tables_ok"] for r in results)
     n_method_ok = sum(r["method_ok"] for r in results)
+    # Chart accuracy is scored only over questions that returned rows.
+    chart_scored = [r for r in results if r["rows"] > 0 and r["expected_chart"] is not None]
+    n_chart_ok = sum(r["chart_ok"] for r in chart_scored)
     n_pascal_violations = sum(1 for r in results if r["pascal_violations"])
     method_counts = Counter(r["method"] for r in results)
     graph_pct = method_counts.get("graph", 0) / n * 100
@@ -121,6 +135,9 @@ def main() -> int:
     print(f"Ran without DB error : {n_ran_ok}/{n}")
     print(f"Expected tables hit  : {n_tables_ok}/{n}      {'PASS' if n_tables_ok >= 14 else 'FAIL'} (target ≥14)")
     print(f"Expected method hit  : {n_method_ok}/{n}")
+    if chart_scored:
+        chart_pct = n_chart_ok / len(chart_scored) * 100
+        print(f"Chart type hit       : {n_chart_ok}/{len(chart_scored)}      ({chart_pct:.1f}%, scored over rows>0)")
     print(f"Method breakdown     : {dict(method_counts)}")
     print(f"  graph %            : {graph_pct:.1f}%   {'PASS' if graph_pct >= 60 else 'FAIL'} (target ≥60%)")
     print(f"Self-correction used : {retry_total} times")

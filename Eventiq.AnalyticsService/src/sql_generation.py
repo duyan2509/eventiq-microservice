@@ -9,7 +9,7 @@ from __future__ import annotations
 import re
 
 from . import llm_client
-from .prompt_builder import build_prompt
+from .prompt_builder import build_org_prompt, build_prompt
 
 
 _FENCE_OPEN = re.compile(r"^\s*```[\w]*\s*\n?", re.MULTILINE)
@@ -39,9 +39,11 @@ def generate_sql(
     *,
     max_tokens: int = 600,
     temperature: float = 0.0,
+    org_mode: bool = False,
 ) -> str:
     """Build the prompt, call the LLM, return cleaned SQL."""
-    prompt = build_prompt(question, subgraph, schema)
+    builder = build_org_prompt if org_mode else build_prompt
+    prompt = builder(question, subgraph, schema)
     raw = llm_client.call(
         prompt,
         max_tokens=max_tokens,
