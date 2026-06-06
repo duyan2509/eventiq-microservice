@@ -122,6 +122,7 @@ public class LegendRepository : BaseRepository, ILegendRepository
     UPDATE legends
     SET name = COALESCE(@Name, name),
         color = COALESCE(@Color, color),
+        price = COALESCE(@Price, price),
         updated_at = NOW()
     WHERE id = @LegendId
       AND event_id = @EventId
@@ -134,7 +135,8 @@ public class LegendRepository : BaseRepository, ILegendRepository
                     LegendId = legendId,
                     EventId = eventId,
                     dto.Name,
-                    dto.Color
+                    dto.Color,
+                    dto.Price
                 },
                 transaction: _transaction
             );
