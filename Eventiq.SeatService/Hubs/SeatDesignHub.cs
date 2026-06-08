@@ -25,6 +25,14 @@ public class SeatDesignHub : Hub
     private static readonly Dictionary<Guid, Guid> _seatMapOrgCache = new();
     private static readonly object _orgCacheLock = new();
 
+    // Tracks which seat map + user each live connection belongs to, so a dropped
+    // connection (tab close, network loss) can clean up presence in OnDisconnectedAsync
+    // even when the client never reaches LeaveSeatMap. Ref-counted per user so a user
+    // with multiple tabs open only disappears once the LAST connection goes away.
+    private static readonly Dictionary<string, (Guid SeatMapId, Guid UserId)> _connectionInfo = new();
+    private static readonly Dictionary<(Guid SeatMapId, Guid UserId), HashSet<string>> _userConnections = new();
+    private static readonly object _connLock = new();
+
     public SeatDesignHub(
         ISeatDesignService designService,
         IPresenceService presenceService,
@@ -57,6 +65,7 @@ public class SeatDesignHub : Hub
 
         await Groups.AddToGroupAsync(Context.ConnectionId, groupName);
         await _presenceService.AddUserAsync(seatMapId, user);
+        RegisterConnection(seatMapId, user.UserId, Context.ConnectionId);
 
         var onlineUsers = await _presenceService.GetOnlineUsersAsync(seatMapId);
         var selections = await _presenceService.GetSelectionsAsync(seatMapId);
@@ -67,17 +76,31 @@ public class SeatDesignHub : Hub
 
     public async Task LeaveSeatMap(Guid seatMapId)
     {
-        var userId = GetUserId();
         var groupName = GetGroupName(seatMapId);
-
         await Groups.RemoveFromGroupAsync(Context.ConnectionId, groupName);
-        await _presenceService.RemoveUserAsync(seatMapId, userId);
-        await Clients.OthersInGroup(groupName).SendAsync("UserLeft", userId);
+
+        // Only clear presence and notify peers when this was the user's last open tab.
+        if (UnregisterConnection(Context.ConnectionId) is (var smId, var uId, true))
+        {
+            await _presenceService.RemoveUserAsync(smId, uId);
+            await Clients.OthersInGroup(GetGroupName(smId)).SendAsync("UserLeft", uId);
+        }
     }
 
     public override async Task OnDisconnectedAsync(Exception? exception)
     {
         lock (_orgIdLock) { _connectionOrgId.Remove(Context.ConnectionId); }
+
+        // A dropped connection (closed tab, lost network) never calls LeaveSeatMap, so
+        // do the same cleanup here — otherwise the user's cursor and presence badge stay
+        // visible to everyone else forever. SignalR has already pulled this connection
+        // out of its groups, so Clients.Group reaches only the remaining members.
+        if (UnregisterConnection(Context.ConnectionId) is (var smId, var uId, true))
+        {
+            await _presenceService.RemoveUserAsync(smId, uId);
+            await Clients.Group(GetGroupName(smId)).SendAsync("UserLeft", uId);
+        }
+
         await base.OnDisconnectedAsync(exception);
     }
 
@@ -158,6 +181,12 @@ public class SeatDesignHub : Hub
         await Clients.OthersInGroup(GetGroupName(seatMapId)).SendAsync("CursorMoved", new { UserId = userId, cursor.X, cursor.Y });
     }
 
+    public async Task SendCursorLeave(Guid seatMapId)
+    {
+        var userId = GetUserId();
+        await Clients.OthersInGroup(GetGroupName(seatMapId)).SendAsync("CursorLeft", userId);
+    }
+
     public async Task SendSelection(Guid seatMapId, SelectionDto selection)
     {
         var userId = GetUserId();
@@ -208,6 +237,43 @@ public class SeatDesignHub : Hub
                     }
                 }
             });
+        }
+    }
+
+    private static void RegisterConnection(Guid seatMapId, Guid userId, string connectionId)
+    {
+        lock (_connLock)
+        {
+            _connectionInfo[connectionId] = (seatMapId, userId);
+            var key = (seatMapId, userId);
+            if (!_userConnections.TryGetValue(key, out var set))
+            {
+                set = new HashSet<string>();
+                _userConnections[key] = set;
+            }
+            set.Add(connectionId);
+        }
+    }
+
+    // Returns the seat map / user the connection belonged to, and whether it was the
+    // user's last connection on that map. Null if the connection was never tracked
+    // (e.g. disconnected before JoinSeatMap, or already unregistered by LeaveSeatMap).
+    private static (Guid SeatMapId, Guid UserId, bool IsLast)? UnregisterConnection(string connectionId)
+    {
+        lock (_connLock)
+        {
+            if (!_connectionInfo.Remove(connectionId, out var info))
+                return null;
+
+            var key = (info.SeatMapId, info.UserId);
+            var isLast = true;
+            if (_userConnections.TryGetValue(key, out var set))
+            {
+                set.Remove(connectionId);
+                if (set.Count == 0) _userConnections.Remove(key);
+                else isLast = false;
+            }
+            return (info.SeatMapId, info.UserId, isLast);
         }
     }
 

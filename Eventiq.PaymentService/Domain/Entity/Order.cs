@@ -18,5 +18,8 @@ public class Order : BaseEntity
     public DateTime SessionDate { get; set; }
     public DateTime? PaidAt { get; set; }
 
+    // Which path settled this order (Webhook vs Reconciliation). Null until Paid.
+    public SettlementSource? SettledBy { get; set; }
+
     public ICollection<OrderItem> Items { get; set; } = new List<OrderItem>();
 }
