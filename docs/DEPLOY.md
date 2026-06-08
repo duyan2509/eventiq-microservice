@@ -62,7 +62,16 @@ curl http://localhost:5001/gateway/auth/login -H "Content-Type: application/json
 
 ---
 
-## 2. Azure (AKS) deploy
+## 2. Azure deploy
+
+**The supported cloud target is Azure Container Apps (no Kubernetes) —
+see [`DEPLOY-ACA.md`](DEPLOY-ACA.md).** It uses all-Azure backing services
+(PostgreSQL Flexible, Redis, Service Bus) and four scripts in
+[`../deploy/aca/`](../deploy/aca/). The AKS notes below are kept for reference
+only and are superseded by DEPLOY-ACA.md.
+
+<details>
+<summary>Legacy AKS path (reference)</summary>
 
 Resource provisioning (ACR, AKS, Postgres Flexible, Redis, Key Vault, ingress)
 is in [`../infrastructure.md`](../infrastructure.md) §2–§4. Deploy order:
@@ -81,6 +90,8 @@ is in [`../infrastructure.md`](../infrastructure.md) §2–§4. Deploy order:
 - Ocelot service URLs switch from `localhost:52xx` to k8s DNS (`user-service:8081`, …).
 - SeatService ingress needs WebSocket annotations + sticky routing for SignalR (infrastructure.md §6).
 - RSA keys mounted from Key Vault via CSI driver into `/app/keys`.
+
+</details>
 
 ---
 

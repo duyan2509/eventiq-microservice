@@ -1,0 +1,2 @@
+# Real config holds secrets — never commit it. Keep config.example.ps1 only.
+config.ps1

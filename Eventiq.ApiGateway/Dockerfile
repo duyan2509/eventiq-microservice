@@ -19,4 +19,6 @@ RUN dotnet publish "./Eventiq.ApiGateway.csproj" -c $BUILD_CONFIGURATION -o /app
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
+# RSA public key for JWT validation (Jwt__PublicKeyPath=/app/keys/public.key)
+COPY keys/public.key ./keys/public.key
 ENTRYPOINT ["dotnet", "Eventiq.ApiGateway.dll"]
