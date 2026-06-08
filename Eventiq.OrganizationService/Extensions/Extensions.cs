@@ -18,7 +18,7 @@ public static class Extensions
         builder.Host.UseEventiqSerilog();
         builder.Services.AddServices(builder.Configuration)
             .AddInfrastructure(builder.Configuration);
-        builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
+        builder.Services.AddAutoMapper(_ => { }, AppDomain.CurrentDomain.GetAssemblies());
         JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
         var publicKey = RsaKeyLoader.LoadPublicKey(
             builder.Configuration["Jwt:PublicKeyPath"]

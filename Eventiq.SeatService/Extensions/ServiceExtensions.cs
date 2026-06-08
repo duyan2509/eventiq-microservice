@@ -26,7 +26,7 @@ public static class ServiceExtensions
         builder.Services.AddInfrastructure(builder.Configuration);
 
         // AutoMapper
-        builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
+        builder.Services.AddAutoMapper(_ => { }, AppDomain.CurrentDomain.GetAssemblies());
 
         // SignalR + Redis backplane
         var redisConnectionString = builder.Configuration.GetConnectionString("Redis") ?? "localhost:6379";

@@ -27,7 +27,7 @@ public static class Extensions
         builder.Services.AddScoped<ISeatServiceClient, SeatServiceClient>();
         builder.Services.AddServices(builder.Configuration)
             .AddInfrastructure(builder.Configuration);
-        builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
+        builder.Services.AddAutoMapper(_ => { }, AppDomain.CurrentDomain.GetAssemblies());
         Dapper.DefaultTypeMap.MatchNamesWithUnderscores = true;
 
         JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
