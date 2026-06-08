@@ -10,6 +10,7 @@ public sealed class PaymentDbContext : DbContext
 
     public DbSet<Order> Orders => Set<Order>();
     public DbSet<OrderItem> OrderItems => Set<OrderItem>();
+    public DbSet<WebhookEvent> WebhookEvents => Set<WebhookEvent>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -23,8 +24,19 @@ public sealed class PaymentDbContext : DbContext
             e.HasIndex(x => x.UserId);
             e.HasIndex(x => x.SessionId);
             e.Property(x => x.Status).HasConversion<string>();
+            e.Property(x => x.SettledBy).HasConversion<string>();
             e.Property(x => x.TotalAmount).HasPrecision(18, 2);
             e.Property(x => x.PlatformFee).HasPrecision(18, 2);
+            // Optimistic concurrency on Postgres' system xmin column: when the webhook and the
+            // reconciliation job race to settle the same order, the loser gets a
+            // DbUpdateConcurrencyException instead of a double-settle. xmin is a system column,
+            // so this maps an existing column and generates no schema change.
+            // NB: keep this obsolete API on purpose — the "recommended" IsRowVersion() maps xmin
+            // as a NEW column and emits a broken AddColumn migration. UseXminAsConcurrencyToken
+            // is the only form that produces the correct no-op migration for a system column.
+#pragma warning disable CS0618
+            e.UseXminAsConcurrencyToken();
+#pragma warning restore CS0618
         });
 
         modelBuilder.Entity<OrderItem>(e =>
@@ -36,6 +48,14 @@ public sealed class PaymentDbContext : DbContext
                 .OnDelete(DeleteBehavior.Cascade);
             e.HasIndex(x => x.OrderId);
             e.Property(x => x.Price).HasPrecision(18, 2);
+        });
+
+        modelBuilder.Entity<WebhookEvent>(e =>
+        {
+            e.HasKey(x => x.Id);
+            e.Property(x => x.Status).HasConversion<string>();
+            e.HasIndex(x => x.StripeEventId);  // lookup for idempotency (code-level dedupe)
+            e.HasIndex(x => x.Status);          // query Failed events for tracing
         });
 
         modelBuilder.AddInboxStateEntity();

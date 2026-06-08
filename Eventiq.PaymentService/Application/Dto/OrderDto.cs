@@ -14,12 +14,13 @@ public record OrderResponse(
     decimal PlatformFee,
     DateTime CreatedAt,
     DateTime? PaidAt,
+    string? SettledBy,
     List<OrderItemResponse> Items)
 {
     public static OrderResponse From(Order o) => new(
         o.Id, o.SessionId, o.EventName, o.SessionName, o.SessionDate,
         o.Status.ToString(), o.TotalAmount, o.PlatformFee,
-        o.CreatedAt, o.PaidAt,
+        o.CreatedAt, o.PaidAt, o.SettledBy?.ToString(),
         o.Items.Select(OrderItemResponse.From).ToList());
 }
 

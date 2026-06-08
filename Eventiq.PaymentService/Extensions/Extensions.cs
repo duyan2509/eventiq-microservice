@@ -3,6 +3,7 @@ using System.Security.Claims;
 using Eventiq.PaymentService.Application.Service.Implement;
 using Eventiq.PaymentService.Application.Service.Interface;
 using Eventiq.PaymentService.Helper;
+using Eventiq.PaymentService.Infrastructure.BackgroundServices;
 using Eventiq.PaymentService.Infrastructure.Persistence;
 using Eventiq.Logging;
 using MassTransit;
@@ -23,9 +24,14 @@ public static class Extensions
             opt.UseNpgsql(connStr).UseSnakeCaseNamingConvention());
 
         builder.Services.AddScoped<ICheckoutService, CheckoutService>();
+        builder.Services.AddScoped<IOrderSettlementService, OrderSettlementService>();
         builder.Services.AddScoped<IWebhookService, WebhookService>();
+        builder.Services.AddScoped<IWebhookAdminService, WebhookAdminService>();
         builder.Services.AddScoped<IOrderService, OrderService>();
         builder.Services.AddScoped<IAnalyticsService, AnalyticsService>();
+
+        // Safety net for lost/failed Stripe webhooks — polls Stripe for stuck Pending orders.
+        builder.Services.AddHostedService<PaymentReconciliationService>();
 
         // gRPC clients
         var eventServiceUrl = builder.Configuration["InternalServices:EventServiceBaseUrl"] ?? "http://localhost:5332";

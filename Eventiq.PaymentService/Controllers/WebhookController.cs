@@ -1,5 +1,6 @@
 using Eventiq.PaymentService.Application.Service.Interface;
 using Microsoft.AspNetCore.Mvc;
+using Stripe;
 
 namespace Eventiq.PaymentService.Controllers;
 
@@ -19,7 +20,17 @@ public class WebhookController : ControllerBase
     {
         var payload = await new StreamReader(Request.Body).ReadToEndAsync();
         var signature = Request.Headers["Stripe-Signature"].ToString();
-        await _webhookService.HandleAsync(payload, signature);
-        return Ok();
+        try
+        {
+            await _webhookService.HandleAsync(payload, signature);
+            return Ok();
+        }
+        catch (StripeException ex)
+        {
+            // Signature/parse failure — already recorded for tracing. 400 (do not look
+            // like a server crash). Processing errors are NOT caught here: they bubble
+            // up to 500 so Stripe retries.
+            return BadRequest(new { error = ex.Message });
+        }
     }
 }
