@@ -115,11 +115,3 @@
 - **Metric EX-Acc nghiêm** phạt oan câu mơ hồ / cột thừa (đã định lượng ở mục 5).
 - LLM `llama-3.3-70b` zero-shot (Turbo/FP8 qua Together). 65% là ngoài tầm với phương pháp prompting; cần model mạnh hơn / query decomposition / fine-tune (future work).
 
----
-
-## 7. Hình cho slide
-- Bar chart: Overall EX-Acc baseline (47%) vs pipeline đề xuất (51.8%) + V1/V2/V3 depth.
-- Grouped bar: EX-Acc theo độ khó × cấu hình (cho thấy value-linking giúp ở hard).
-- Line/bar: EX-Acc giảm theo #services (64→36→14→0%).
-- Bảng error taxonomy (mục 5) + bảng ablation tính năng (mục 2b, có cả kết quả âm của enrich).
-- Screenshot: 1 câu qua FastAPI `/api/analytics/query` (SQL + bảng + chart).

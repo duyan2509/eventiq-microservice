@@ -138,6 +138,42 @@ python scripts/diff_results.py eval_results.json eval_results_full_col_val.json
 
 ---
 
+## Evaluation Artefacts
+
+Result files produced by `scripts/eval.py` and `scripts/ablation.py`. All live at the repo root of `Eventiq.AnalyticsService/`.
+
+| File | Produced by | Contents |
+|---|---|---|
+| `eval_results.json` | `eval.py` (baseline) | Per-question output for the graph schema-linking baseline (46.99%) |
+| `eval_results_full_col.json` | `eval.py --column-linking` | + column linking |
+| `eval_results_full_val.json` | `eval.py --value-linking` | + value linking |
+| `eval_results_full_col_val.json` | `eval.py --column-linking --value-linking` | **Proposed pipeline** (51.81%) ⭐ |
+| `eval_results_full_enr.json` | `eval.py --enrich` | + prompt enrichment (rules + few-shot) — degrades accuracy |
+| `eval_results_full_col_enr.json` | `eval.py --column-linking --enrich` | column + enrich |
+| `eval_results_full_val_enr.json` | `eval.py --value-linking --enrich` | value + enrich |
+| `eval_results_full_col_val_enr.json` | `eval.py --column-linking --value-linking --enrich` | all three |
+| `ablation_results.json` | `scripts/ablation.py` | Side-by-side comparison of all 8 variants across all 83 questions |
+| `diff_full_col_val.json` | `scripts/diff_results.py` | Question-level diff: baseline vs proposed pipeline (which flipped correct ↔ wrong) |
+
+Each entry in an `eval_results_*.json` file has the shape:
+```json
+{
+  "id": 12,
+  "question": "...",
+  "gold_sql": "SELECT ...",
+  "predicted_sql": "SELECT ...",
+  "gold_result": [[...]],
+  "predicted_result": [[...]],
+  "correct": false,
+  "error": null,
+  "schema_linking_method": "graph",
+  "relevant_tables": ["event_service.events"],
+  "retries": 1
+}
+```
+
+---
+
 ## Evaluation Results (summary)
 
 | Configuration | EX-Acc |
