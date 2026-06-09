@@ -37,14 +37,32 @@ def generate_sql(
     subgraph: dict,
     schema: dict[str, str],
     *,
+    columns=None,
+    values=None,
+    enrich: bool = False,
     max_tokens: int = 600,
     temperature: float = 0.0,
 ) -> str:
     """Build the prompt, call the LLM, return cleaned SQL."""
-    prompt = build_prompt(question, subgraph, schema)
+    prompt = build_prompt(question, subgraph, schema, columns=columns, values=values,
+                          enrich=enrich)
     raw = llm_client.call(
         prompt,
         max_tokens=max_tokens,
         temperature=temperature,
     )
     return clean_sql(raw)
+
+
+def generate_sql_full_schema(
+    question: str,
+    schema: dict[str, str],
+    *,
+    max_tokens: int = 600,
+    temperature: float = 0.0,
+) -> str:
+    full_subgraph = {"tables": list(schema.keys()), "join_hints": []}
+    return generate_sql(
+        question, full_subgraph, schema,
+        max_tokens=max_tokens, temperature=temperature,
+    )

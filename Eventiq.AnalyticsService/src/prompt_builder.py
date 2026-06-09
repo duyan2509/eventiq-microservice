@@ -92,6 +92,49 @@ LIMIT 1;
 """
 
 
+# Best-practice rules, added only under `enrich` (keeps the baseline prompt
+# byte-identical). Domain-agnostic — not tuned to specific questions.
+_QUERY_RULES = """\
+QUY TẮC TRUY VẤN (best practice — áp dụng khi phù hợp):
+- Khi thống kê/đếm THEO TỪNG nhóm (mỗi tổ chức, mỗi sự kiện, mỗi khách hàng...): \
+LEFT JOIN từ bảng nhóm sang bảng chi tiết để GIỮ cả nhóm có 0 bản ghi \
+(KHÔNG để INNER JOIN làm rớt nhóm có count = 0).
+- Chỉ SELECT đúng các cột câu hỏi cần; KHÔNG thêm cột mô tả thừa.
+- Đếm số đối tượng duy nhất: dùng COUNT(DISTINCT ...).
+- Tỉ lệ/phần trăm: ép numeric khi chia và chặn chia 0, vd `x::numeric / NULLIF(y, 0)`.
+"""
+
+# Few-shot for SQL constructs (window, HAVING, NOT EXISTS, ratio). Scenarios
+# are disjoint from the eval questions — they teach the pattern, not the test.
+_FEW_SHOT_PATTERNS = """\
+
+-- Câu hỏi: Đánh số thứ tự các suất diễn theo thời gian trong mỗi sự kiện?
+SELECT s.event_id, s.id,
+       ROW_NUMBER() OVER (PARTITION BY s.event_id ORDER BY s.start_time) AS seq
+FROM event_service.sessions s;
+
+-- Câu hỏi: Những tổ chức có nhiều hơn 5 sự kiện?
+SELECT e.organization_id, COUNT(*) AS event_count
+FROM event_service.events e
+WHERE NOT e.is_deleted
+GROUP BY e.organization_id
+HAVING COUNT(*) > 5;
+
+-- Câu hỏi: Tổ chức nào chưa tạo sự kiện nào?
+SELECT org."Id", org."Name"
+FROM org_service."Organizations" org
+WHERE NOT org."IsDeleted"
+  AND NOT EXISTS (
+    SELECT 1 FROM event_service.events e WHERE e.organization_id = org."Id"
+  );
+
+-- Câu hỏi: Tỉ lệ đơn đã thanh toán trên tổng số đơn?
+SELECT COUNT(*) FILTER (WHERE o.status = 'Paid')::numeric
+       / NULLIF(COUNT(*), 0) AS paid_ratio
+FROM payment_service.orders o;
+"""
+
+
 def _ddl_section(tables: Iterable[str], schema: dict[str, str]) -> str:
     blocks = []
     for fq in tables:
@@ -110,27 +153,64 @@ def _join_section(hints: Iterable[str]) -> str:
     return "\n".join(f"- {h}" for h in hints)
 
 
+def _column_section(columns) -> str:
+    cols = list(columns or [])
+    if not cols:
+        return ""
+    listed = "\n".join(f"- {c}" for c in cols)
+    return (
+        "CỘT LIÊN QUAN (column linking): chỉ dùng các cột dưới đây cho SELECT/WHERE/"
+        "GROUP BY/ORDER BY. Cột khóa JOIN ở mục JOIN được phép dùng thêm. KHÔNG thêm "
+        "cột mô tả thừa ngoài yêu cầu của câu hỏi.\n"
+        f"{listed}\n\n"
+    )
+
+
+def _value_section(values) -> str:
+    vals = list(values or [])
+    if not vals:
+        return ""
+    listed = "\n".join(f"- {tbl}.{col} = '{val}'" for tbl, col, val in vals)
+    return (
+        "GIÁ TRỊ THỰC TẾ TRONG DB (value linking): các từ trong câu hỏi khớp ĐÚNG với "
+        "giá trị có thật trong cột dưới đây. Khi lọc theo những từ này, BẮT BUỘC dùng "
+        "đúng cột và đúng giá trị (đã lấy trực tiếp từ DB), KHÔNG tự đoán mã số/enum khác.\n"
+        f"{listed}\n\n"
+    )
+
+
 def build_prompt(
     question: str,
     subgraph: dict,
     schema: dict[str, str],
+    columns=None,
+    values=None,
+    enrich: bool = False,
 ) -> str:
     """Render the full prompt for SQL generation.
 
     `subgraph` is the dict produced by `schema_linking.schema_link`,
     i.e. it must have `tables: list[str]` and `join_hints: list[str]`.
+    `columns` (optional) is the validated `table.col` list from
+    `column_linking.link_columns`; when present the model is told to
+    restrict SELECT/WHERE to those columns.
     """
     ddl_block = _ddl_section(subgraph.get("tables", []), schema)
     join_block = _join_section(subgraph.get("join_hints", []))
+    rules_block = f"{_QUERY_RULES}\n" if enrich else ""
+    few_shot = _FEW_SHOT + (_FEW_SHOT_PATTERNS if enrich else "")
 
     return (
         f"{_SYSTEM}\n\n"
         f"{_NAMING_RULES}\n"
         f"{_ENUMS}\n"
         f"{_SOFT_DELETE}\n"
+        f"{rules_block}"
         f"Schema (chỉ dùng các bảng/cột dưới đây):\n{ddl_block}\n\n"
         f"Quan hệ JOIN (ưu tiên dùng đúng các điều kiện này):\n{join_block}\n\n"
-        f"{_FEW_SHOT}\n"
+        f"{_column_section(columns)}"
+        f"{_value_section(values)}"
+        f"{few_shot}\n"
         f"Câu hỏi: {question}\n"
         f"SQL:"
     )

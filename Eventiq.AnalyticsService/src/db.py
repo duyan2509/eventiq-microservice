@@ -15,9 +15,16 @@ BUSINESS_SCHEMAS = (
 )
 
 
+_MODE_PREFIX = {
+    "dev": "NEON_DB_",
+    "eval": "EVAL_DB_",
+    "prod": "ANALYTICS_DB_",
+}
+
+
 def _conn_kwargs() -> dict:
-    mode = os.getenv("ANALYTICS_MODE", "dev").lower()
-    prefix = "NEON_DB_" if mode == "dev" else "ANALYTICS_DB_"
+    mode = current_mode()
+    prefix = _MODE_PREFIX.get(mode, "ANALYTICS_DB_")
     return {
         "host": os.environ[f"{prefix}HOST"],
         "port": int(os.environ[f"{prefix}PORT"]),

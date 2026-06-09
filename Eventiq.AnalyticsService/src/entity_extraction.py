@@ -148,8 +148,16 @@ def entity_extraction(question: str) -> dict:
           "confidence": float,
         }
     """
-    raw = llm_client.call(_build_prompt(question), max_tokens=400, temperature=0.0)
-    parsed = _parse_json(raw)
+    raw = llm_client.call(_build_prompt(question), max_tokens=400, temperature=0.0,
+                          response_format={"type": "json_object"})
+    try:
+        parsed = _parse_json(raw)
+    except (json.JSONDecodeError, ValueError):
+        # A single malformed LLM JSON must not abort an 83-question run. Degrade
+        # to an empty entity (routes to keyword-fallback schema linking) instead.
+        parsed = {}
+    if not isinstance(parsed, dict):
+        parsed = {}
     # Soft validation — keep going even if some fields missing.
     parsed.setdefault("tables", [])
     parsed.setdefault("filters", [])

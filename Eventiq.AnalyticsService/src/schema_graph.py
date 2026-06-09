@@ -70,6 +70,14 @@ def build_graph(
         g.add_node(table_a)
         g.add_node(table_b)
         g.add_edge(table_a, table_b, cols={table_a: col_a, table_b: col_b})
+
+    # Attach column metadata to existing nodes (name, type, role) for
+    # column-level schema linking. Only nodes already present get the
+    # attribute — we don't add isolated nodes (keeps the graph connected).
+    from .schema_columns import column_meta
+    meta = column_meta()
+    for n in g.nodes:
+        g.nodes[n]["columns"] = meta.get(n, [])
     return g
 
 
