@@ -79,13 +79,14 @@ def test_graph_connected(graph: nx.Graph) -> None:
 # ---------------------------------------------------------------- edges
 def test_edge_orders_users_attrs(graph: nx.Graph) -> None:
     attrs = graph['payment_service.orders']['user_service."Users"']
-    # Edge is undirected; we don't enforce which endpoint is "a".
-    assert {attrs["col_a"], attrs["col_b"]} == {"user_id", "Id"}
+    assert set(attrs["cols"].values()) == {"user_id", "Id"}
+    assert attrs["cols"]['payment_service.orders'] == "user_id"
+    assert attrs["cols"]['user_service."Users"'] == "Id"
 
 
 def test_edge_seats_legends_attrs(graph: nx.Graph) -> None:
     attrs = graph['seat_service.seats']['event_service.legends']
-    assert {attrs["col_a"], attrs["col_b"]} == {"legend_id", "id"}
+    assert set(attrs["cols"].values()) == {"legend_id", "id"}
 
 
 # ---------------------------------------------------------------- dump

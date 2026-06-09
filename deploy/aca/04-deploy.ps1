@@ -73,7 +73,7 @@ Deploy-App -Name "api-gateway" -Image "api-gateway" -Ingress "external" `
 
 # =============================== USER SERVICE ===============================
 Deploy-App -Name "user-service" -Image "user-service" -Ingress "internal" `
-  -Secrets @("pg-conn=$PG_CONN","sb-conn=$SB_CONN","blob-conn=$BLOB_CONN","seed-admin-pwd=$SEED_ADMIN_PASSWORD") `
+  -Secrets @("pg-conn=$PG_CONN_USER","sb-conn=$SB_CONN","blob-conn=$BLOB_CONN","seed-admin-pwd=$SEED_ADMIN_PASSWORD") `
   -EnvVars @(
     $ASPNET, $URLS, $JWT_PUB, "Jwt__PrivateKeyPath=/app/keys/private.key",
     "ConnectionStrings__Postgres=secretref:pg-conn",
@@ -86,7 +86,7 @@ Deploy-App -Name "user-service" -Image "user-service" -Ingress "internal" `
 
 # =============================== ORG SERVICE ================================
 Deploy-App -Name "org-service" -Image "org-service" -Ingress "internal" `
-  -Secrets @("pg-conn=$PG_CONN","sb-conn=$SB_CONN","blob-conn=$BLOB_CONN") `
+  -Secrets @("pg-conn=$PG_CONN_ORG","sb-conn=$SB_CONN","blob-conn=$BLOB_CONN") `
   -EnvVars @(
     $ASPNET, $URLS, $JWT_PUB,
     "ConnectionStrings__Postgres=secretref:pg-conn",
@@ -97,7 +97,7 @@ Deploy-App -Name "org-service" -Image "org-service" -Ingress "internal" `
 
 # ============================== EVENT SERVICE ==============================
 Deploy-App -Name "event-service" -Image "event-service" -Ingress "internal" `
-  -Secrets @("pg-conn=$PG_CONN","sb-conn=$SB_CONN","blob-conn=$BLOB_CONN") `
+  -Secrets @("pg-conn=$PG_CONN_EVENT","sb-conn=$SB_CONN","blob-conn=$BLOB_CONN") `
   -EnvVars @(
     $ASPNET, $URLS, $JWT_PUB,
     "ConnectionStrings__Postgres=secretref:pg-conn",
@@ -109,7 +109,7 @@ Deploy-App -Name "event-service" -Image "event-service" -Ingress "internal" `
 # =============================== SEAT SERVICE ===============================
 # External ingress so SignalR clients connect directly (VITE_SEAT_HUB_BASE_URL).
 Deploy-App -Name "seat-service" -Image "seat-service" -Ingress "external" -MaxReplicas 3 `
-  -Secrets @("pg-conn=$PG_CONN","sb-conn=$SB_CONN","redis-conn=$REDIS_CONN") `
+  -Secrets @("pg-conn=$PG_CONN_SEAT","sb-conn=$SB_CONN","redis-conn=$REDIS_CONN") `
   -EnvVars @(
     $ASPNET, $URLS, $JWT_PUB,
     "ConnectionStrings__Postgres=secretref:pg-conn",
@@ -121,7 +121,7 @@ az containerapp ingress sticky-sessions set -n "seat-service" -g $RG --affinity 
 
 # ============================= PAYMENT SERVICE =============================
 Deploy-App -Name "payment-service" -Image "payment-service" -Ingress "internal" `
-  -Secrets @("pg-conn=$PG_CONN","sb-conn=$SB_CONN","stripe-secret=$STRIPE_SECRET_KEY","stripe-webhook=$STRIPE_WEBHOOK_SECRET","ticket-secret=$TICKET_SIGNING_SECRET") `
+  -Secrets @("pg-conn=$PG_CONN_PAYMENT","sb-conn=$SB_CONN","stripe-secret=$STRIPE_SECRET_KEY","stripe-webhook=$STRIPE_WEBHOOK_SECRET","ticket-secret=$TICKET_SIGNING_SECRET") `
   -EnvVars @(
     $ASPNET, $URLS, $JWT_PUB,
     "ConnectionStrings__Postgres=secretref:pg-conn",
@@ -134,7 +134,11 @@ Deploy-App -Name "payment-service" -Image "payment-service" -Ingress "internal" 
     "InternalServices__SeatServiceBaseUrl=http://seat-service",
     "InternalServices__OrgServiceBaseUrl=http://org-service",
     "Frontend__BaseUrl=$FRONTEND_URL",
-    "Ticket__SigningSecret=secretref:ticket-secret"
+    "Ticket__SigningSecret=secretref:ticket-secret",
+    # Fast settle for the demo: reconcile every 5s with no grace window, so a paid
+    # order flips to Sold within ~10s even if the Stripe webhook is missed.
+    "Reconciliation__IntervalSeconds=5",
+    "Reconciliation__GraceMinutes=0"
   )
 
 # ============================== EMAIL SERVICE ==============================
@@ -152,18 +156,20 @@ Deploy-App -Name "email-service" -Image "email-service" -Ingress "none" `
   )
 
 # ============================ ANALYTICS SERVICE ============================
-# Python FastAPI; ANALYTICS_MODE=dev reads NEON_DB_* (here = the Azure PG server,
-# multi-schema in one database).
+# Prod (FDW) mode: connects to analytics_db, where 05-setup-fdw.ps1 has imported
+# the 5 service schemas as foreign tables. Same Text2SQL SQL as Neon dev mode,
+# but the cross-service JOINs resolve through postgres_fdw. Run 05-setup-fdw.ps1
+# (after 03-migrate) before relying on this.
 Deploy-App -Name "analytics-service" -Image "analytics-service" -Ingress "internal" `
   -Secrets @("pg-password=$PG_PASSWORD","groq-key=$GROQ_API_KEY") `
   -EnvVars @(
-    "ANALYTICS_MODE=dev",
-    "NEON_DB_HOST=$PG_HOST",
-    "NEON_DB_PORT=5432",
-    "NEON_DB_NAME=$PG_DB",
-    "NEON_DB_USER=$PG_ADMIN",
-    "NEON_DB_PASSWORD=secretref:pg-password",
-    "NEON_DB_SSLMODE=require",
+    "ANALYTICS_MODE=prod",
+    "ANALYTICS_DB_HOST=$PG_HOST",
+    "ANALYTICS_DB_PORT=5432",
+    "ANALYTICS_DB_NAME=$PG_DB_ANALYTICS",
+    "ANALYTICS_DB_USER=$PG_ADMIN",
+    "ANALYTICS_DB_PASSWORD=secretref:pg-password",
+    "ANALYTICS_DB_SSLMODE=require",
     "GROQ_API_KEY=secretref:groq-key",
     "GROQ_MODEL=$GROQ_MODEL"
   )

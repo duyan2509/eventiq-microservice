@@ -1,0 +1,2604 @@
+{
+  "V1 — No schema linking": [
+    {
+      "id": "001",
+      "question": "Có bao nhiêu user mới tháng này?",
+      "difficulty": "easy",
+      "involves_services": [
+        "user"
+      ],
+      "variant": "no_linking",
+      "schema_linking_method": null,
+      "predicted_sql": "SELECT COUNT(*) AS new_users FROM user_service.\"Users\" u WHERE u.\"CreatedAt\" >= DATE_TRUNC('month', CURRENT_DATE) AND NOT u.\"IsDeleted\";",
+      "error": null,
+      "retries": 0,
+      "row_count": 1,
+      "correct": true
+    },
+    {
+      "id": "002",
+      "question": "Doanh thu theo tháng năm nay",
+      "difficulty": "easy",
+      "involves_services": [
+        "payment"
+      ],
+      "variant": "no_linking",
+      "schema_linking_method": null,
+      "predicted_sql": "SELECT DATE_TRUNC('month', o.paid_at) AS month, SUM(o.total_amount) AS revenue \nFROM payment_service.orders o \nWHERE o.status = 'Paid' AND EXTRACT(YEAR FROM o.paid_at) = EXTRACT(YEAR FROM CURRENT_DATE) \nGROUP BY 1 \nORDER BY 1;",
+      "error": null,
+      "retries": 0,
+      "row_count": 6,
+      "correct": true
+    },
+    {
+      "id": "003",
+      "question": "Top 5 sự kiện bán nhiều vé nhất",
+      "difficulty": "medium",
+      "involves_services": [
+        "event"
+      ],
+      "variant": "no_linking",
+      "schema_linking_method": null,
+      "predicted_sql": "SELECT e.name, COUNT(t.id) AS sold\nFROM event_service.events    e\nJOIN event_service.sessions  s ON s.event_id   = e.id\nJOIN event_service.tickets   t ON t.session_id = s.id\nWHERE NOT t.is_deleted AND NOT e.is_deleted AND NOT s.is_deleted\nGROUP BY e.id, e.name\nORDER BY sold DESC\nLIMIT 5;",
+      "error": null,
+      "retries": 0,
+      "row_count": 5,
+      "correct": true
+    },
+    {
+      "id": "004",
+      "question": "Tỉ lệ vé đã check-in của các sự kiện",
+      "difficulty": "medium",
+      "involves_services": [
+        "event"
+      ],
+      "variant": "no_linking",
+      "schema_linking_method": null,
+      "predicted_sql": "SELECT e.name, \n       COUNT(t.id) FILTER (WHERE t.is_checked_in) AS checked_in, \n       COUNT(t.id) AS total, \n       ROUND(COUNT(t.id) FILTER (WHERE t.is_checked_in) * 1.0 / COUNT(t.id), 2) AS check_in_rate\nFROM event_service.events e\nJOIN event_service.sessions s ON s.event_id = e.id\nJOIN event_service.tickets t ON t.session_id = s.id\nWHERE NOT e.is_deleted AND NOT s.is_deleted AND NOT t.is_deleted\nGROUP BY e.id, e.name\nORDER BY check_in_rate DESC;",
+      "error": null,
+      "retries": 0,
+      "row_count": 57,
+      "correct": false
+    },
+    {
+      "id": "005",
+      "question": "Sự kiện nào có doanh thu cao nhất tuần qua",
+      "difficulty": "hard",
+      "involves_services": [
+        "event",
+        "payment"
+      ],
+      "variant": "no_linking",
+      "schema_linking_method": null,
+      "predicted_sql": "SELECT e.name, SUM(o.total_amount) AS revenue\nFROM event_service.events e\nJOIN event_service.sessions s ON s.event_id = e.id\nJOIN payment_service.orders o ON o.session_id = s.id\nWHERE o.status = 'Paid'\n  AND o.paid_at >= CURRENT_DATE - INTERVAL '7 days'\nGROUP BY e.id, e.name\nORDER BY revenue DESC\nLIMIT 1;",
+      "error": null,
+      "retries": 0,
+      "row_count": 1,
+      "correct": true
+    },
+    {
+      "id": "006",
+      "question": "Tổng ghế đã bán theo từng sự kiện",
+      "difficulty": "hard",
+      "involves_services": [
+        "event",
+        "seat"
+      ],
+      "variant": "no_linking",
+      "schema_linking_method": null,
+      "predicted_sql": "SELECT e.name, COUNT(t.id) AS sold_seats\nFROM event_service.events e\nJOIN event_service.sessions s ON s.event_id = e.id\nJOIN event_service.tickets t ON t.session_id = s.id\nWHERE t.is_checked_in = TRUE AND NOT t.is_deleted\nGROUP BY e.id, e.name\nORDER BY sold_seats DESC;",
+      "error": null,
+      "retries": 0,
+      "row_count": 57,
+      "correct": false
+    },
+    {
+      "id": "007",
+      "question": "Org nào doanh thu cao nhất quý này",
+      "difficulty": "medium",
+      "involves_services": [
+        "org",
+        "payment"
+      ],
+      "variant": "no_linking",
+      "schema_linking_method": null,
+      "predicted_sql": "SELECT org_service.\"Organizations\".\"Name\", SUM(payment_service.orders.total_amount) AS revenue \nFROM payment_service.orders \nJOIN org_service.\"Organizations\" ON org_service.\"Organizations\".\"Id\" = payment_service.orders.org_id \nWHERE payment_service.orders.status = 'Paid' \n  AND payment_service.orders.paid_at >= DATE_TRUNC('quarter', CURRENT_DATE) \n  AND NOT payment_service.orders.is_deleted \n  AND NOT org_service.\"Organizations\".\"IsDeleted\" \nGROUP BY org_service.\"Organizations\".\"Id\", org_service.\"Organizations\".\"Name\" \nORDER BY revenue DESC \nLIMIT 1;",
+      "error": null,
+      "retries": 0,
+      "row_count": 1,
+      "correct": true
+    },
+    {
+      "id": "008",
+      "question": "Số lượng lời mời tham gia mỗi org",
+      "difficulty": "easy",
+      "involves_services": [
+        "org"
+      ],
+      "variant": "no_linking",
+      "schema_linking_method": null,
+      "predicted_sql": "SELECT org.\"Name\", COUNT(i.\"Id\") AS num_invitations\nFROM org_service.\"Invitations\" i\nJOIN org_service.\"Organizations\" org ON org.\"Id\" = i.\"OrganizationId\"\nWHERE NOT i.\"IsDeleted\"\nGROUP BY org.\"Id\", org.\"Name\"\nORDER BY num_invitations DESC;",
+      "error": null,
+      "retries": 0,
+      "row_count": 25,
+      "correct": false
+    },
+    {
+      "id": "009",
+      "question": "Sự kiện đang chờ duyệt",
+      "difficulty": "easy",
+      "involves_services": [
+        "event"
+      ],
+      "variant": "no_linking",
+      "schema_linking_method": null,
+      "predicted_sql": "SELECT e.name, e.start_time \nFROM event_service.events e \nWHERE e.status = 1 \n  AND NOT e.is_deleted;",
+      "error": null,
+      "retries": 0,
+      "row_count": 8,
+      "correct": false
+    },
+    {
+      "id": "010",
+      "question": "Khách hàng chi tiêu nhiều nhất top 10",
+      "difficulty": "medium",
+      "involves_services": [
+        "user",
+        "payment"
+      ],
+      "variant": "no_linking",
+      "schema_linking_method": null,
+      "predicted_sql": "SELECT u.\"Email\", SUM(o.total_amount) AS total_spent\nFROM payment_service.orders o\nJOIN user_service.\"Users\" u ON u.\"Id\" = o.user_id\nWHERE o.status = 'Paid'\nGROUP BY u.\"Id\", u.\"Email\"\nORDER BY total_spent DESC\nLIMIT 10;",
+      "error": null,
+      "retries": 0,
+      "row_count": 10,
+      "correct": false
+    },
+    {
+      "id": "011",
+      "question": "Phí platform đã thu trong tháng này",
+      "difficulty": "easy",
+      "involves_services": [
+        "payment"
+      ],
+      "variant": "no_linking",
+      "schema_linking_method": null,
+      "predicted_sql": "SELECT SUM(o.platform_fee) AS platform_fee\nFROM payment_service.orders o\nWHERE o.status = 'Paid'\n  AND o.paid_at >= DATE_TRUNC('month', CURRENT_DATE)\n  AND NOT o.is_deleted;",
+      "error": null,
+      "retries": 0,
+      "row_count": 1,
+      "correct": true
+    },
+    {
+      "id": "012",
+      "question": "Tỉ lệ ghế VIP đã bán",
+      "difficulty": "hard",
+      "involves_services": [
+        "seat",
+        "event"
+      ],
+      "variant": "no_linking",
+      "schema_linking_method": null,
+      "predicted_sql": "SELECT SUM(CASE WHEN s.seat_type = 1 AND t.id IS NOT NULL THEN 1 ELSE 0 END) * 1.0 / COUNT(s.id) AS vip_seat_ratio\nFROM seat_service.seats s\nLEFT JOIN event_service.tickets t ON s.id = t.seat_id\nWHERE s.seat_type = 1 AND NOT s.is_deleted;",
+      "error": null,
+      "retries": 0,
+      "row_count": 1,
+      "correct": false
+    },
+    {
+      "id": "013",
+      "question": "So sánh doanh thu Q1 vs Q2 năm nay",
+      "difficulty": "medium",
+      "involves_services": [
+        "payment"
+      ],
+      "variant": "no_linking",
+      "schema_linking_method": null,
+      "predicted_sql": "SELECT \n  SUM(CASE WHEN EXTRACT(QUARTER FROM o.paid_at) = 1 THEN o.total_amount ELSE 0 END) AS q1_revenue,\n  SUM(CASE WHEN EXTRACT(QUARTER FROM o.paid_at) = 2 THEN o.total_amount ELSE 0 END) AS q2_revenue\nFROM \n  payment_service.orders o\nWHERE \n  o.status = 'Paid' \n  AND EXTRACT(YEAR FROM o.paid_at) = EXTRACT(YEAR FROM CURRENT_DATE);",
+      "error": null,
+      "retries": 0,
+      "row_count": 1,
+      "correct": false
+    },
+    {
+      "id": "014",
+      "question": "Sự kiện có nhiều session nhất",
+      "difficulty": "easy",
+      "involves_services": [
+        "event"
+      ],
+      "variant": "no_linking",
+      "schema_linking_method": null,
+      "predicted_sql": "SELECT e.name, COUNT(s.id) AS num_sessions\nFROM event_service.events e\nJOIN event_service.sessions s ON s.event_id = e.id\nWHERE NOT e.is_deleted AND NOT s.is_deleted\nGROUP BY e.id, e.name\nORDER BY num_sessions DESC\nLIMIT 1;",
+      "error": null,
+      "retries": 0,
+      "row_count": 1,
+      "correct": true
+    },
+    {
+      "id": "015",
+      "question": "User bị ban gần đây",
+      "difficulty": "easy",
+      "involves_services": [
+        "user"
+      ],
+      "variant": "no_linking",
+      "schema_linking_method": null,
+      "predicted_sql": "SELECT u.\"Email\", u.\"Username\", bh.\"Reason\", bh.\"CreatedAt\" \nFROM user_service.\"BanHistories\" bh \nJOIN user_service.\"Users\" u ON u.\"Id\" = bh.\"UserId\" \nWHERE bh.\"CreatedAt\" >= CURRENT_DATE - INTERVAL '7 days' \nORDER BY bh.\"CreatedAt\" DESC;",
+      "error": null,
+      "retries": 0,
+      "row_count": 1,
+      "correct": false
+    },
+    {
+      "id": "016",
+      "question": "Số sơ đồ ghế template chưa được publish",
+      "difficulty": "hard",
+      "involves_services": [
+        "seat"
+      ],
+      "variant": "no_linking",
+      "schema_linking_method": null,
+      "predicted_sql": "SELECT COUNT(*) \nFROM seat_service.seat_maps \nWHERE status = 'Draft' AND session_id IS NULL AND NOT is_deleted;",
+      "error": null,
+      "retries": 0,
+      "row_count": 1,
+      "correct": true
+    },
+    {
+      "id": "017",
+      "question": "Doanh thu trung bình mỗi vé",
+      "difficulty": "medium",
+      "involves_services": [
+        "event",
+        "payment"
+      ],
+      "variant": "no_linking",
+      "schema_linking_method": null,
+      "predicted_sql": "SELECT AVG(o.total_amount / (SELECT COUNT(*) FROM event_service.tickets t WHERE t.order_id = o.id)) AS avg_revenue_per_ticket\nFROM payment_service.orders o\nWHERE o.status = 'Paid';",
+      "error": null,
+      "retries": 0,
+      "row_count": 1,
+      "correct": false
+    },
+    {
+      "id": "018",
+      "question": "Legend nào được dùng nhiều nhất trong các sơ đồ ghế",
+      "difficulty": "medium",
+      "involves_services": [
+        "event",
+        "seat"
+      ],
+      "variant": "no_linking",
+      "schema_linking_method": null,
+      "predicted_sql": "SELECT l.name, COUNT(s.legend_id) AS count \nFROM event_service.legends l \nJOIN seat_service.seats s ON l.id = s.legend_id \nWHERE NOT s.is_deleted \nGROUP BY l.id, l.name \nORDER BY count DESC \nLIMIT 1;",
+      "error": null,
+      "retries": 0,
+      "row_count": 1,
+      "correct": false
+    },
+    {
+      "id": "019",
+      "question": "Org nào chưa connect Stripe",
+      "difficulty": "medium",
+      "involves_services": [
+        "org"
+      ],
+      "variant": "no_linking",
+      "schema_linking_method": null,
+      "predicted_sql": "SELECT \"Name\" \nFROM org_service.\"Organizations\" \nWHERE \"StripeAccountId\" IS NULL AND NOT \"IsDeleted\";",
+      "error": null,
+      "retries": 0,
+      "row_count": 10,
+      "correct": true
+    },
+    {
+      "id": "020",
+      "question": "Số order Failed trong tuần qua",
+      "difficulty": "easy",
+      "involves_services": [
+        "payment"
+      ],
+      "variant": "no_linking",
+      "schema_linking_method": null,
+      "predicted_sql": "SELECT COUNT(*) AS failed_orders\nFROM payment_service.orders o\nWHERE o.status = 'Failed'\n  AND o.updated_at >= CURRENT_DATE - INTERVAL '7 days';",
+      "error": null,
+      "retries": 0,
+      "row_count": 1,
+      "correct": false
+    },
+    {
+      "id": "021",
+      "question": "Top 10 khách hàng mua ghế VIP chi tiêu cao nhất",
+      "difficulty": "cross-service",
+      "involves_services": [
+        "user",
+        "payment",
+        "seat",
+        "event"
+      ],
+      "variant": "no_linking",
+      "schema_linking_method": null,
+      "predicted_sql": "SELECT u.\"Email\", SUM(oi.price) AS total_spent\nFROM payment_service.order_items oi\nJOIN payment_service.orders o ON oi.order_id = o.id\nJOIN user_service.\"Users\" u ON u.\"Id\" = o.user_id\nJOIN seat_service.seats s ON s.id = oi.seat_id\nJOIN event_service.legends l ON l.id = s.legend_id\nWHERE l.price > (SELECT AVG(price) * 2 FROM event_service.legends)\nGROUP BY u.\"Id\", u.\"Email\"\nORDER BY total_spent DESC\nLIMIT 10;",
+      "error": null,
+      "retries": 0,
+      "row_count": 0,
+      "correct": false
+    },
+    {
+      "id": "022",
+      "question": "Doanh thu và phí platform theo từng sự kiện của mỗi tổ chức",
+      "difficulty": "cross-service",
+      "involves_services": [
+        "org",
+        "event",
+        "payment"
+      ],
+      "variant": "no_linking",
+      "schema_linking_method": null,
+      "predicted_sql": "SELECT org.\"Name\" AS organization_name, e.name AS event_name, \n       SUM(o.total_amount) AS revenue, \n       SUM(o.platform_fee) AS platform_fee\nFROM payment_service.orders o\nJOIN org_service.\"Organizations\" org ON org.\"Id\" = o.org_id\nJOIN event_service.events e ON e.id = o.session_id\nJOIN event_service.sessions s ON s.id = o.session_id\nWHERE o.status = 'Paid'\nGROUP BY org.\"Id\", org.\"Name\", e.id, e.name\nORDER BY org.\"Name\", e.name;",
+      "error": null,
+      "retries": 0,
+      "row_count": 0,
+      "correct": false
+    },
+    {
+      "id": "023",
+      "question": "Sự kiện nào có chủ tổ chức đã bị ban",
+      "difficulty": "cross-service",
+      "involves_services": [
+        "event",
+        "org",
+        "user"
+      ],
+      "variant": "no_linking",
+      "schema_linking_method": null,
+      "predicted_sql": "SELECT DISTINCT e.name \nFROM event_service.events e \nJOIN org_service.\"Organizations\" o ON o.\"Id\" = e.organization_id \nJOIN user_service.\"Users\" u ON u.\"Id\" = o.\"OwnerId\" \nJOIN user_service.\"BanHistories\" b ON b.\"UserId\" = u.\"Id\" \nWHERE NOT e.is_deleted AND NOT o.\"IsDeleted\" AND NOT u.\"IsDeleted\" AND NOT b.\"IsDeleted\";",
+      "error": null,
+      "retries": 0,
+      "row_count": 4,
+      "correct": false
+    },
+    {
+      "id": "024",
+      "question": "Tổng số tổ chức trên hệ thống",
+      "difficulty": "easy",
+      "involves_services": [
+        "org"
+      ],
+      "variant": "no_linking",
+      "schema_linking_method": null,
+      "predicted_sql": "SELECT COUNT(*) AS total_organizations \nFROM org_service.\"Organizations\" \nWHERE NOT \"IsDeleted\";",
+      "error": null,
+      "retries": 0,
+      "row_count": 1,
+      "correct": true
+    },
+    {
+      "id": "025",
+      "question": "Số sự kiện đã publish",
+      "difficulty": "easy",
+      "involves_services": [
+        "event"
+      ],
+      "variant": "no_linking",
+      "schema_linking_method": null,
+      "predicted_sql": "SELECT COUNT(*) AS published_events\nFROM event_service.events e\nWHERE e.status = 4 AND NOT e.is_deleted;",
+      "error": null,
+      "retries": 0,
+      "row_count": 1,
+      "correct": true
+    },
+    {
+      "id": "026",
+      "question": "Số ghế còn trống",
+      "difficulty": "easy",
+      "involves_services": [
+        "seat"
+      ],
+      "variant": "no_linking",
+      "schema_linking_method": null,
+      "predicted_sql": "SELECT COUNT(*) AS empty_seats\nFROM seat_service.seats\nWHERE status = 'Available' AND NOT is_deleted;",
+      "error": null,
+      "retries": 0,
+      "row_count": 1,
+      "correct": true
+    },
+    {
+      "id": "027",
+      "question": "Tổng số vé đã phát hành",
+      "difficulty": "easy",
+      "involves_services": [
+        "event"
+      ],
+      "variant": "no_linking",
+      "schema_linking_method": null,
+      "predicted_sql": "SELECT COUNT(*) AS total_tickets \nFROM event_service.tickets \nWHERE NOT is_deleted;",
+      "error": null,
+      "retries": 0,
+      "row_count": 1,
+      "correct": true
+    },
+    {
+      "id": "028",
+      "question": "Số đơn hàng theo trạng thái",
+      "difficulty": "easy",
+      "involves_services": [
+        "payment"
+      ],
+      "variant": "no_linking",
+      "schema_linking_method": null,
+      "predicted_sql": "SELECT status, COUNT(id) AS count \nFROM payment_service.orders \nWHERE NOT is_deleted \nGROUP BY status \nORDER BY count DESC;",
+      "error": null,
+      "retries": 0,
+      "row_count": 3,
+      "correct": true
+    },
+    {
+      "id": "029",
+      "question": "Số user đang bị ban",
+      "difficulty": "easy",
+      "involves_services": [
+        "user"
+      ],
+      "variant": "no_linking",
+      "schema_linking_method": null,
+      "predicted_sql": "SELECT COUNT(*) AS banned_users \nFROM user_service.\"Users\" u \nWHERE u.\"IsBanned\" = TRUE AND NOT u.\"IsDeleted\";",
+      "error": null,
+      "retries": 0,
+      "row_count": 1,
+      "correct": true
+    },
+    {
+      "id": "030",
+      "question": "Số sự kiện theo từng trạng thái",
+      "difficulty": "easy",
+      "involves_services": [
+        "event"
+      ],
+      "variant": "no_linking",
+      "schema_linking_method": null,
+      "predicted_sql": "SELECT \n  CASE \n    WHEN status = 0 THEN 'Draft'\n    WHEN status = 1 THEN 'Pending'\n    WHEN status = 2 THEN 'Approved'\n    WHEN status = 3 THEN 'Rejected'\n    WHEN status = 4 THEN 'Published'\n    WHEN status = 5 THEN 'Cancelled'\n  END AS status,\n  COUNT(*) AS count\nFROM \n  event_service.events\nWHERE \n  NOT is_deleted\nGROUP BY \n  status\nORDER BY \n  status;",
+      "error": null,
+      "retries": 0,
+      "row_count": 6,
+      "correct": false
+    },
+    {
+      "id": "031",
+      "question": "Số ghế theo từng loại ghế",
+      "difficulty": "easy",
+      "involves_services": [
+        "seat"
+      ],
+      "variant": "no_linking",
+      "schema_linking_method": null,
+      "predicted_sql": "SELECT s.seat_type, COUNT(s.id) AS count \nFROM seat_service.seats s \nWHERE NOT s.is_deleted \nGROUP BY s.seat_type \nORDER BY s.seat_type;",
+      "error": null,
+      "retries": 0,
+      "row_count": 4,
+      "correct": true
+    },
+    {
+      "id": "032",
+      "question": "Số lời mời theo trạng thái",
+      "difficulty": "easy",
+      "involves_services": [
+        "org"
+      ],
+      "variant": "no_linking",
+      "schema_linking_method": null,
+      "predicted_sql": "SELECT \"Status\", COUNT(*) AS count \nFROM org_service.\"Invitations\" \nWHERE NOT \"IsDeleted\" \nGROUP BY \"Status\";",
+      "error": null,
+      "retries": 0,
+      "row_count": 4,
+      "correct": true
+    },
+    {
+      "id": "033",
+      "question": "Tổng doanh thu toàn hệ thống",
+      "difficulty": "easy",
+      "involves_services": [
+        "payment"
+      ],
+      "variant": "no_linking",
+      "schema_linking_method": null,
+      "predicted_sql": "SELECT SUM(o.total_amount) AS total_revenue\nFROM payment_service.orders o\nWHERE o.status = 'Paid' AND NOT o.is_deleted;",
+      "error": null,
+      "retries": 0,
+      "row_count": 1,
+      "correct": true
+    },
+    {
+      "id": "034",
+      "question": "Tổng số session đã tạo",
+      "difficulty": "easy",
+      "involves_services": [
+        "event"
+      ],
+      "variant": "no_linking",
+      "schema_linking_method": null,
+      "predicted_sql": "SELECT COUNT(id) AS total_sessions FROM event_service.sessions WHERE NOT is_deleted;",
+      "error": null,
+      "retries": 0,
+      "row_count": 1,
+      "correct": true
+    },
+    {
+      "id": "035",
+      "question": "Mức phí hiện tại của nền tảng",
+      "difficulty": "easy",
+      "involves_services": [
+        "org"
+      ],
+      "variant": "no_linking",
+      "schema_linking_method": null,
+      "predicted_sql": "SELECT \"CurrentFeeRate\" FROM org_service.\"PlatformConfigs\" ORDER BY \"Id\" DESC LIMIT 1;",
+      "error": null,
+      "retries": 0,
+      "row_count": 1,
+      "correct": true
+    },
+    {
+      "id": "036",
+      "question": "Số tổ chức đã kết nối Stripe",
+      "difficulty": "easy",
+      "involves_services": [
+        "org"
+      ],
+      "variant": "no_linking",
+      "schema_linking_method": null,
+      "predicted_sql": "SELECT COUNT(*) AS num_orgs \nFROM org_service.\"Organizations\" \nWHERE \"StripeAccountId\" IS NOT NULL AND \"IsDeleted\" = FALSE;",
+      "error": null,
+      "retries": 0,
+      "row_count": 1,
+      "correct": true
+    },
+    {
+      "id": "037",
+      "question": "Số vé đã check-in",
+      "difficulty": "easy",
+      "involves_services": [
+        "event"
+      ],
+      "variant": "no_linking",
+      "schema_linking_method": null,
+      "predicted_sql": "SELECT COUNT(*) AS checked_in_tickets\nFROM event_service.tickets\nWHERE is_checked_in = TRUE AND NOT is_deleted;",
+      "error": null,
+      "retries": 0,
+      "row_count": 1,
+      "correct": true
+    },
+    {
+      "id": "038",
+      "question": "Số sơ đồ ghế đã publish",
+      "difficulty": "easy",
+      "involves_services": [
+        "seat"
+      ],
+      "variant": "no_linking",
+      "schema_linking_method": null,
+      "predicted_sql": "SELECT COUNT(*) AS published_seat_maps\nFROM seat_service.seat_maps\nWHERE status = 'Published' AND NOT is_deleted;",
+      "error": null,
+      "retries": 0,
+      "row_count": 1,
+      "correct": true
+    },
+    {
+      "id": "039",
+      "question": "Giá vé trung bình trên toàn bộ loại vé",
+      "difficulty": "easy",
+      "involves_services": [
+        "event"
+      ],
+      "variant": "no_linking",
+      "schema_linking_method": null,
+      "predicted_sql": "SELECT AVG(t.price) AS average_ticket_price\nFROM event_service.tickets t\nWHERE NOT t.is_deleted;",
+      "error": null,
+      "retries": 0,
+      "row_count": 1,
+      "correct": false
+    },
+    {
+      "id": "040",
+      "question": "Số đơn hàng đã thanh toán hôm nay",
+      "difficulty": "easy",
+      "involves_services": [
+        "payment"
+      ],
+      "variant": "no_linking",
+      "schema_linking_method": null,
+      "predicted_sql": "SELECT COUNT(*) AS paid_orders\nFROM payment_service.orders o\nWHERE o.status = 'Paid'\n  AND o.paid_at >= CURRENT_DATE\n  AND o.paid_at < CURRENT_DATE + INTERVAL '1 day';",
+      "error": null,
+      "retries": 0,
+      "row_count": 1,
+      "correct": true
+    },
+    {
+      "id": "041",
+      "question": "Doanh thu theo từng tổ chức",
+      "difficulty": "medium",
+      "involves_services": [
+        "org",
+        "payment"
+      ],
+      "variant": "no_linking",
+      "schema_linking_method": null,
+      "predicted_sql": "SELECT org.\"Name\", SUM(o.total_amount) AS revenue\nFROM payment_service.orders o\nJOIN org_service.\"Organizations\" org ON org.\"Id\" = o.org_id\nWHERE o.status = 'Paid' AND NOT o.is_deleted\nGROUP BY org.\"Id\", org.\"Name\"\nORDER BY revenue DESC;",
+      "error": null,
+      "retries": 0,
+      "row_count": 27,
+      "correct": true
+    },
+    {
+      "id": "042",
+      "question": "Số vé bán theo từng sự kiện",
+      "difficulty": "medium",
+      "involves_services": [
+        "event"
+      ],
+      "variant": "no_linking",
+      "schema_linking_method": null,
+      "predicted_sql": "SELECT e.name, COUNT(t.id) AS sold\nFROM event_service.events e\nJOIN event_service.sessions s ON s.event_id = e.id\nJOIN event_service.tickets t ON t.session_id = s.id\nWHERE NOT t.is_deleted\nGROUP BY e.id, e.name\nORDER BY sold DESC;",
+      "error": null,
+      "retries": 0,
+      "row_count": 57,
+      "correct": true
+    },
+    {
+      "id": "043",
+      "question": "Top 10 sự kiện doanh thu cao nhất",
+      "difficulty": "medium",
+      "involves_services": [
+        "event",
+        "payment"
+      ],
+      "variant": "no_linking",
+      "schema_linking_method": null,
+      "predicted_sql": "SELECT e.name, SUM(o.total_amount) AS revenue\nFROM event_service.events e\nJOIN event_service.sessions s ON s.event_id = e.id\nJOIN payment_service.orders o ON o.session_id = s.id\nWHERE o.status = 'Paid' AND NOT e.is_deleted AND NOT o.is_deleted\nGROUP BY e.id, e.name\nORDER BY revenue DESC\nLIMIT 10;",
+      "error": null,
+      "retries": 0,
+      "row_count": 10,
+      "correct": true
+    },
+    {
+      "id": "044",
+      "question": "Số ghế đã bán theo từng tổ chức",
+      "difficulty": "medium",
+      "involves_services": [
+        "seat"
+      ],
+      "variant": "no_linking",
+      "schema_linking_method": null,
+      "predicted_sql": "SELECT org.\"Name\", COUNT(t.id) AS sold_seats\nFROM event_service.events    e\nJOIN event_service.sessions  s ON s.event_id   = e.id\nJOIN event_service.tickets   t ON t.session_id = s.id\nJOIN org_service.\"Organizations\" org ON org.\"Id\" = e.organization_id\nWHERE t.is_checked_in = TRUE AND NOT t.is_deleted\nGROUP BY org.\"Id\", org.\"Name\"\nORDER BY sold_seats DESC;",
+      "error": null,
+      "retries": 0,
+      "row_count": 27,
+      "correct": false
+    },
+    {
+      "id": "045",
+      "question": "Doanh thu theo từng loại vé",
+      "difficulty": "medium",
+      "involves_services": [
+        "payment"
+      ],
+      "variant": "no_linking",
+      "schema_linking_method": null,
+      "predicted_sql": "SELECT el.name, SUM(oi.price) AS revenue\nFROM payment_service.order_items oi\nJOIN event_service.legends el ON el.id = oi.legend_name::uuid\nWHERE oi.is_deleted = FALSE\nGROUP BY el.name\nORDER BY revenue DESC;",
+      "error": "invalid input syntax for type uuid: \"Standard\"",
+      "retries": 1,
+      "row_count": 0,
+      "correct": false
+    },
+    {
+      "id": "046",
+      "question": "Số đơn hàng của mỗi khách hàng",
+      "difficulty": "medium",
+      "involves_services": [
+        "user",
+        "payment"
+      ],
+      "variant": "no_linking",
+      "schema_linking_method": null,
+      "predicted_sql": "SELECT u.\"Email\", COUNT(o.id) AS num_orders\nFROM user_service.\"Users\" u\nJOIN payment_service.orders o ON o.user_id = u.\"Id\"\nWHERE NOT u.\"IsDeleted\" AND NOT o.is_deleted\nGROUP BY u.\"Id\", u.\"Email\"\nORDER BY num_orders DESC;",
+      "error": null,
+      "retries": 0,
+      "row_count": 161,
+      "correct": false
+    },
+    {
+      "id": "047",
+      "question": "Số sự kiện của mỗi tổ chức",
+      "difficulty": "medium",
+      "involves_services": [
+        "org",
+        "event"
+      ],
+      "variant": "no_linking",
+      "schema_linking_method": null,
+      "predicted_sql": "SELECT org.\"Name\", COUNT(e.id) AS num_events\nFROM org_service.\"Organizations\" org\nJOIN event_service.events e ON e.organization_id = org.\"Id\"\nWHERE NOT e.is_deleted\nGROUP BY org.\"Id\", org.\"Name\"\nORDER BY num_events DESC;",
+      "error": null,
+      "retries": 0,
+      "row_count": 28,
+      "correct": true
+    },
+    {
+      "id": "048",
+      "question": "Tỉ lệ ghế đã bán của mỗi sơ đồ ghế",
+      "difficulty": "medium",
+      "involves_services": [
+        "seat"
+      ],
+      "variant": "no_linking",
+      "schema_linking_method": null,
+      "predicted_sql": "SELECT s.name, \n       COUNT(DISTINCT t.id) / s.total_seats * 100 AS sold_rate\nFROM seat_service.seat_maps s\nJOIN seat_service.seats se ON se.seat_map_id = s.id\nJOIN event_service.tickets t ON t.seat_id = se.id\nWHERE t.is_checked_in = TRUE AND NOT t.is_deleted\nGROUP BY s.id, s.name, s.total_seats\nORDER BY sold_rate DESC;",
+      "error": null,
+      "retries": 1,
+      "row_count": 130,
+      "correct": false
+    },
+    {
+      "id": "049",
+      "question": "Giá trị đơn hàng trung bình theo tổ chức",
+      "difficulty": "medium",
+      "involves_services": [
+        "org",
+        "payment"
+      ],
+      "variant": "no_linking",
+      "schema_linking_method": null,
+      "predicted_sql": "SELECT org.\"Name\", AVG(o.total_amount) AS avg_order_value\nFROM payment_service.orders o\nJOIN org_service.\"Organizations\" org ON org.\"Id\" = o.org_id\nWHERE o.status = 'Paid' AND NOT o.is_deleted\nGROUP BY org.\"Id\", org.\"Name\"\nORDER BY avg_order_value DESC;",
+      "error": null,
+      "retries": 0,
+      "row_count": 27,
+      "correct": true
+    },
+    {
+      "id": "050",
+      "question": "Số vé check-in theo từng sự kiện",
+      "difficulty": "medium",
+      "involves_services": [
+        "event"
+      ],
+      "variant": "no_linking",
+      "schema_linking_method": null,
+      "predicted_sql": "SELECT e.name, COUNT(t.id) AS checked_in\nFROM event_service.events e\nJOIN event_service.sessions s ON s.event_id = e.id\nJOIN event_service.tickets t ON t.session_id = s.id\nWHERE t.is_checked_in = TRUE\nGROUP BY e.id, e.name\nORDER BY checked_in DESC;",
+      "error": null,
+      "retries": 0,
+      "row_count": 57,
+      "correct": true
+    },
+    {
+      "id": "051",
+      "question": "Top 5 khách hàng có nhiều đơn nhất",
+      "difficulty": "medium",
+      "involves_services": [
+        "user",
+        "payment"
+      ],
+      "variant": "no_linking",
+      "schema_linking_method": null,
+      "predicted_sql": "SELECT u.\"Email\", COUNT(o.id) AS total_orders\nFROM payment_service.orders o\nJOIN user_service.\"Users\" u ON u.\"Id\" = o.user_id\nWHERE NOT u.\"IsDeleted\" AND o.status = 'Paid'\nGROUP BY u.\"Id\", u.\"Email\"\nORDER BY total_orders DESC\nLIMIT 5;",
+      "error": null,
+      "retries": 0,
+      "row_count": 5,
+      "correct": false
+    },
+    {
+      "id": "052",
+      "question": "Tổng số ghế của mỗi sự kiện",
+      "difficulty": "medium",
+      "involves_services": [
+        "event",
+        "seat"
+      ],
+      "variant": "no_linking",
+      "schema_linking_method": null,
+      "predicted_sql": "SELECT e.id, e.name, SUM(s.total_seats) AS total_seats\nFROM event_service.events e\nJOIN seat_service.seat_maps s ON s.event_id = e.id\nWHERE NOT s.is_deleted\nGROUP BY e.id, e.name\nORDER BY e.id;",
+      "error": null,
+      "retries": 0,
+      "row_count": 57,
+      "correct": false
+    },
+    {
+      "id": "053",
+      "question": "Doanh thu theo tỉnh thành",
+      "difficulty": "medium",
+      "involves_services": [
+        "event",
+        "payment"
+      ],
+      "variant": "no_linking",
+      "schema_linking_method": null,
+      "predicted_sql": "SELECT e.province_name, SUM(o.total_amount) AS revenue\nFROM event_service.events e\nJOIN payment_service.orders o ON o.user_id = e.organization_id\nWHERE o.status = 'Paid'\nGROUP BY e.province_name\nORDER BY revenue DESC;",
+      "error": null,
+      "retries": 0,
+      "row_count": 0,
+      "correct": false
+    },
+    {
+      "id": "054",
+      "question": "Số session của mỗi sự kiện",
+      "difficulty": "medium",
+      "involves_services": [
+        "event"
+      ],
+      "variant": "no_linking",
+      "schema_linking_method": null,
+      "predicted_sql": "SELECT e.name, COUNT(s.id) AS number_of_sessions \nFROM event_service.events e \nJOIN event_service.sessions s ON e.id = s.event_id \nWHERE NOT e.is_deleted AND NOT s.is_deleted \nGROUP BY e.id, e.name \nORDER BY e.name;",
+      "error": null,
+      "retries": 0,
+      "row_count": 80,
+      "correct": true
+    },
+    {
+      "id": "055",
+      "question": "Tổng phí nền tảng thu được theo tổ chức",
+      "difficulty": "medium",
+      "involves_services": [
+        "org",
+        "payment"
+      ],
+      "variant": "no_linking",
+      "schema_linking_method": null,
+      "predicted_sql": "SELECT org.\"Name\", SUM(o.platform_fee) AS total_fee\nFROM payment_service.orders o\nJOIN org_service.\"Organizations\" org ON org.\"Id\" = o.org_id\nWHERE o.status = 'Paid'\nGROUP BY org.\"Id\", org.\"Name\"\nORDER BY total_fee DESC;",
+      "error": null,
+      "retries": 0,
+      "row_count": 27,
+      "correct": true
+    },
+    {
+      "id": "056",
+      "question": "Số loại vé của mỗi sự kiện",
+      "difficulty": "medium",
+      "involves_services": [
+        "event"
+      ],
+      "variant": "no_linking",
+      "schema_linking_method": null,
+      "predicted_sql": "SELECT e.name, COUNT(DISTINCT t.legend_name) AS num_ticket_types\nFROM event_service.events e\nJOIN event_service.sessions s ON s.event_id = e.id\nJOIN event_service.tickets t ON t.session_id = s.id\nWHERE NOT t.is_deleted\nGROUP BY e.id, e.name\nORDER BY e.name;",
+      "error": null,
+      "retries": 0,
+      "row_count": 57,
+      "correct": false
+    },
+    {
+      "id": "057",
+      "question": "Số đơn hàng thất bại theo tổ chức",
+      "difficulty": "medium",
+      "involves_services": [
+        "org",
+        "payment"
+      ],
+      "variant": "no_linking",
+      "schema_linking_method": null,
+      "predicted_sql": "SELECT org.\"Name\", COUNT(o.id) AS failed_orders\nFROM payment_service.orders o\nJOIN org_service.\"Organizations\" org ON org.\"Id\" = o.org_id\nWHERE o.status = 'Failed'\n  AND NOT o.is_deleted\nGROUP BY org.\"Id\", org.\"Name\"\nORDER BY failed_orders DESC;",
+      "error": null,
+      "retries": 0,
+      "row_count": 23,
+      "correct": true
+    },
+    {
+      "id": "058",
+      "question": "Doanh thu theo tháng của từng tổ chức",
+      "difficulty": "medium",
+      "involves_services": [
+        "org",
+        "payment"
+      ],
+      "variant": "no_linking",
+      "schema_linking_method": null,
+      "predicted_sql": "SELECT DATE_TRUNC('month', o.paid_at) AS month, org.\"Name\", SUM(o.total_amount) AS revenue\nFROM payment_service.orders o\nJOIN org_service.\"Organizations\" org ON org.\"Id\" = o.org_id\nWHERE o.status = 'Paid'\nGROUP BY 1, org.\"Id\", org.\"Name\"\nORDER BY 1, revenue DESC;",
+      "error": null,
+      "retries": 0,
+      "row_count": 143,
+      "correct": true
+    },
+    {
+      "id": "059",
+      "question": "Số khách hàng duy nhất đã mua vé mỗi sự kiện",
+      "difficulty": "medium",
+      "involves_services": [
+        "event",
+        "payment"
+      ],
+      "variant": "no_linking",
+      "schema_linking_method": null,
+      "predicted_sql": "SELECT e.name, COUNT(DISTINCT o.user_id) AS unique_customers\nFROM event_service.events e\nJOIN event_service.sessions s ON s.event_id = e.id\nJOIN payment_service.orders o ON o.session_id = s.id\nWHERE o.status = 'Paid'\nGROUP BY e.id, e.name\nORDER BY unique_customers DESC;",
+      "error": null,
+      "retries": 0,
+      "row_count": 57,
+      "correct": true
+    },
+    {
+      "id": "060",
+      "question": "Giá vé cao nhất của mỗi sự kiện",
+      "difficulty": "medium",
+      "involves_services": [
+        "event"
+      ],
+      "variant": "no_linking",
+      "schema_linking_method": null,
+      "predicted_sql": "SELECT e.name, MAX(t.price) AS max_price\nFROM event_service.events e\nJOIN event_service.sessions s ON s.event_id = e.id\nJOIN event_service.tickets t ON t.session_id = s.id\nWHERE NOT t.is_deleted\nGROUP BY e.id, e.name\nORDER BY max_price DESC;",
+      "error": null,
+      "retries": 0,
+      "row_count": 57,
+      "correct": false
+    },
+    {
+      "id": "061",
+      "question": "Số ghế VIP của mỗi sự kiện",
+      "difficulty": "medium",
+      "involves_services": [
+        "event",
+        "seat"
+      ],
+      "variant": "no_linking",
+      "schema_linking_method": null,
+      "predicted_sql": "SELECT e.name, COUNT(s.id) AS vip_seats\nFROM event_service.events e\nJOIN event_service.sessions ses ON ses.event_id = e.id\nJOIN seat_service.seat_maps sm ON sm.event_id = e.id AND sm.session_id = ses.id\nJOIN seat_service.seats s ON s.seat_map_id = sm.id AND s.seat_type = 1\nWHERE NOT s.is_deleted AND NOT sm.is_deleted AND NOT e.is_deleted\nGROUP BY e.id, e.name;",
+      "error": null,
+      "retries": 0,
+      "row_count": 39,
+      "correct": false
+    },
+    {
+      "id": "062",
+      "question": "Tỉ lệ đơn đã thanh toán trên tổng đơn theo tổ chức",
+      "difficulty": "medium",
+      "involves_services": [
+        "payment"
+      ],
+      "variant": "no_linking",
+      "schema_linking_method": null,
+      "predicted_sql": "SELECT \n  org.\"Name\", \n  COUNT(CASE WHEN o.status = 'Paid' THEN o.id END) AS paid_orders, \n  COUNT(o.id) AS total_orders, \n  ROUND(COUNT(CASE WHEN o.status = 'Paid' THEN o.id END) * 1.0 / COUNT(o.id), 2) AS paid_rate\nFROM \n  payment_service.orders o\nJOIN \n  org_service.\"Organizations\" org ON org.\"Id\" = o.org_id\nWHERE \n  NOT o.is_deleted\nGROUP BY \n  org.\"Id\", org.\"Name\"\nORDER BY \n  paid_rate DESC;",
+      "error": null,
+      "retries": 0,
+      "row_count": 27,
+      "correct": false
+    },
+    {
+      "id": "063",
+      "question": "Số thành viên là designer của mỗi tổ chức",
+      "difficulty": "medium",
+      "involves_services": [
+        "org"
+      ],
+      "variant": "no_linking",
+      "schema_linking_method": null,
+      "predicted_sql": "SELECT org.\"Name\", COUNT(m.\"Id\") AS designer_count\nFROM org_service.\"Organizations\" org\nJOIN org_service.\"Members\" m ON m.\"OrganizationId\" = org.\"Id\"\nJOIN org_service.\"Permissions\" p ON p.\"Id\" = m.\"PermissionId\"\nWHERE p.\"IsDesigner\" = TRUE AND NOT m.\"IsDeleted\" AND NOT p.\"IsDeleted\"\nGROUP BY org.\"Id\", org.\"Name\"\nORDER BY designer_count DESC;",
+      "error": null,
+      "retries": 0,
+      "row_count": 27,
+      "correct": true
+    },
+    {
+      "id": "064",
+      "question": "Top 3 loại vé doanh thu cao nhất của mỗi sự kiện",
+      "difficulty": "hard",
+      "involves_services": [
+        "event",
+        "payment"
+      ],
+      "variant": "no_linking",
+      "schema_linking_method": null,
+      "predicted_sql": "SELECT e.name, l.name, SUM(t.price) AS revenue\nFROM event_service.events e\nJOIN event_service.sessions s ON s.event_id = e.id\nJOIN event_service.tickets t ON t.session_id = s.id\nJOIN event_service.legends l ON l.id = (SELECT legend_id FROM seat_service.seats WHERE id = t.seat_id)\nWHERE NOT t.is_deleted AND NOT s.is_deleted AND NOT e.is_deleted\nGROUP BY e.id, e.name, l.name\nORDER BY e.name, revenue DESC;",
+      "error": null,
+      "retries": 0,
+      "row_count": 172,
+      "correct": false
+    },
+    {
+      "id": "065",
+      "question": "Sự kiện có doanh thu vượt mức trung bình",
+      "difficulty": "hard",
+      "involves_services": [
+        "event",
+        "payment"
+      ],
+      "variant": "no_linking",
+      "schema_linking_method": null,
+      "predicted_sql": "SELECT e.name, SUM(o.total_amount) AS revenue\nFROM event_service.events e\nJOIN event_service.sessions s ON s.event_id = e.id\nJOIN payment_service.orders o ON o.session_id = s.id\nWHERE o.status = 'Paid' AND NOT o.is_deleted\nGROUP BY e.id, e.name\nHAVING SUM(o.total_amount) > (SELECT AVG(revenue) FROM (SELECT SUM(o.total_amount) AS revenue FROM event_service.events e JOIN event_service.sessions s ON s.event_id = e.id JOIN payment_service.orders o ON o.session_id = s.id WHERE o.status = 'Paid' AND NOT o.is_deleted GROUP BY e.id) AS subquery);",
+      "error": null,
+      "retries": 0,
+      "row_count": 29,
+      "correct": true
+    },
+    {
+      "id": "066",
+      "question": "Khách hàng quay lại mua nhiều lần",
+      "difficulty": "hard",
+      "involves_services": [
+        "user",
+        "payment"
+      ],
+      "variant": "no_linking",
+      "schema_linking_method": null,
+      "predicted_sql": "SELECT u.\"Email\", COUNT(DISTINCT o.id) AS num_orders\nFROM user_service.\"Users\" u\nJOIN payment_service.orders o ON o.user_id = u.\"Id\"\nWHERE o.status = 'Paid'\nGROUP BY u.\"Email\"\nHAVING COUNT(DISTINCT o.id) > 1;",
+      "error": null,
+      "retries": 0,
+      "row_count": 104,
+      "correct": false
+    },
+    {
+      "id": "067",
+      "question": "Tỉ lệ check-in của mỗi session",
+      "difficulty": "hard",
+      "involves_services": [
+        "event"
+      ],
+      "variant": "no_linking",
+      "schema_linking_method": null,
+      "predicted_sql": "SELECT s.id, s.name, COUNT(t.id) AS checked_in, COUNT(t.id) * 1.0 / (SELECT COUNT(*) FROM event_service.tickets WHERE session_id = s.id AND NOT is_deleted) AS check_in_rate\nFROM event_service.sessions s\nJOIN event_service.tickets t ON t.session_id = s.id AND t.is_checked_in AND NOT t.is_deleted\nWHERE NOT s.is_deleted\nGROUP BY s.id, s.name\nORDER BY s.id;",
+      "error": null,
+      "retries": 0,
+      "row_count": 130,
+      "correct": false
+    },
+    {
+      "id": "068",
+      "question": "So sánh doanh thu tháng này với tháng trước theo tổ chức",
+      "difficulty": "hard",
+      "involves_services": [
+        "org",
+        "payment"
+      ],
+      "variant": "no_linking",
+      "schema_linking_method": null,
+      "predicted_sql": "SELECT \n  org.\"Name\", \n  SUM(CASE WHEN EXTRACT(MONTH FROM o.paid_at) = EXTRACT(MONTH FROM CURRENT_DATE) THEN o.total_amount ELSE 0 END) AS this_month_revenue,\n  SUM(CASE WHEN EXTRACT(MONTH FROM o.paid_at) = EXTRACT(MONTH FROM CURRENT_DATE) - 1 THEN o.total_amount ELSE 0 END) AS last_month_revenue\nFROM \n  payment_service.orders o\nJOIN \n  org_service.\"Organizations\" org ON org.\"Id\" = o.org_id\nWHERE \n  o.status = 'Paid' \n  AND o.paid_at >= DATE_TRUNC('month', CURRENT_DATE) - INTERVAL '1 month'\nGROUP BY \n  org.\"Id\", org.\"Name\"\nORDER BY \n  this_month_revenue DESC;",
+      "error": null,
+      "retries": 0,
+      "row_count": 25,
+      "correct": false
+    },
+    {
+      "id": "069",
+      "question": "Top 5 tổ chức theo doanh thu kèm phần trăm đóng góp",
+      "difficulty": "hard",
+      "involves_services": [
+        "org",
+        "payment"
+      ],
+      "variant": "no_linking",
+      "schema_linking_method": null,
+      "predicted_sql": "SELECT org.\"Name\", SUM(o.total_amount) AS revenue, \n       ROUND(SUM(o.total_amount) * 100 / (SELECT SUM(total_amount) FROM payment_service.orders WHERE status = 'Paid'), 2) AS percentage\nFROM payment_service.orders o\nJOIN org_service.\"Organizations\" org ON org.\"Id\" = o.org_id\nWHERE o.status = 'Paid'\nGROUP BY org.\"Id\", org.\"Name\"\nORDER BY revenue DESC\nLIMIT 5;",
+      "error": null,
+      "retries": 0,
+      "row_count": 5,
+      "correct": false
+    },
+    {
+      "id": "070",
+      "question": "Sự kiện chưa bán được vé nào",
+      "difficulty": "hard",
+      "involves_services": [
+        "event"
+      ],
+      "variant": "no_linking",
+      "schema_linking_method": null,
+      "predicted_sql": "SELECT e.name \nFROM event_service.events e \nWHERE e.id NOT IN (SELECT t.event_id FROM event_service.tickets t WHERE NOT t.is_deleted) \nAND NOT e.is_deleted;",
+      "error": "column t.event_id does not exist",
+      "retries": 1,
+      "row_count": 0,
+      "correct": false
+    },
+    {
+      "id": "071",
+      "question": "Khách hàng chi tiêu trên mức trung bình",
+      "difficulty": "hard",
+      "involves_services": [
+        "user",
+        "payment"
+      ],
+      "variant": "no_linking",
+      "schema_linking_method": null,
+      "predicted_sql": "SELECT u.\"Email\", SUM(o.total_amount) AS total_spent\nFROM payment_service.orders o\nJOIN user_service.\"Users\" u ON u.\"Id\" = o.user_id\nWHERE o.status = 'Paid'\nGROUP BY u.\"Id\", u.\"Email\"\nHAVING SUM(o.total_amount) > (SELECT AVG(total_amount) FROM payment_service.orders WHERE status = 'Paid')\nORDER BY total_spent DESC;",
+      "error": null,
+      "retries": 0,
+      "row_count": 118,
+      "correct": false
+    },
+    {
+      "id": "072",
+      "question": "Xếp hạng sự kiện theo vé bán trong từng tổ chức",
+      "difficulty": "hard",
+      "involves_services": [
+        "org",
+        "event"
+      ],
+      "variant": "no_linking",
+      "schema_linking_method": null,
+      "predicted_sql": "SELECT org.\"Name\", e.name, COUNT(t.id) AS sold\nFROM event_service.events    e\nJOIN event_service.sessions  s ON s.event_id   = e.id\nJOIN event_service.tickets   t ON t.session_id = s.id\nJOIN org_service.\"Organizations\" org ON org.\"Id\" = e.organization_id\nWHERE NOT t.is_deleted AND NOT e.is_deleted AND NOT org.\"IsDeleted\"\nGROUP BY org.\"Id\", org.\"Name\", e.id, e.name\nORDER BY sold DESC;",
+      "error": null,
+      "retries": 0,
+      "row_count": 57,
+      "correct": false
+    },
+    {
+      "id": "073",
+      "question": "Sự kiện có tỉ lệ lấp đầy ghế trên 20%",
+      "difficulty": "hard",
+      "involves_services": [
+        "event",
+        "seat"
+      ],
+      "variant": "no_linking",
+      "schema_linking_method": null,
+      "predicted_sql": "SELECT e.name, \n       COUNT(t.id) AS sold_tickets, \n       sm.total_seats, \n       ROUND(COUNT(t.id) * 100.0 / sm.total_seats, 2) AS fill_rate\nFROM event_service.events e\nJOIN event_service.sessions s ON e.id = s.event_id\nJOIN event_service.tickets t ON s.id = t.session_id\nJOIN seat_service.seat_maps sm ON s.chart_id = sm.id\nWHERE t.is_checked_in = TRUE\nGROUP BY e.id, e.name, sm.total_seats\nHAVING ROUND(COUNT(t.id) * 100.0 / sm.total_seats, 2) > 20;",
+      "error": null,
+      "retries": 0,
+      "row_count": 0,
+      "correct": false
+    },
+    {
+      "id": "074",
+      "question": "Doanh thu lũy kế theo tháng",
+      "difficulty": "hard",
+      "involves_services": [
+        "payment"
+      ],
+      "variant": "no_linking",
+      "schema_linking_method": null,
+      "predicted_sql": "SELECT DATE_TRUNC('month', o.paid_at) AS month, \n       SUM(o.total_amount) OVER (ORDER BY DATE_TRUNC('month', o.paid_at)) AS cumulative_revenue\nFROM payment_service.orders o\nWHERE o.status = 'Paid'\nORDER BY 1;",
+      "error": null,
+      "retries": 0,
+      "row_count": 361,
+      "correct": false
+    },
+    {
+      "id": "075",
+      "question": "Sự kiện có hơn 3 vé đã check-in",
+      "difficulty": "hard",
+      "involves_services": [
+        "event"
+      ],
+      "variant": "no_linking",
+      "schema_linking_method": null,
+      "predicted_sql": "SELECT e.name, COUNT(t.id) AS checked_in\nFROM event_service.events    e\nJOIN event_service.sessions  s ON s.event_id   = e.id\nJOIN event_service.tickets   t ON t.session_id = s.id\nWHERE t.is_checked_in = TRUE\nGROUP BY e.id, e.name\nHAVING COUNT(t.id) > 3;",
+      "error": null,
+      "retries": 0,
+      "row_count": 51,
+      "correct": true
+    },
+    {
+      "id": "076",
+      "question": "Loại vé phổ biến nhất trong từng tổ chức",
+      "difficulty": "hard",
+      "involves_services": [
+        "org",
+        "seat",
+        "event"
+      ],
+      "variant": "no_linking",
+      "schema_linking_method": null,
+      "predicted_sql": "SELECT org.\"Name\", l.name AS legend_name, COUNT(t.id) AS count\nFROM event_service.tickets t\nJOIN event_service.sessions s ON t.session_id = s.id\nJOIN event_service.events e ON s.event_id = e.id\nJOIN event_service.legends l ON t.legend_name = l.name AND l.event_id = e.id\nJOIN org_service.\"Organizations\" org ON org.\"Id\" = e.organization_id\nWHERE NOT t.is_deleted AND NOT e.is_deleted AND NOT org.\"IsDeleted\"\nGROUP BY org.\"Id\", org.\"Name\", l.name\nORDER BY count DESC;",
+      "error": null,
+      "retries": 0,
+      "row_count": 94,
+      "correct": false
+    },
+    {
+      "id": "077",
+      "question": "Báo cáo doanh thu và phí theo tổ chức kèm số ghế đã bán",
+      "difficulty": "cross-service",
+      "involves_services": [
+        "org",
+        "event",
+        "seat",
+        "payment"
+      ],
+      "variant": "no_linking",
+      "schema_linking_method": null,
+      "predicted_sql": "SELECT \n  org.\"Name\" AS organization_name, \n  SUM(o.total_amount) AS revenue, \n  SUM(o.platform_fee) AS platform_fee, \n  COUNT(t.id) AS seats_sold\nFROM \n  payment_service.orders o\nJOIN \n  org_service.\"Organizations\" org ON org.\"Id\" = o.org_id\nJOIN \n  event_service.sessions s ON s.id = o.session_id\nJOIN \n  event_service.tickets t ON t.session_id = s.id\nWHERE \n  o.status = 'Paid' AND NOT t.is_deleted\nGROUP BY \n  org.\"Id\", org.\"Name\"\nORDER BY \n  revenue DESC;",
+      "error": null,
+      "retries": 0,
+      "row_count": 27,
+      "correct": false
+    },
+    {
+      "id": "078",
+      "question": "Khách hàng mua vé ở nhiều sự kiện nhất",
+      "difficulty": "cross-service",
+      "involves_services": [
+        "user",
+        "payment",
+        "event"
+      ],
+      "variant": "no_linking",
+      "schema_linking_method": null,
+      "predicted_sql": "SELECT u.\"Email\", COUNT(DISTINCT e.id) AS num_events\nFROM user_service.\"Users\" u\nJOIN payment_service.orders o ON u.\"Id\" = o.user_id\nJOIN event_service.sessions s ON o.session_id = s.id\nJOIN event_service.events e ON s.event_id = e.id\nWHERE o.status = 'Paid'\nGROUP BY u.\"Id\", u.\"Email\"\nORDER BY num_events DESC\nLIMIT 1;",
+      "error": null,
+      "retries": 0,
+      "row_count": 1,
+      "correct": false
+    },
+    {
+      "id": "079",
+      "question": "Top khách hàng mua ghế VIP nhiều nhất",
+      "difficulty": "cross-service",
+      "involves_services": [
+        "user",
+        "payment",
+        "seat",
+        "event"
+      ],
+      "variant": "no_linking",
+      "schema_linking_method": null,
+      "predicted_sql": "SELECT u.\"Email\", COUNT(t.id) AS vip_tickets\nFROM user_service.\"Users\" u\nJOIN payment_service.orders o ON o.user_id = u.\"Id\"\nJOIN payment_service.order_items oi ON oi.order_id = o.id\nJOIN seat_service.seats s ON s.id = oi.seat_id\nJOIN event_service.legends l ON l.id = s.legend_id\nWHERE l.price > (SELECT AVG(price) FROM event_service.legends)\nAND u.\"IsDeleted\" = FALSE\nAND o.\"IsDeleted\" = FALSE\nAND oi.\"IsDeleted\" = FALSE\nAND s.\"IsDeleted\" = FALSE\nAND l.\"IsDeleted\" = FALSE\nGROUP BY u.\"Id\", u.\"Email\"\nORDER BY vip_tickets DESC\nLIMIT 10;",
+      "error": "missing FROM-clause entry for table \"t\"",
+      "retries": 1,
+      "row_count": 0,
+      "correct": false
+    },
+    {
+      "id": "080",
+      "question": "Doanh thu mỗi tổ chức kèm số sự kiện và số vé bán",
+      "difficulty": "cross-service",
+      "involves_services": [
+        "org",
+        "event",
+        "payment"
+      ],
+      "variant": "no_linking",
+      "schema_linking_method": null,
+      "predicted_sql": "SELECT org.\"Name\", \n       SUM(o.total_amount) AS revenue, \n       COUNT(DISTINCT e.id) AS num_events, \n       COUNT(t.id) AS num_tickets\nFROM payment_service.orders o\nJOIN org_service.\"Organizations\" org ON org.\"Id\" = o.org_id\nJOIN event_service.sessions s ON s.id = o.session_id\nJOIN event_service.events e ON e.id = s.event_id\nJOIN event_service.tickets t ON t.session_id = s.id\nWHERE o.status = 'Paid'\nGROUP BY org.\"Id\", org.\"Name\"\nORDER BY revenue DESC;",
+      "error": null,
+      "retries": 0,
+      "row_count": 27,
+      "correct": false
+    },
+    {
+      "id": "081",
+      "question": "Tổ chức mà mỗi khách hàng chi tiêu nhiều nhất",
+      "difficulty": "cross-service",
+      "involves_services": [
+        "user",
+        "org",
+        "payment"
+      ],
+      "variant": "no_linking",
+      "schema_linking_method": null,
+      "predicted_sql": "SELECT org.\"Name\", SUM(o.total_amount) AS total_spent\nFROM payment_service.orders o\nJOIN org_service.\"Organizations\" org ON org.\"Id\" = o.org_id\nJOIN user_service.\"Users\" u ON u.\"Id\" = o.user_id\nWHERE o.status = 'Paid'\nGROUP BY org.\"Id\", org.\"Name\", u.\"Id\", u.\"Email\"\nORDER BY total_spent DESC;",
+      "error": null,
+      "retries": 0,
+      "row_count": 339,
+      "correct": false
+    },
+    {
+      "id": "082",
+      "question": "Top 10 sự kiện theo doanh thu kèm tên tổ chức và số ghế đã bán",
+      "difficulty": "cross-service",
+      "involves_services": [
+        "event",
+        "org",
+        "seat",
+        "payment"
+      ],
+      "variant": "no_linking",
+      "schema_linking_method": null,
+      "predicted_sql": "SELECT e.name, org.\"Name\", SUM(o.total_amount) AS revenue, COUNT(t.id) AS sold_seats\nFROM event_service.events e\nJOIN org_service.\"Organizations\" org ON org.\"Id\" = e.organization_id\nJOIN event_service.sessions s ON s.event_id = e.id\nJOIN event_service.tickets t ON t.session_id = s.id\nJOIN payment_service.orders o ON o.session_id = s.id\nWHERE o.status = 'Paid'\nGROUP BY e.id, e.name, org.\"Id\", org.\"Name\"\nORDER BY revenue DESC\nLIMIT 10;",
+      "error": null,
+      "retries": 0,
+      "row_count": 10,
+      "correct": false
+    },
+    {
+      "id": "083",
+      "question": "Toàn cảnh mỗi tổ chức: số sự kiện, số vé bán, doanh thu",
+      "difficulty": "cross-service",
+      "involves_services": [
+        "org",
+        "event",
+        "payment"
+      ],
+      "variant": "no_linking",
+      "schema_linking_method": null,
+      "predicted_sql": "SELECT \n  org.\"Name\", \n  COUNT(DISTINCT e.id) AS num_events,\n  COUNT(DISTINCT t.id) AS num_tickets_sold,\n  SUM(o.total_amount) AS revenue\nFROM \n  org_service.\"Organizations\" org\n  LEFT JOIN event_service.events e ON e.organization_id = org.\"Id\" AND NOT e.is_deleted\n  LEFT JOIN event_service.sessions s ON s.event_id = e.id AND NOT s.is_deleted\n  LEFT JOIN event_service.tickets t ON t.session_id = s.id AND NOT t.is_deleted\n  LEFT JOIN payment_service.orders o ON o.session_id = s.id AND o.status = 'Paid' AND NOT o.is_deleted\nGROUP BY \n  org.\"Id\", org.\"Name\"\nORDER BY \n  revenue DESC;",
+      "error": null,
+      "retries": 0,
+      "row_count": 30,
+      "correct": false
+    }
+  ],
+  "V2 — Keyword matching only": [
+    {
+      "id": "001",
+      "question": "Có bao nhiêu user mới tháng này?",
+      "difficulty": "easy",
+      "involves_services": [
+        "user"
+      ],
+      "variant": "keyword_only",
+      "schema_linking_method": "keyword_only",
+      "predicted_sql": "SELECT COUNT(*) AS new_users \nFROM user_service.\"Users\" u \nWHERE u.\"CreatedAt\" >= DATE_TRUNC('month', CURRENT_DATE) \n  AND NOT u.\"IsDeleted\";",
+      "error": null,
+      "retries": 0,
+      "row_count": 1,
+      "correct": true
+    },
+    {
+      "id": "002",
+      "question": "Doanh thu theo tháng năm nay",
+      "difficulty": "easy",
+      "involves_services": [
+        "payment"
+      ],
+      "variant": "keyword_only",
+      "schema_linking_method": "keyword_only",
+      "predicted_sql": "SELECT DATE_TRUNC('month', o.paid_at) AS month, SUM(o.total_amount) AS revenue \nFROM payment_service.orders o \nWHERE o.status = 'Paid' AND EXTRACT(YEAR FROM o.paid_at) = EXTRACT(YEAR FROM CURRENT_DATE) \nGROUP BY 1 \nORDER BY 1;",
+      "error": null,
+      "retries": 0,
+      "row_count": 6,
+      "correct": true
+    },
+    {
+      "id": "003",
+      "question": "Top 5 sự kiện bán nhiều vé nhất",
+      "difficulty": "medium",
+      "involves_services": [
+        "event"
+      ],
+      "variant": "keyword_only",
+      "schema_linking_method": "keyword_only",
+      "predicted_sql": "SELECT e.name, COUNT(t.id) AS sold \nFROM event_service.events e \nJOIN event_service.tickets t ON t.order_id IN (SELECT id FROM payment_service.orders WHERE status = 'Paid' AND event_id = e.id) \nWHERE NOT e.is_deleted AND NOT t.is_deleted \nGROUP BY e.id, e.name \nORDER BY sold DESC \nLIMIT 5; \n\nKhông có lỗi trong câu lệnh SQL này, tuy nhiên có thể lỗi là do không có cột event_id trong bảng payment_service.orders. Nếu vậy, cần phải sửa lại câu lệnh SQL để tham chiếu đúng đến cột chứa id của event trong bảng payment_service.orders. Tuy nhiên, vì không có thông tin về cấu trúc của bảng payment_service.orders, nên không thể sửa lại chính xác. \n\nTuy nhiên, nếu giả sử cột event_id trong bảng payment_service.orders thực sự là id của event, thì có thể lỗi là do tên cột event_id không được đặt đúng theo quy tắc snake_case. Nếu vậy, cần phải sửa lại tên cột event_id trong câu lệnh SQL để phù hợp với quy tắc snake_case.\n\nGiả sử cột event_id trong bảng payment_service.orders được đặt tên là event_id theo quy tắc snake_case, thì câu lệnh SQL trên đã đúng. Tuy nhiên, nếu cột event_id được đặt tên khác, chẳng hạn như eventid, thì cần phải sửa lại câu lệnh SQL như sau:\n\nSELECT e.name, COUNT(t.id) AS sold \nFROM event_service.events e \nJOIN event_service.tickets t ON t.order_id IN (SELECT id FROM payment_service.orders WHERE status = 'Paid' AND eventid = e.id) \nWHERE NOT e.is_deleted AND NOT t.is_deleted \nGROUP BY e.id, e.name \nORDER BY sold DESC \nLIMIT 5; \n\nTuy nhiên, vì không có thông tin về cấu trúc của bảng payment_service.orders, nên không thể sửa lại chính xác. \n\nNếu bảng payment_service.orders có cấu trúc như sau:\n\nCREATE TABLE payment_service.orders (\n  id                  uuid         PRIMARY KEY,\n  event_id            uuid         NOT NULL,\n  status              text         NOT NULL,  \n  created_at          timestamptz  NOT NULL,\n  updated_at          timestamptz,\n  deleted_at          timestamptz,\n  is_deleted          bool         NOT NULL  \n);",
+      "error": "syntax error at or near \"Không\"",
+      "retries": 1,
+      "row_count": 0,
+      "correct": false
+    },
+    {
+      "id": "004",
+      "question": "Tỉ lệ vé đã check-in của các sự kiện",
+      "difficulty": "medium",
+      "involves_services": [
+        "event"
+      ],
+      "variant": "keyword_only",
+      "schema_linking_method": "keyword_only",
+      "predicted_sql": "SELECT e.name, COUNT(t.id) FILTER (WHERE t.is_checked_in) * 1.0 / COUNT(t.id) AS checkin_rate\nFROM event_service.events e\nJOIN event_service.sessions s ON s.event_id = e.id\nJOIN event_service.tickets t ON t.session_id = s.id\nWHERE NOT e.is_deleted AND NOT t.is_deleted\nGROUP BY e.id, e.name\nORDER BY checkin_rate DESC;",
+      "error": null,
+      "retries": 0,
+      "row_count": 57,
+      "correct": true
+    },
+    {
+      "id": "005",
+      "question": "Sự kiện nào có doanh thu cao nhất tuần qua",
+      "difficulty": "hard",
+      "involves_services": [
+        "event",
+        "payment"
+      ],
+      "variant": "keyword_only",
+      "schema_linking_method": "keyword_only",
+      "predicted_sql": "SELECT e.name, SUM(o.total_amount) AS revenue\nFROM event_service.events e\nJOIN payment_service.orders o ON o.session_id = e.id\nWHERE o.status = 'Paid'\n  AND o.paid_at >= CURRENT_DATE - INTERVAL '7 days'\n  AND NOT e.is_deleted\nGROUP BY e.id, e.name\nORDER BY revenue DESC\nLIMIT 1;",
+      "error": null,
+      "retries": 0,
+      "row_count": 0,
+      "correct": false
+    },
+    {
+      "id": "006",
+      "question": "Tổng ghế đã bán theo từng sự kiện",
+      "difficulty": "hard",
+      "involves_services": [
+        "event",
+        "seat"
+      ],
+      "variant": "keyword_only",
+      "schema_linking_method": "keyword_only",
+      "predicted_sql": "SELECT e.name, COUNT(t.id) AS sold_seats\nFROM event_service.events e\nJOIN event_service.tickets t ON t.session_id IN (SELECT id FROM event_service.sessions WHERE event_id = e.id)\nGROUP BY e.id, e.name\nORDER BY sold_seats DESC;",
+      "error": null,
+      "retries": 0,
+      "row_count": 57,
+      "correct": false
+    },
+    {
+      "id": "007",
+      "question": "Org nào doanh thu cao nhất quý này",
+      "difficulty": "medium",
+      "involves_services": [
+        "org",
+        "payment"
+      ],
+      "variant": "keyword_only",
+      "schema_linking_method": "keyword_only",
+      "predicted_sql": "SELECT org.\"Name\", SUM(o.total_amount) AS revenue \nFROM payment_service.orders o \nJOIN org_service.\"Organizations\" org ON org.\"Id\" = o.org_id \nWHERE o.status = 'Paid' \n  AND o.paid_at >= DATE_TRUNC('quarter', CURRENT_DATE) \n  AND NOT o.is_deleted \nGROUP BY org.\"Id\", org.\"Name\" \nORDER BY revenue DESC \nLIMIT 1;",
+      "error": null,
+      "retries": 0,
+      "row_count": 1,
+      "correct": true
+    },
+    {
+      "id": "008",
+      "question": "Số lượng lời mời tham gia mỗi org",
+      "difficulty": "easy",
+      "involves_services": [
+        "org"
+      ],
+      "variant": "keyword_only",
+      "schema_linking_method": "keyword_only",
+      "predicted_sql": "SELECT org.\"Name\", COUNT(i.\"Id\") AS invitation_count\nFROM org_service.\"Invitations\" i\nJOIN org_service.\"Organizations\" org ON org.\"Id\" = i.\"OrganizationId\"\nWHERE NOT i.\"IsDeleted\"\nGROUP BY org.\"Id\", org.\"Name\"\nORDER BY invitation_count DESC;",
+      "error": null,
+      "retries": 0,
+      "row_count": 25,
+      "correct": false
+    },
+    {
+      "id": "009",
+      "question": "Sự kiện đang chờ duyệt",
+      "difficulty": "easy",
+      "involves_services": [
+        "event"
+      ],
+      "variant": "keyword_only",
+      "schema_linking_method": "keyword_only",
+      "predicted_sql": "SELECT e.id, e.name, e.organization_name, e.status \nFROM event_service.events e \nWHERE e.status = 1 AND e.is_deleted = FALSE;",
+      "error": null,
+      "retries": 0,
+      "row_count": 8,
+      "correct": false
+    },
+    {
+      "id": "010",
+      "question": "Khách hàng chi tiêu nhiều nhất top 10",
+      "difficulty": "medium",
+      "involves_services": [
+        "user",
+        "payment"
+      ],
+      "variant": "keyword_only",
+      "schema_linking_method": "keyword_only",
+      "predicted_sql": "SELECT u.\"Username\", SUM(o.total_amount) AS total_spent\nFROM payment_service.orders o\nJOIN user_service.\"Users\" u ON u.\"Id\" = o.user_id\nWHERE o.status = 'Paid'\nGROUP BY u.\"Id\", u.\"Username\"\nORDER BY total_spent DESC\nLIMIT 10;",
+      "error": null,
+      "retries": 0,
+      "row_count": 10,
+      "correct": true
+    },
+    {
+      "id": "011",
+      "question": "Phí platform đã thu trong tháng này",
+      "difficulty": "easy",
+      "involves_services": [
+        "payment"
+      ],
+      "variant": "keyword_only",
+      "schema_linking_method": "keyword_only",
+      "predicted_sql": "SELECT SUM(o.platform_fee) AS platform_fee \nFROM payment_service.orders o \nWHERE o.status = 'Paid' \n  AND o.paid_at >= DATE_TRUNC('month', CURRENT_DATE);",
+      "error": null,
+      "retries": 0,
+      "row_count": 1,
+      "correct": true
+    },
+    {
+      "id": "012",
+      "question": "Tỉ lệ ghế VIP đã bán",
+      "difficulty": "hard",
+      "involves_services": [
+        "seat",
+        "event"
+      ],
+      "variant": "keyword_only",
+      "schema_linking_method": "keyword_only",
+      "predicted_sql": "SELECT COUNT(CASE WHEN s.seat_type = 1 AND t.id IS NOT NULL THEN 1 END) * 1.0 / COUNT(s.id) AS vip_seat_sold_ratio\nFROM seat_service.seats s\nLEFT JOIN event_service.tickets t ON s.id = t.seat_id\nWHERE NOT s.is_deleted AND s.status = 'Sold';",
+      "error": null,
+      "retries": 0,
+      "row_count": 1,
+      "correct": false
+    },
+    {
+      "id": "013",
+      "question": "So sánh doanh thu Q1 vs Q2 năm nay",
+      "difficulty": "medium",
+      "involves_services": [
+        "payment"
+      ],
+      "variant": "keyword_only",
+      "schema_linking_method": "keyword_only",
+      "predicted_sql": "SELECT \n  SUM(CASE WHEN EXTRACT(QUARTER FROM o.paid_at) = 1 THEN o.total_amount ELSE 0 END) AS q1_revenue,\n  SUM(CASE WHEN EXTRACT(QUARTER FROM o.paid_at) = 2 THEN o.total_amount ELSE 0 END) AS q2_revenue\nFROM \n  payment_service.orders o\nWHERE \n  o.status = 'Paid' \n  AND EXTRACT(YEAR FROM o.paid_at) = EXTRACT(YEAR FROM CURRENT_DATE);",
+      "error": null,
+      "retries": 0,
+      "row_count": 1,
+      "correct": false
+    },
+    {
+      "id": "014",
+      "question": "Sự kiện có nhiều session nhất",
+      "difficulty": "easy",
+      "involves_services": [
+        "event"
+      ],
+      "variant": "keyword_only",
+      "schema_linking_method": "keyword_only",
+      "predicted_sql": "SELECT e.name, COUNT(s.id) AS num_sessions\nFROM event_service.events e\nJOIN event_service.sessions s ON s.event_id = e.id\nWHERE NOT e.is_deleted AND NOT s.is_deleted\nGROUP BY e.id, e.name\nORDER BY num_sessions DESC\nLIMIT 1;",
+      "error": null,
+      "retries": 0,
+      "row_count": 1,
+      "correct": true
+    },
+    {
+      "id": "015",
+      "question": "User bị ban gần đây",
+      "difficulty": "easy",
+      "involves_services": [
+        "user"
+      ],
+      "variant": "keyword_only",
+      "schema_linking_method": "keyword_only",
+      "predicted_sql": "SELECT u.\"Id\", u.\"Email\", u.\"BannedAt\" \nFROM user_service.\"Users\" u \nWHERE u.\"IsBanned\" = TRUE AND u.\"BannedAt\" IS NOT NULL AND u.\"BannedAt\" >= CURRENT_DATE - INTERVAL '7 days' \nORDER BY u.\"BannedAt\" DESC;",
+      "error": "column u.BannedAt does not exist",
+      "retries": 1,
+      "row_count": 0,
+      "correct": false
+    },
+    {
+      "id": "016",
+      "question": "Số sơ đồ ghế template chưa được publish",
+      "difficulty": "hard",
+      "involves_services": [
+        "seat"
+      ],
+      "variant": "keyword_only",
+      "schema_linking_method": "keyword_only",
+      "predicted_sql": "SELECT COUNT(*) \nFROM seat_service.seat_maps \nWHERE status = 'Draft' AND session_id IS NULL AND NOT is_deleted;",
+      "error": null,
+      "retries": 0,
+      "row_count": 1,
+      "correct": true
+    },
+    {
+      "id": "017",
+      "question": "Doanh thu trung bình mỗi vé",
+      "difficulty": "medium",
+      "involves_services": [
+        "event",
+        "payment"
+      ],
+      "variant": "keyword_only",
+      "schema_linking_method": "keyword_only",
+      "predicted_sql": "SELECT AVG(o.total_amount) AS average_revenue_per_ticket \nFROM payment_service.orders o \nWHERE o.status = 'Paid' AND NOT o.is_deleted;",
+      "error": null,
+      "retries": 0,
+      "row_count": 1,
+      "correct": false
+    },
+    {
+      "id": "018",
+      "question": "Legend nào được dùng nhiều nhất trong các sơ đồ ghế",
+      "difficulty": "medium",
+      "involves_services": [
+        "event",
+        "seat"
+      ],
+      "variant": "keyword_only",
+      "schema_linking_method": "keyword_only",
+      "predicted_sql": "SELECT legend_id, COUNT(*) AS count \nFROM seat_service.seats \nWHERE NOT is_deleted \nGROUP BY legend_id \nORDER BY count DESC \nLIMIT 1;",
+      "error": null,
+      "retries": 0,
+      "row_count": 1,
+      "correct": false
+    },
+    {
+      "id": "019",
+      "question": "Org nào chưa connect Stripe",
+      "difficulty": "medium",
+      "involves_services": [
+        "org"
+      ],
+      "variant": "keyword_only",
+      "schema_linking_method": "keyword_only",
+      "predicted_sql": "SELECT org.\"Name\" \nFROM org_service.\"Organizations\" org \nWHERE org.\"PaymentStatus\" = 0 AND NOT org.\"IsDeleted\";",
+      "error": null,
+      "retries": 0,
+      "row_count": 10,
+      "correct": true
+    },
+    {
+      "id": "020",
+      "question": "Số order Failed trong tuần qua",
+      "difficulty": "easy",
+      "involves_services": [
+        "payment"
+      ],
+      "variant": "keyword_only",
+      "schema_linking_method": "keyword_only",
+      "predicted_sql": "SELECT COUNT(*) AS failed_orders\nFROM payment_service.orders o\nWHERE o.status = 'Failed'\n  AND o.updated_at >= CURRENT_DATE - INTERVAL '7 days'\n  AND NOT o.is_deleted;",
+      "error": null,
+      "retries": 0,
+      "row_count": 1,
+      "correct": false
+    },
+    {
+      "id": "021",
+      "question": "Top 10 khách hàng mua ghế VIP chi tiêu cao nhất",
+      "difficulty": "cross-service",
+      "involves_services": [
+        "user",
+        "payment",
+        "seat",
+        "event"
+      ],
+      "variant": "keyword_only",
+      "schema_linking_method": "keyword_only",
+      "predicted_sql": "SELECT u.\"Email\", SUM(oi.price) AS total_spent\nFROM payment_service.order_items oi\nJOIN payment_service.orders o ON oi.order_id = o.id\nJOIN user_service.\"Users\" u ON u.\"Id\" = o.user_id\nWHERE oi.seat_id IN (SELECT s.id FROM seat_service.seats s WHERE s.seat_type = 4)\n  AND o.status = 'Paid'\n  AND NOT u.\"IsDeleted\"\nGROUP BY u.\"Id\", u.\"Email\"\nORDER BY total_spent DESC\nLIMIT 10;",
+      "error": null,
+      "retries": 0,
+      "row_count": 10,
+      "correct": false
+    },
+    {
+      "id": "022",
+      "question": "Doanh thu và phí platform theo từng sự kiện của mỗi tổ chức",
+      "difficulty": "cross-service",
+      "involves_services": [
+        "org",
+        "event",
+        "payment"
+      ],
+      "variant": "keyword_only",
+      "schema_linking_method": "keyword_only",
+      "predicted_sql": "SELECT org.\"Name\" AS organization_name, e.name AS event_name, SUM(o.total_amount) AS revenue, SUM(o.platform_fee) AS platform_fee\nFROM payment_service.orders o\nJOIN org_service.\"Organizations\" org ON org.\"Id\" = o.org_id\nJOIN event_service.events e ON e.id = o.session_id\nWHERE o.status = 'Paid' AND NOT o.is_deleted AND NOT e.is_deleted\nGROUP BY org.\"Id\", org.\"Name\", e.id, e.name\nORDER BY org.\"Name\", e.name;",
+      "error": null,
+      "retries": 0,
+      "row_count": 0,
+      "correct": false
+    },
+    {
+      "id": "023",
+      "question": "Sự kiện nào có chủ tổ chức đã bị ban",
+      "difficulty": "cross-service",
+      "involves_services": [
+        "event",
+        "org",
+        "user"
+      ],
+      "variant": "keyword_only",
+      "schema_linking_method": "keyword_only",
+      "predicted_sql": "SELECT e.name, e.organization_name \nFROM event_service.events e \nJOIN org_service.\"Organizations\" o ON o.\"Id\" = e.organization_id \nWHERE o.\"PaymentStatus\" = 3 AND NOT e.is_deleted;",
+      "error": null,
+      "retries": 0,
+      "row_count": 0,
+      "correct": false
+    },
+    {
+      "id": "024",
+      "question": "Tổng số tổ chức trên hệ thống",
+      "difficulty": "easy",
+      "involves_services": [
+        "org"
+      ],
+      "variant": "keyword_only",
+      "schema_linking_method": "keyword_only",
+      "predicted_sql": "SELECT COUNT(*) AS total_organizations \nFROM org_service.\"Organizations\" \nWHERE NOT \"IsDeleted\";",
+      "error": null,
+      "retries": 0,
+      "row_count": 1,
+      "correct": true
+    },
+    {
+      "id": "025",
+      "question": "Số sự kiện đã publish",
+      "difficulty": "easy",
+      "involves_services": [
+        "event"
+      ],
+      "variant": "keyword_only",
+      "schema_linking_method": "keyword_only",
+      "predicted_sql": "SELECT COUNT(*) AS published_events \nFROM event_service.events \nWHERE status = 4 AND NOT is_deleted;",
+      "error": null,
+      "retries": 0,
+      "row_count": 1,
+      "correct": true
+    },
+    {
+      "id": "026",
+      "question": "Số ghế còn trống",
+      "difficulty": "easy",
+      "involves_services": [
+        "seat"
+      ],
+      "variant": "keyword_only",
+      "schema_linking_method": "keyword_only",
+      "predicted_sql": "SELECT COUNT(*) AS available_seats \nFROM seat_service.seats \nWHERE status = 'Available' AND NOT is_deleted;",
+      "error": null,
+      "retries": 0,
+      "row_count": 1,
+      "correct": true
+    },
+    {
+      "id": "027",
+      "question": "Tổng số vé đã phát hành",
+      "difficulty": "easy",
+      "involves_services": [
+        "event"
+      ],
+      "variant": "keyword_only",
+      "schema_linking_method": "keyword_only",
+      "predicted_sql": "SELECT COUNT(*) AS total_tickets FROM event_service.tickets WHERE NOT is_deleted;",
+      "error": null,
+      "retries": 0,
+      "row_count": 1,
+      "correct": true
+    },
+    {
+      "id": "028",
+      "question": "Số đơn hàng theo trạng thái",
+      "difficulty": "easy",
+      "involves_services": [
+        "payment"
+      ],
+      "variant": "keyword_only",
+      "schema_linking_method": "keyword_only",
+      "predicted_sql": "SELECT status, COUNT(*) AS count \nFROM payment_service.orders \nWHERE NOT is_deleted \nGROUP BY status \nORDER BY count DESC;",
+      "error": null,
+      "retries": 0,
+      "row_count": 3,
+      "correct": true
+    },
+    {
+      "id": "029",
+      "question": "Số user đang bị ban",
+      "difficulty": "easy",
+      "involves_services": [
+        "user"
+      ],
+      "variant": "keyword_only",
+      "schema_linking_method": "keyword_only",
+      "predicted_sql": "SELECT COUNT(*) AS banned_users \nFROM user_service.\"Users\" u \nJOIN user_service.\"Roles\" r ON u.\"RoleId\" = r.\"Id\" \nWHERE r.\"Name\" = 'User' AND u.\"IsDeleted\" = TRUE;",
+      "error": "column u.RoleId does not exist",
+      "retries": 1,
+      "row_count": 0,
+      "correct": false
+    },
+    {
+      "id": "030",
+      "question": "Số sự kiện theo từng trạng thái",
+      "difficulty": "easy",
+      "involves_services": [
+        "event"
+      ],
+      "variant": "keyword_only",
+      "schema_linking_method": "keyword_only",
+      "predicted_sql": "SELECT status, COUNT(*) AS count \nFROM event_service.events \nWHERE NOT is_deleted \nGROUP BY status \nORDER BY status;",
+      "error": null,
+      "retries": 0,
+      "row_count": 6,
+      "correct": true
+    },
+    {
+      "id": "031",
+      "question": "Số ghế theo từng loại ghế",
+      "difficulty": "easy",
+      "involves_services": [
+        "seat"
+      ],
+      "variant": "keyword_only",
+      "schema_linking_method": "keyword_only",
+      "predicted_sql": "SELECT seat_type, COUNT(id) AS so_ghe \nFROM seat_service.seats \nWHERE NOT is_deleted \nGROUP BY seat_type \nORDER BY seat_type;",
+      "error": null,
+      "retries": 0,
+      "row_count": 4,
+      "correct": true
+    },
+    {
+      "id": "032",
+      "question": "Số lời mời theo trạng thái",
+      "difficulty": "easy",
+      "involves_services": [
+        "org"
+      ],
+      "variant": "keyword_only",
+      "schema_linking_method": "keyword_only",
+      "predicted_sql": "SELECT \"Status\", COUNT(*) AS count \nFROM org_service.\"Invitations\" \nWHERE NOT \"IsDeleted\" \nGROUP BY \"Status\";",
+      "error": null,
+      "retries": 0,
+      "row_count": 4,
+      "correct": true
+    },
+    {
+      "id": "033",
+      "question": "Tổng doanh thu toàn hệ thống",
+      "difficulty": "easy",
+      "involves_services": [
+        "payment"
+      ],
+      "variant": "keyword_only",
+      "schema_linking_method": "keyword_only",
+      "predicted_sql": "SELECT SUM(o.total_amount) AS total_revenue \nFROM payment_service.orders o \nWHERE o.status = 'Paid' AND NOT o.is_deleted;",
+      "error": null,
+      "retries": 0,
+      "row_count": 1,
+      "correct": true
+    },
+    {
+      "id": "034",
+      "question": "Tổng số session đã tạo",
+      "difficulty": "easy",
+      "involves_services": [
+        "event"
+      ],
+      "variant": "keyword_only",
+      "schema_linking_method": "keyword_only",
+      "predicted_sql": "SELECT COUNT(DISTINCT id) AS total_sessions FROM event_service.sessions WHERE NOT is_deleted;",
+      "error": null,
+      "retries": 0,
+      "row_count": 1,
+      "correct": true
+    },
+    {
+      "id": "035",
+      "question": "Mức phí hiện tại của nền tảng",
+      "difficulty": "easy",
+      "involves_services": [
+        "org"
+      ],
+      "variant": "keyword_only",
+      "schema_linking_method": "keyword_only",
+      "predicted_sql": "SELECT AVG(platform_fee) AS current_fee FROM payment_service.orders WHERE NOT is_deleted;",
+      "error": null,
+      "retries": 0,
+      "row_count": 1,
+      "correct": false
+    },
+    {
+      "id": "036",
+      "question": "Số tổ chức đã kết nối Stripe",
+      "difficulty": "easy",
+      "involves_services": [
+        "org"
+      ],
+      "variant": "keyword_only",
+      "schema_linking_method": "keyword_only",
+      "predicted_sql": "SELECT COUNT(*) AS num_orgs \nFROM org_service.\"Organizations\" o \nWHERE o.\"StripeAccountId\" IS NOT NULL AND NOT o.\"IsDeleted\";",
+      "error": null,
+      "retries": 0,
+      "row_count": 1,
+      "correct": true
+    },
+    {
+      "id": "037",
+      "question": "Số vé đã check-in",
+      "difficulty": "easy",
+      "involves_services": [
+        "event"
+      ],
+      "variant": "keyword_only",
+      "schema_linking_method": "keyword_only",
+      "predicted_sql": "SELECT COUNT(*) AS checked_in_tickets FROM event_service.tickets WHERE is_checked_in = TRUE AND NOT is_deleted;",
+      "error": null,
+      "retries": 0,
+      "row_count": 1,
+      "correct": true
+    },
+    {
+      "id": "038",
+      "question": "Số sơ đồ ghế đã publish",
+      "difficulty": "easy",
+      "involves_services": [
+        "seat"
+      ],
+      "variant": "keyword_only",
+      "schema_linking_method": "keyword_only",
+      "predicted_sql": "SELECT COUNT(*) AS published_seat_maps\nFROM seat_service.seat_maps\nWHERE status = 'Published' AND NOT is_deleted;",
+      "error": null,
+      "retries": 0,
+      "row_count": 1,
+      "correct": true
+    },
+    {
+      "id": "039",
+      "question": "Giá vé trung bình trên toàn bộ loại vé",
+      "difficulty": "easy",
+      "involves_services": [
+        "event"
+      ],
+      "variant": "keyword_only",
+      "schema_linking_method": "keyword_only",
+      "predicted_sql": "SELECT AVG(t.price) AS average_ticket_price \nFROM event_service.tickets t \nWHERE NOT t.is_deleted;",
+      "error": null,
+      "retries": 0,
+      "row_count": 1,
+      "correct": false
+    },
+    {
+      "id": "040",
+      "question": "Số đơn hàng đã thanh toán hôm nay",
+      "difficulty": "easy",
+      "involves_services": [
+        "payment"
+      ],
+      "variant": "keyword_only",
+      "schema_linking_method": "keyword_only",
+      "predicted_sql": "SELECT COUNT(*) AS paid_orders \nFROM payment_service.orders \nWHERE status = 'Paid' AND DATE(paid_at) = DATE(CURRENT_DATE) AND NOT is_deleted;",
+      "error": null,
+      "retries": 0,
+      "row_count": 1,
+      "correct": true
+    },
+    {
+      "id": "041",
+      "question": "Doanh thu theo từng tổ chức",
+      "difficulty": "medium",
+      "involves_services": [
+        "org",
+        "payment"
+      ],
+      "variant": "keyword_only",
+      "schema_linking_method": "keyword_only",
+      "predicted_sql": "SELECT org.\"Name\", SUM(o.total_amount) AS revenue \nFROM payment_service.orders o \nJOIN org_service.\"Organizations\" org ON org.\"Id\" = o.org_id \nWHERE o.status = 'Paid' AND NOT o.is_deleted AND NOT org.\"IsDeleted\" \nGROUP BY org.\"Id\", org.\"Name\" \nORDER BY revenue DESC;",
+      "error": null,
+      "retries": 0,
+      "row_count": 27,
+      "correct": true
+    },
+    {
+      "id": "042",
+      "question": "Số vé bán theo từng sự kiện",
+      "difficulty": "medium",
+      "involves_services": [
+        "event"
+      ],
+      "variant": "keyword_only",
+      "schema_linking_method": "keyword_only",
+      "predicted_sql": "SELECT e.name, COUNT(t.id) AS sold \nFROM event_service.events e \nJOIN event_service.tickets t ON t.order_id IN (SELECT id FROM payment_service.orders WHERE status = 'Paid' AND event_id = e.id)\nWHERE NOT e.is_deleted AND NOT t.is_deleted \nGROUP BY e.id, e.name \nORDER BY sold DESC; \n\nthành \n\nSELECT e.name, COUNT(t.id) AS sold \nFROM event_service.events e \nJOIN event_service.tickets t ON t.order_id IN (SELECT id FROM payment_service.orders WHERE status = 'Paid' AND event_id = e.id)\nWHERE NOT e.is_deleted AND NOT t.is_deleted \nGROUP BY e.id, e.name \nORDER BY sold DESC;\n\nsửa lại thành \n\nSELECT e.name, COUNT(t.id) AS sold \nFROM event_service.events e \nJOIN event_service.tickets t ON t.order_id IN (SELECT id FROM payment_service.orders WHERE status = 'Paid' AND event_id = e.id)\nWHERE NOT e.is_deleted AND NOT t.is_deleted \nGROUP BY e.id, e.name \nORDER BY sold DESC;\n\nthành \n\nSELECT e.name, COUNT(t.id) AS sold \nFROM event_service.events e \nJOIN event_service.tickets t ON t.order_id IN (SELECT id FROM payment_service.orders WHERE status = 'Paid' AND event_id = e.id)\nWHERE NOT e.is_deleted AND NOT t.is_deleted \nGROUP BY e.id, e.name \nORDER BY sold DESC;\n\nsửa lại thành \n\nSELECT e.name, COUNT(t.id) AS sold \nFROM event_service.events e \nJOIN event_service.tickets t ON t.order_id IN (SELECT id FROM payment_service.orders WHERE status = 'Paid' AND event_id = e.id)\nWHERE NOT e.is_deleted AND NOT t.is_deleted \nGROUP BY e.id, e.name \nORDER BY sold DESC;\n\nthành \n\nSELECT e.name, COUNT(t.id) AS sold \nFROM event_service.events e \nJOIN event_service.tickets t ON t.order_id IN (SELECT id FROM payment_service.orders WHERE status = 'Paid' AND event_id = e.id)\nWHERE NOT e.is_deleted AND NOT t.is_deleted \nGROUP BY e.id, e.name \nORDER BY sold DESC;\n\nsửa lại thành \n\nSELECT e.name, COUNT(t.id) AS sold \nFROM event_service.events e \nJOIN event_service.tickets t ON t.order_id IN (SELECT id FROM payment_service.orders WHERE status = 'Paid' AND event_id = e.id)\nWHERE NOT e.is_deleted AND NOT t.is_deleted \nGROUP BY e.id, e.name \nORDER BY sold DESC;",
+      "error": "syntax error at or near \"thành\"",
+      "retries": 1,
+      "row_count": 0,
+      "correct": false
+    },
+    {
+      "id": "043",
+      "question": "Top 10 sự kiện doanh thu cao nhất",
+      "difficulty": "medium",
+      "involves_services": [
+        "event",
+        "payment"
+      ],
+      "variant": "keyword_only",
+      "schema_linking_method": "keyword_only",
+      "predicted_sql": "SELECT e.name, SUM(o.total_amount) AS revenue\nFROM event_service.events e\nJOIN event_service.sessions s ON e.id = s.event_id\nJOIN payment_service.orders o ON o.session_id = s.id\nWHERE o.status = 'Paid'\nGROUP BY e.id, e.name\nORDER BY revenue DESC\nLIMIT 10;",
+      "error": null,
+      "retries": 0,
+      "row_count": 10,
+      "correct": true
+    },
+    {
+      "id": "044",
+      "question": "Số ghế đã bán theo từng tổ chức",
+      "difficulty": "medium",
+      "involves_services": [
+        "seat"
+      ],
+      "variant": "keyword_only",
+      "schema_linking_method": "keyword_only",
+      "predicted_sql": "SELECT org.\"Name\", COUNT(DISTINCT t.id) AS sold_seats\nFROM org_service.\"Organizations\" org\nJOIN payment_service.orders o ON org.\"Id\" = o.org_id\nJOIN event_service.tickets t ON o.id = t.order_id\nWHERE o.status = 'Paid'\n  AND NOT t.is_deleted\n  AND NOT o.is_deleted\nGROUP BY org.\"Id\", org.\"Name\"\nORDER BY sold_seats DESC;",
+      "error": null,
+      "retries": 0,
+      "row_count": 27,
+      "correct": false
+    },
+    {
+      "id": "045",
+      "question": "Doanh thu theo từng loại vé",
+      "difficulty": "medium",
+      "involves_services": [
+        "payment"
+      ],
+      "variant": "keyword_only",
+      "schema_linking_method": "keyword_only",
+      "predicted_sql": "SELECT l.name AS legend_name, SUM(o.total_amount) AS revenue\nFROM payment_service.orders o\nJOIN event_service.tickets t ON o.id = t.order_id\nJOIN event_service.legends l ON t.legend_name = l.name\nWHERE o.status = 'Paid'\nGROUP BY l.name\nORDER BY revenue DESC;",
+      "error": null,
+      "retries": 0,
+      "row_count": 4,
+      "correct": false
+    },
+    {
+      "id": "046",
+      "question": "Số đơn hàng của mỗi khách hàng",
+      "difficulty": "medium",
+      "involves_services": [
+        "user",
+        "payment"
+      ],
+      "variant": "keyword_only",
+      "schema_linking_method": "keyword_only",
+      "predicted_sql": "SELECT u.\"Id\", COUNT(o.id) AS num_orders \nFROM user_service.\"Users\" u \nJOIN payment_service.orders o ON u.\"Id\" = o.user_id \nWHERE NOT o.is_deleted \nGROUP BY u.\"Id\" \nORDER BY num_orders DESC;",
+      "error": null,
+      "retries": 0,
+      "row_count": 161,
+      "correct": false
+    },
+    {
+      "id": "047",
+      "question": "Số sự kiện của mỗi tổ chức",
+      "difficulty": "medium",
+      "involves_services": [
+        "org",
+        "event"
+      ],
+      "variant": "keyword_only",
+      "schema_linking_method": "keyword_only",
+      "predicted_sql": "SELECT org.\"Name\", COUNT(e.id) AS num_events\nFROM event_service.events e\nJOIN org_service.\"Organizations\" org ON org.\"Id\" = e.organization_id\nWHERE NOT e.is_deleted AND NOT org.\"IsDeleted\"\nGROUP BY org.\"Id\", org.\"Name\"\nORDER BY num_events DESC;",
+      "error": null,
+      "retries": 0,
+      "row_count": 28,
+      "correct": true
+    },
+    {
+      "id": "048",
+      "question": "Tỉ lệ ghế đã bán của mỗi sơ đồ ghế",
+      "difficulty": "medium",
+      "involves_services": [
+        "seat"
+      ],
+      "variant": "keyword_only",
+      "schema_linking_method": "keyword_only",
+      "predicted_sql": "SELECT sm.name, \n       COUNT(CASE WHEN s.status = 'Sold' THEN 1 END) * 1.0 / sm.total_seats AS sold_rate\nFROM seat_service.seat_maps sm\nJOIN seat_service.seats s ON s.seat_map_id = sm.id\nWHERE NOT s.is_deleted AND NOT sm.is_deleted\nGROUP BY sm.id, sm.name, sm.total_seats\nORDER BY sold_rate DESC;",
+      "error": null,
+      "retries": 0,
+      "row_count": 145,
+      "correct": false
+    },
+    {
+      "id": "049",
+      "question": "Giá trị đơn hàng trung bình theo tổ chức",
+      "difficulty": "medium",
+      "involves_services": [
+        "org",
+        "payment"
+      ],
+      "variant": "keyword_only",
+      "schema_linking_method": "keyword_only",
+      "predicted_sql": "SELECT org.\"Name\", AVG(o.total_amount) AS avg_order_value\nFROM payment_service.orders o\nJOIN org_service.\"Organizations\" org ON org.\"Id\" = o.org_id\nWHERE o.status = 'Paid' AND NOT o.is_deleted AND NOT org.\"IsDeleted\"\nGROUP BY org.\"Id\", org.\"Name\"\nORDER BY avg_order_value DESC;",
+      "error": null,
+      "retries": 0,
+      "row_count": 27,
+      "correct": true
+    },
+    {
+      "id": "050",
+      "question": "Số vé check-in theo từng sự kiện",
+      "difficulty": "medium",
+      "involves_services": [
+        "event"
+      ],
+      "variant": "keyword_only",
+      "schema_linking_method": "keyword_only",
+      "predicted_sql": "SELECT e.name, COUNT(t.id) AS checked_in_tickets\nFROM event_service.events e\nJOIN event_service.tickets t ON t.order_id IN (SELECT id FROM payment_service.orders WHERE status = 'Paid' AND event_id = e.id)\nWHERE t.is_checked_in = TRUE AND NOT e.is_deleted AND NOT t.is_deleted\nGROUP BY e.id, e.name\nORDER BY checked_in_tickets DESC;",
+      "error": "column \"event_id\" does not exist",
+      "retries": 1,
+      "row_count": 0,
+      "correct": false
+    },
+    {
+      "id": "051",
+      "question": "Top 5 khách hàng có nhiều đơn nhất",
+      "difficulty": "medium",
+      "involves_services": [
+        "user",
+        "payment"
+      ],
+      "variant": "keyword_only",
+      "schema_linking_method": "keyword_only",
+      "predicted_sql": "SELECT u.\"Username\", COUNT(o.id) AS total_orders\nFROM user_service.\"Users\" u\nJOIN payment_service.orders o ON u.\"Id\" = o.user_id\nWHERE NOT u.\"IsDeleted\" AND NOT o.is_deleted\nGROUP BY u.\"Id\", u.\"Username\"\nORDER BY total_orders DESC\nLIMIT 5;",
+      "error": null,
+      "retries": 0,
+      "row_count": 5,
+      "correct": false
+    },
+    {
+      "id": "052",
+      "question": "Tổng số ghế của mỗi sự kiện",
+      "difficulty": "medium",
+      "involves_services": [
+        "event",
+        "seat"
+      ],
+      "variant": "keyword_only",
+      "schema_linking_method": "keyword_only",
+      "predicted_sql": "SELECT e.name, COUNT(s.id) AS total_seats\nFROM event_service.events e\nJOIN seat_service.seats s ON s.seat_map_id = e.id\nWHERE NOT s.is_deleted\nGROUP BY e.id, e.name\nORDER BY total_seats DESC;",
+      "error": null,
+      "retries": 0,
+      "row_count": 0,
+      "correct": false
+    },
+    {
+      "id": "053",
+      "question": "Doanh thu theo tỉnh thành",
+      "difficulty": "medium",
+      "involves_services": [
+        "event",
+        "payment"
+      ],
+      "variant": "keyword_only",
+      "schema_linking_method": "keyword_only",
+      "predicted_sql": "SELECT org.\"Address\".\"City\", SUM(o.total_amount) AS revenue\nFROM payment_service.orders o\nJOIN org_service.\"Organizations\" org ON org.\"Id\" = o.org_id\nWHERE o.status = 'Paid' AND NOT o.is_deleted\nGROUP BY org.\"Id\", org.\"Address\".\"City\"\nORDER BY revenue DESC;",
+      "error": "missing FROM-clause entry for table \"Address\"",
+      "retries": 1,
+      "row_count": 0,
+      "correct": false
+    },
+    {
+      "id": "054",
+      "question": "Số session của mỗi sự kiện",
+      "difficulty": "medium",
+      "involves_services": [
+        "event"
+      ],
+      "variant": "keyword_only",
+      "schema_linking_method": "keyword_only",
+      "predicted_sql": "SELECT e.name, COUNT(s.id) AS number_of_sessions \nFROM event_service.events e \nJOIN event_service.sessions s ON s.event_id = e.id \nWHERE NOT e.is_deleted AND NOT s.is_deleted \nGROUP BY e.id, e.name \nORDER BY e.name;",
+      "error": null,
+      "retries": 0,
+      "row_count": 80,
+      "correct": true
+    },
+    {
+      "id": "055",
+      "question": "Tổng phí nền tảng thu được theo tổ chức",
+      "difficulty": "medium",
+      "involves_services": [
+        "org",
+        "payment"
+      ],
+      "variant": "keyword_only",
+      "schema_linking_method": "keyword_only",
+      "predicted_sql": "SELECT org.\"Name\", SUM(o.platform_fee) AS total_fee\nFROM payment_service.orders o\nJOIN org_service.\"Organizations\" org ON org.\"Id\" = o.org_id\nWHERE NOT o.is_deleted AND NOT org.\"IsDeleted\"\nGROUP BY org.\"Id\", org.\"Name\"\nORDER BY total_fee DESC;",
+      "error": null,
+      "retries": 0,
+      "row_count": 27,
+      "correct": false
+    },
+    {
+      "id": "056",
+      "question": "Số loại vé của mỗi sự kiện",
+      "difficulty": "medium",
+      "involves_services": [
+        "event"
+      ],
+      "variant": "keyword_only",
+      "schema_linking_method": "keyword_only",
+      "predicted_sql": "SELECT e.id, e.name, COUNT(DISTINCT t.legend_name) AS num_ticket_types\nFROM event_service.events e\nJOIN event_service.tickets t ON e.id = (SELECT order_id FROM payment_service.orders WHERE id = t.order_id)\nGROUP BY e.id, e.name\nORDER BY e.id;",
+      "error": null,
+      "retries": 0,
+      "row_count": 0,
+      "correct": false
+    },
+    {
+      "id": "057",
+      "question": "Số đơn hàng thất bại theo tổ chức",
+      "difficulty": "medium",
+      "involves_services": [
+        "org",
+        "payment"
+      ],
+      "variant": "keyword_only",
+      "schema_linking_method": "keyword_only",
+      "predicted_sql": "SELECT org.\"Name\", COUNT(o.id) AS failed_orders\nFROM payment_service.orders o\nJOIN org_service.\"Organizations\" org ON org.\"Id\" = o.org_id\nWHERE o.status = 'Failed' AND NOT o.is_deleted\nGROUP BY org.\"Id\", org.\"Name\"\nORDER BY failed_orders DESC;",
+      "error": null,
+      "retries": 0,
+      "row_count": 23,
+      "correct": true
+    },
+    {
+      "id": "058",
+      "question": "Doanh thu theo tháng của từng tổ chức",
+      "difficulty": "medium",
+      "involves_services": [
+        "org",
+        "payment"
+      ],
+      "variant": "keyword_only",
+      "schema_linking_method": "keyword_only",
+      "predicted_sql": "SELECT DATE_TRUNC('month', o.paid_at) AS month, org.\"Name\", SUM(o.total_amount) AS revenue\nFROM payment_service.orders o\nJOIN org_service.\"Organizations\" org ON org.\"Id\" = o.org_id\nWHERE o.status = 'Paid' AND NOT org.\"IsDeleted\" AND NOT o.is_deleted\nGROUP BY 1, org.\"Id\", org.\"Name\"\nORDER BY 1, org.\"Name\";",
+      "error": null,
+      "retries": 0,
+      "row_count": 143,
+      "correct": true
+    },
+    {
+      "id": "059",
+      "question": "Số khách hàng duy nhất đã mua vé mỗi sự kiện",
+      "difficulty": "medium",
+      "involves_services": [
+        "event",
+        "payment"
+      ],
+      "variant": "keyword_only",
+      "schema_linking_method": "keyword_only",
+      "predicted_sql": "SELECT e.name, COUNT(DISTINCT o.user_id) AS unique_buyers\nFROM event_service.events e\nJOIN payment_service.orders o ON o.event_name = e.name\nWHERE o.status = 'Paid'\nGROUP BY e.id, e.name\nORDER BY unique_buyers DESC;",
+      "error": null,
+      "retries": 0,
+      "row_count": 57,
+      "correct": true
+    },
+    {
+      "id": "060",
+      "question": "Giá vé cao nhất của mỗi sự kiện",
+      "difficulty": "medium",
+      "involves_services": [
+        "event"
+      ],
+      "variant": "keyword_only",
+      "schema_linking_method": "keyword_only",
+      "predicted_sql": "SELECT e.name, MAX(t.price) AS max_price\nFROM event_service.events e\nJOIN event_service.tickets t ON t.order_id IN (SELECT id FROM payment_service.orders WHERE organization_id = e.organization_id)\nWHERE NOT e.is_deleted AND NOT t.is_deleted\nGROUP BY e.id, e.name\nORDER BY max_price DESC;",
+      "error": null,
+      "retries": 0,
+      "row_count": 80,
+      "correct": true
+    },
+    {
+      "id": "061",
+      "question": "Số ghế VIP của mỗi sự kiện",
+      "difficulty": "medium",
+      "involves_services": [
+        "event",
+        "seat"
+      ],
+      "variant": "keyword_only",
+      "schema_linking_method": "keyword_only",
+      "predicted_sql": "SELECT e.name, COUNT(s.id) AS vip_seats\nFROM event_service.events e\nJOIN seat_service.seats s ON s.seat_map_id = e.id\nWHERE s.seat_type = 1\nGROUP BY e.id, e.name\nORDER BY vip_seats DESC;",
+      "error": null,
+      "retries": 0,
+      "row_count": 0,
+      "correct": false
+    },
+    {
+      "id": "062",
+      "question": "Tỉ lệ đơn đã thanh toán trên tổng đơn theo tổ chức",
+      "difficulty": "medium",
+      "involves_services": [
+        "payment"
+      ],
+      "variant": "keyword_only",
+      "schema_linking_method": "keyword_only",
+      "predicted_sql": "SELECT org.\"Name\", \n       SUM(CASE WHEN o.status = 'Paid' THEN 1 ELSE 0 END) AS paid_orders, \n       COUNT(o.id) AS total_orders, \n       ROUND(SUM(CASE WHEN o.status = 'Paid' THEN 1.0 ELSE 0 END) / COUNT(o.id), 2) AS paid_ratio\nFROM payment_service.orders o\nJOIN org_service.\"Organizations\" org ON org.\"Id\" = o.org_id\nWHERE NOT o.is_deleted AND NOT org.\"IsDeleted\"\nGROUP BY org.\"Id\", org.\"Name\"\nORDER BY paid_ratio DESC;",
+      "error": null,
+      "retries": 0,
+      "row_count": 27,
+      "correct": false
+    },
+    {
+      "id": "063",
+      "question": "Số thành viên là designer của mỗi tổ chức",
+      "difficulty": "medium",
+      "involves_services": [
+        "org"
+      ],
+      "variant": "keyword_only",
+      "schema_linking_method": "keyword_only",
+      "predicted_sql": "SELECT org.\"Name\", COUNT(u.\"Id\") AS designer_count\nFROM org_service.\"Organizations\" org\nJOIN user_service.\"Users\" u ON u.\"OwnerId\" = org.\"OwnerId\"\nJOIN user_service.\"Roles\" r ON r.\"Id\" = u.\"RoleId\"\nWHERE r.\"Name\" = 'Designer'\n  AND NOT u.\"IsDeleted\"\n  AND NOT org.\"IsDeleted\"\nGROUP BY org.\"Id\", org.\"Name\";",
+      "error": "column u.OwnerId does not exist",
+      "retries": 1,
+      "row_count": 0,
+      "correct": false
+    },
+    {
+      "id": "064",
+      "question": "Top 3 loại vé doanh thu cao nhất của mỗi sự kiện",
+      "difficulty": "hard",
+      "involves_services": [
+        "event",
+        "payment"
+      ],
+      "variant": "keyword_only",
+      "schema_linking_method": "keyword_only",
+      "predicted_sql": "SELECT e.name, l.name, SUM(t.price) AS revenue\nFROM event_service.events e\nJOIN event_service.legends l ON e.id = l.event_id\nJOIN event_service.tickets t ON t.legend_name = l.name AND t.session_id IN (SELECT id FROM event_service.sessions WHERE event_id = e.id)\nJOIN payment_service.orders o ON o.id = t.order_id\nWHERE o.status = 'Paid'\nGROUP BY e.id, e.name, l.name\nORDER BY e.name, revenue DESC;",
+      "error": null,
+      "retries": 0,
+      "row_count": 172,
+      "correct": false
+    },
+    {
+      "id": "065",
+      "question": "Sự kiện có doanh thu vượt mức trung bình",
+      "difficulty": "hard",
+      "involves_services": [
+        "event",
+        "payment"
+      ],
+      "variant": "keyword_only",
+      "schema_linking_method": "keyword_only",
+      "predicted_sql": "SELECT e.name, SUM(o.total_amount) AS revenue\nFROM event_service.events e\nJOIN payment_service.orders o ON o.session_id = e.id\nWHERE o.status = 'Paid'\n  AND NOT o.is_deleted\n  AND NOT e.is_deleted\nGROUP BY e.id, e.name\nHAVING SUM(o.total_amount) > (SELECT AVG(revenue) FROM (SELECT SUM(o.total_amount) AS revenue FROM event_service.events e JOIN payment_service.orders o ON o.session_id = e.id WHERE o.status = 'Paid' AND NOT o.is_deleted AND NOT e.is_deleted GROUP BY e.id) AS subquery);",
+      "error": null,
+      "retries": 0,
+      "row_count": 0,
+      "correct": false
+    },
+    {
+      "id": "066",
+      "question": "Khách hàng quay lại mua nhiều lần",
+      "difficulty": "hard",
+      "involves_services": [
+        "user",
+        "payment"
+      ],
+      "variant": "keyword_only",
+      "schema_linking_method": "keyword_only",
+      "predicted_sql": "SELECT u.\"Email\", COUNT(o.id) AS num_orders\nFROM user_service.\"Users\" u\nJOIN payment_service.orders o ON u.\"Id\" = o.user_id\nWHERE o.status = 'Paid'\nGROUP BY u.\"Id\", u.\"Email\"\nHAVING COUNT(o.id) > 1\nORDER BY num_orders DESC;",
+      "error": null,
+      "retries": 0,
+      "row_count": 104,
+      "correct": false
+    },
+    {
+      "id": "067",
+      "question": "Tỉ lệ check-in của mỗi session",
+      "difficulty": "hard",
+      "involves_services": [
+        "event"
+      ],
+      "variant": "keyword_only",
+      "schema_linking_method": "keyword_only",
+      "predicted_sql": "SELECT s.id, COUNT(t.id) / sm.total_seats AS checkin_rate\nFROM event_service.events s\nJOIN event_service.events t ON t.organization_id = s.organization_id AND t.status = 2\nJOIN seat_service.seat_maps sm ON sm.event_id = s.id\nWHERE NOT sm.is_deleted AND s.status = 4\nGROUP BY s.id, sm.total_seats\nORDER BY s.id;",
+      "error": null,
+      "retries": 1,
+      "row_count": 16,
+      "correct": false
+    },
+    {
+      "id": "068",
+      "question": "So sánh doanh thu tháng này với tháng trước theo tổ chức",
+      "difficulty": "hard",
+      "involves_services": [
+        "org",
+        "payment"
+      ],
+      "variant": "keyword_only",
+      "schema_linking_method": "keyword_only",
+      "predicted_sql": "SELECT \n  org.\"Name\", \n  SUM(CASE WHEN DATE_TRUNC('month', o.paid_at) = DATE_TRUNC('month', CURRENT_DATE) THEN o.total_amount ELSE 0 END) AS this_month_revenue,\n  SUM(CASE WHEN DATE_TRUNC('month', o.paid_at) = DATE_TRUNC('month', CURRENT_DATE - INTERVAL '1 month') THEN o.total_amount ELSE 0 END) AS last_month_revenue\nFROM \n  payment_service.orders o\nJOIN \n  org_service.\"Organizations\" org ON org.\"Id\" = o.org_id\nWHERE \n  o.status = 'Paid'\n  AND o.paid_at >= DATE_TRUNC('month', CURRENT_DATE - INTERVAL '1 month')\n  AND o.paid_at < DATE_TRUNC('month', CURRENT_DATE + INTERVAL '1 month')\nGROUP BY \n  org.\"Id\", org.\"Name\"\nORDER BY \n  this_month_revenue DESC;",
+      "error": null,
+      "retries": 0,
+      "row_count": 25,
+      "correct": false
+    },
+    {
+      "id": "069",
+      "question": "Top 5 tổ chức theo doanh thu kèm phần trăm đóng góp",
+      "difficulty": "hard",
+      "involves_services": [
+        "org",
+        "payment"
+      ],
+      "variant": "keyword_only",
+      "schema_linking_method": "keyword_only",
+      "predicted_sql": "SELECT org.\"Name\", SUM(o.total_amount) AS revenue, \n       SUM(o.total_amount) * 100 / (SELECT SUM(total_amount) FROM payment_service.orders WHERE status = 'Paid') AS percentage\nFROM payment_service.orders o\nJOIN org_service.\"Organizations\" org ON org.\"Id\" = o.org_id\nWHERE o.status = 'Paid'\nGROUP BY org.\"Id\", org.\"Name\"\nORDER BY revenue DESC\nLIMIT 5;",
+      "error": null,
+      "retries": 0,
+      "row_count": 5,
+      "correct": true
+    },
+    {
+      "id": "070",
+      "question": "Sự kiện chưa bán được vé nào",
+      "difficulty": "hard",
+      "involves_services": [
+        "event"
+      ],
+      "variant": "keyword_only",
+      "schema_linking_method": "keyword_only",
+      "predicted_sql": "SELECT e.id, e.name \nFROM event_service.events e \nLEFT JOIN event_service.tickets t ON e.id = t.session_id \nWHERE t.id IS NULL AND NOT e.is_deleted;",
+      "error": null,
+      "retries": 0,
+      "row_count": 80,
+      "correct": false
+    },
+    {
+      "id": "071",
+      "question": "Khách hàng chi tiêu trên mức trung bình",
+      "difficulty": "hard",
+      "involves_services": [
+        "user",
+        "payment"
+      ],
+      "variant": "keyword_only",
+      "schema_linking_method": "keyword_only",
+      "predicted_sql": "SELECT u.\"Id\", u.\"Email\", u.\"Username\", SUM(o.total_amount) AS total_spent\nFROM user_service.\"Users\" u\nJOIN payment_service.orders o ON u.\"Id\" = o.user_id\nWHERE o.status = 'Paid'\n  AND NOT u.\"IsDeleted\"\n  AND NOT o.is_deleted\nGROUP BY u.\"Id\", u.\"Email\", u.\"Username\"\nHAVING SUM(o.total_amount) > (SELECT AVG(total_spent) FROM (SELECT SUM(o2.total_amount) AS total_spent FROM payment_service.orders o2 WHERE o2.status = 'Paid' AND NOT o2.is_deleted GROUP BY o2.user_id) AS sub);",
+      "error": null,
+      "retries": 0,
+      "row_count": 69,
+      "correct": false
+    },
+    {
+      "id": "072",
+      "question": "Xếp hạng sự kiện theo vé bán trong từng tổ chức",
+      "difficulty": "hard",
+      "involves_services": [
+        "org",
+        "event"
+      ],
+      "variant": "keyword_only",
+      "schema_linking_method": "keyword_only",
+      "predicted_sql": "SELECT org.\"Name\", e.name, COUNT(t.id) AS sold\nFROM event_service.events    e\nJOIN event_service.tickets   t ON t.session_id = e.id\nJOIN org_service.\"Organizations\" org ON org.\"Id\" = e.organization_id\nWHERE NOT t.is_deleted AND NOT e.is_deleted\nGROUP BY org.\"Id\", org.\"Name\", e.id, e.name\nORDER BY org.\"Name\", sold DESC;",
+      "error": null,
+      "retries": 0,
+      "row_count": 0,
+      "correct": false
+    },
+    {
+      "id": "073",
+      "question": "Sự kiện có tỉ lệ lấp đầy ghế trên 20%",
+      "difficulty": "hard",
+      "involves_services": [
+        "event",
+        "seat"
+      ],
+      "variant": "keyword_only",
+      "schema_linking_method": "keyword_only",
+      "predicted_sql": "SELECT e.name, \n       COUNT(t.id) AS sold_tickets, \n       COUNT(s.id) AS total_seats, \n       ROUND(COUNT(t.id) * 100.0 / COUNT(s.id), 2) AS fill_rate\nFROM event_service.events e\nJOIN event_service.sessions ses ON e.id = ses.event_id\nJOIN event_service.tickets t ON ses.id = t.session_id\nJOIN seat_service.seats s ON t.seat_id = s.id\nWHERE NOT s.is_deleted AND NOT t.is_deleted\nGROUP BY e.id, e.name\nHAVING ROUND(COUNT(t.id) * 100.0 / COUNT(s.id), 2) > 20\nORDER BY fill_rate DESC;",
+      "error": null,
+      "retries": 0,
+      "row_count": 57,
+      "correct": false
+    },
+    {
+      "id": "074",
+      "question": "Doanh thu lũy kế theo tháng",
+      "difficulty": "hard",
+      "involves_services": [
+        "payment"
+      ],
+      "variant": "keyword_only",
+      "schema_linking_method": "keyword_only",
+      "predicted_sql": "SELECT DATE_TRUNC('month', o.paid_at) AS month, \n       SUM(o.total_amount) OVER (ORDER BY DATE_TRUNC('month', o.paid_at)) AS cumulative_revenue\nFROM payment_service.orders o\nWHERE o.status = 'Paid' AND NOT o.is_deleted\nORDER BY 1;",
+      "error": null,
+      "retries": 0,
+      "row_count": 361,
+      "correct": false
+    },
+    {
+      "id": "075",
+      "question": "Sự kiện có hơn 3 vé đã check-in",
+      "difficulty": "hard",
+      "involves_services": [
+        "event"
+      ],
+      "variant": "keyword_only",
+      "schema_linking_method": "keyword_only",
+      "predicted_sql": "SELECT e.name, COUNT(t.id) AS checked_in_tickets\nFROM event_service.events e\nJOIN event_service.tickets t ON t.order_id = e.id\nWHERE t.is_checked_in = TRUE AND NOT e.is_deleted AND NOT t.is_deleted\nGROUP BY e.id, e.name\nHAVING COUNT(t.id) > 3;",
+      "error": null,
+      "retries": 0,
+      "row_count": 0,
+      "correct": false
+    },
+    {
+      "id": "076",
+      "question": "Loại vé phổ biến nhất trong từng tổ chức",
+      "difficulty": "hard",
+      "involves_services": [
+        "org",
+        "seat",
+        "event"
+      ],
+      "variant": "keyword_only",
+      "schema_linking_method": "keyword_only",
+      "predicted_sql": "SELECT org.\"Name\", t.legend_name, COUNT(t.id) AS count\nFROM event_service.tickets t\nJOIN payment_service.orders o ON o.id = t.order_id\nJOIN org_service.\"Organizations\" org ON org.\"Id\" = o.org_id\nWHERE NOT t.is_deleted AND NOT o.is_deleted AND org.\"IsDeleted\" = FALSE\nGROUP BY org.\"Id\", org.\"Name\", t.legend_name\nORDER BY count DESC;",
+      "error": null,
+      "retries": 0,
+      "row_count": 94,
+      "correct": false
+    },
+    {
+      "id": "077",
+      "question": "Báo cáo doanh thu và phí theo tổ chức kèm số ghế đã bán",
+      "difficulty": "cross-service",
+      "involves_services": [
+        "org",
+        "event",
+        "seat",
+        "payment"
+      ],
+      "variant": "keyword_only",
+      "schema_linking_method": "keyword_only",
+      "predicted_sql": "SELECT org.\"Name\", SUM(o.total_amount) AS revenue, SUM(o.platform_fee) AS fee, COUNT(t.id) AS seats_sold\nFROM payment_service.orders o\nJOIN org_service.\"Organizations\" org ON org.\"Id\" = o.org_id\nJOIN event_service.tickets t ON t.order_id = o.id\nWHERE o.status = 'Paid' AND NOT t.is_deleted\nGROUP BY org.\"Id\", org.\"Name\"\nORDER BY revenue DESC;",
+      "error": null,
+      "retries": 0,
+      "row_count": 27,
+      "correct": false
+    },
+    {
+      "id": "078",
+      "question": "Khách hàng mua vé ở nhiều sự kiện nhất",
+      "difficulty": "cross-service",
+      "involves_services": [
+        "user",
+        "payment",
+        "event"
+      ],
+      "variant": "keyword_only",
+      "schema_linking_method": "keyword_only",
+      "predicted_sql": "SELECT u.\"Username\", COUNT(DISTINCT e.id) AS num_events\nFROM user_service.\"Users\" u\nJOIN payment_service.orders o ON u.\"Id\" = o.user_id\nJOIN event_service.events e ON e.id = o.session_id\nWHERE o.status = 'Paid'\nGROUP BY u.\"Id\", u.\"Username\"\nORDER BY num_events DESC\nLIMIT 1;",
+      "error": null,
+      "retries": 0,
+      "row_count": 0,
+      "correct": false
+    },
+    {
+      "id": "079",
+      "question": "Top khách hàng mua ghế VIP nhiều nhất",
+      "difficulty": "cross-service",
+      "involves_services": [
+        "user",
+        "payment",
+        "seat",
+        "event"
+      ],
+      "variant": "keyword_only",
+      "schema_linking_method": "keyword_only",
+      "predicted_sql": "SELECT u.\"Email\", COUNT(DISTINCT oi.id) AS vip_seats\nFROM user_service.\"Users\" u\nJOIN payment_service.orders o ON u.\"Id\" = o.user_id\nJOIN payment_service.order_items oi ON o.id = oi.order_id\nJOIN seat_service.seats s ON oi.seat_id = s.id\nWHERE s.seat_type = 4  -- giả sử ghế VIP là loại 4\n  AND o.status = 'Paid'\n  AND NOT u.\"IsDeleted\"\n  AND NOT o.is_deleted\n  AND NOT oi.is_deleted\nGROUP BY u.\"Id\", u.\"Email\"\nORDER BY vip_seats DESC\nLIMIT 10;",
+      "error": null,
+      "retries": 0,
+      "row_count": 10,
+      "correct": false
+    },
+    {
+      "id": "080",
+      "question": "Doanh thu mỗi tổ chức kèm số sự kiện và số vé bán",
+      "difficulty": "cross-service",
+      "involves_services": [
+        "org",
+        "event",
+        "payment"
+      ],
+      "variant": "keyword_only",
+      "schema_linking_method": "keyword_only",
+      "predicted_sql": "SELECT org.\"Name\", \n       SUM(o.total_amount) AS revenue, \n       COUNT(DISTINCT e.id) AS num_events, \n       COUNT(t.id) AS num_tickets\nFROM payment_service.orders o\nJOIN org_service.\"Organizations\" org ON org.\"Id\" = o.org_id\nJOIN event_service.events e ON e.id = (SELECT id FROM event_service.sessions WHERE id = o.session_id)\nJOIN event_service.tickets t ON t.order_id = o.id\nWHERE o.status = 'Paid' AND NOT org.\"IsDeleted\" AND NOT e.is_deleted AND NOT t.is_deleted\nGROUP BY org.\"Id\", org.\"Name\"\nORDER BY revenue DESC;",
+      "error": null,
+      "retries": 0,
+      "row_count": 0,
+      "correct": false
+    },
+    {
+      "id": "081",
+      "question": "Tổ chức mà mỗi khách hàng chi tiêu nhiều nhất",
+      "difficulty": "cross-service",
+      "involves_services": [
+        "user",
+        "org",
+        "payment"
+      ],
+      "variant": "keyword_only",
+      "schema_linking_method": "keyword_only",
+      "predicted_sql": "SELECT org.\"Name\", SUM(o.total_amount) AS total_spent\nFROM payment_service.orders o\nJOIN org_service.\"Organizations\" org ON org.\"Id\" = o.org_id\nJOIN user_service.\"Users\" u ON u.\"Id\" = o.user_id\nWHERE o.status = 'Paid'\nGROUP BY org.\"Id\", org.\"Name\", u.\"Id\"\nORDER BY total_spent DESC;",
+      "error": null,
+      "retries": 0,
+      "row_count": 339,
+      "correct": false
+    },
+    {
+      "id": "082",
+      "question": "Top 10 sự kiện theo doanh thu kèm tên tổ chức và số ghế đã bán",
+      "difficulty": "cross-service",
+      "involves_services": [
+        "event",
+        "org",
+        "seat",
+        "payment"
+      ],
+      "variant": "keyword_only",
+      "schema_linking_method": "keyword_only",
+      "predicted_sql": "SELECT e.name, org.\"Name\", SUM(o.total_amount) AS revenue, COUNT(t.id) AS sold_seats\nFROM event_service.events e\nJOIN org_service.\"Organizations\" org ON org.\"Id\" = e.organization_id\nJOIN event_service.sessions s ON s.event_id = e.id\nJOIN payment_service.orders o ON o.session_id = s.id\nJOIN event_service.tickets t ON t.session_id = s.id AND t.order_id = o.id\nWHERE o.status = 'Paid' AND NOT e.is_deleted AND NOT o.is_deleted AND NOT t.is_deleted\nGROUP BY e.id, e.name, org.\"Id\", org.\"Name\"\nORDER BY revenue DESC\nLIMIT 10;",
+      "error": null,
+      "retries": 0,
+      "row_count": 10,
+      "correct": false
+    },
+    {
+      "id": "083",
+      "question": "Toàn cảnh mỗi tổ chức: số sự kiện, số vé bán, doanh thu",
+      "difficulty": "cross-service",
+      "involves_services": [
+        "org",
+        "event",
+        "payment"
+      ],
+      "variant": "keyword_only",
+      "schema_linking_method": "keyword_only",
+      "predicted_sql": "SELECT \n  org.\"Name\", \n  COUNT(DISTINCT e.id) AS num_events, \n  COUNT(t.id) AS num_tickets, \n  SUM(o.total_amount) AS revenue\nFROM \n  org_service.\"Organizations\" org\n  LEFT JOIN event_service.events e ON e.organization_id = org.\"Id\" AND NOT e.is_deleted\n  LEFT JOIN event_service.sessions s ON s.event_id = e.id\n  LEFT JOIN event_service.tickets t ON t.session_id = s.id AND NOT t.is_deleted\n  LEFT JOIN payment_service.orders o ON o.session_id = s.id AND o.status = 'Paid' AND NOT o.is_deleted\nGROUP BY \n  org.\"Id\", \n  org.\"Name\"\nORDER BY \n  revenue DESC;",
+      "error": null,
+      "retries": 0,
+      "row_count": 30,
+      "correct": false
+    }
+  ]
+}

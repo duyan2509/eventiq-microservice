@@ -1,0 +1,886 @@
+[
+  {
+    "id": "001",
+    "difficulty": "easy",
+    "question": "Có bao nhiêu user mới tháng này?",
+    "involves_services": [
+      "user"
+    ],
+    "gold_sql": "SELECT COUNT(*) AS new_users FROM user_service.\"Users\" u WHERE u.\"CreatedAt\" >= DATE_TRUNC('month', CURRENT_DATE) AND NOT u.\"IsDeleted\";",
+    "verified": true
+  },
+  {
+    "id": "002",
+    "difficulty": "easy",
+    "question": "Doanh thu theo tháng năm nay",
+    "involves_services": [
+      "payment"
+    ],
+    "gold_sql": "SELECT DATE_TRUNC('month', o.paid_at) AS month, SUM(o.total_amount) AS revenue FROM payment_service.orders o WHERE o.status = 'Paid' AND o.paid_at >= DATE_TRUNC('year', CURRENT_DATE) GROUP BY 1 ORDER BY 1;",
+    "verified": true
+  },
+  {
+    "id": "003",
+    "difficulty": "medium",
+    "question": "Top 5 sự kiện bán nhiều vé nhất",
+    "involves_services": [
+      "event"
+    ],
+    "gold_sql": "SELECT e.name, COUNT(t.id) AS sold FROM event_service.events e JOIN event_service.sessions s ON s.event_id = e.id JOIN event_service.tickets t ON t.session_id = s.id GROUP BY e.id, e.name ORDER BY sold DESC LIMIT 5;",
+    "verified": true
+  },
+  {
+    "id": "004",
+    "difficulty": "medium",
+    "question": "Tỉ lệ vé đã check-in của các sự kiện",
+    "involves_services": [
+      "event"
+    ],
+    "gold_sql": "SELECT e.name, COUNT(*) FILTER (WHERE t.is_checked_in) * 1.0 / NULLIF(COUNT(*), 0) AS checkin_ratio FROM event_service.events e JOIN event_service.sessions s ON s.event_id = e.id JOIN event_service.tickets t ON t.session_id = s.id GROUP BY e.id, e.name ORDER BY checkin_ratio DESC;",
+    "verified": true
+  },
+  {
+    "id": "005",
+    "difficulty": "hard",
+    "question": "Sự kiện nào có doanh thu cao nhất tuần qua",
+    "involves_services": [
+      "event",
+      "payment"
+    ],
+    "gold_sql": "SELECT e.name, SUM(o.total_amount) AS revenue FROM event_service.events e JOIN event_service.sessions s ON s.event_id = e.id JOIN payment_service.orders o ON o.session_id = s.id WHERE o.status = 'Paid' AND o.paid_at >= CURRENT_DATE - INTERVAL '7 days' GROUP BY e.id, e.name ORDER BY revenue DESC LIMIT 1;",
+    "verified": true
+  },
+  {
+    "id": "006",
+    "difficulty": "hard",
+    "question": "Tổng ghế đã bán theo từng sự kiện",
+    "involves_services": [
+      "event",
+      "seat"
+    ],
+    "gold_sql": "SELECT e.name, COUNT(*) AS sold_seats FROM event_service.events e JOIN event_service.sessions s ON s.event_id = e.id JOIN seat_service.seat_maps sm ON sm.session_id = s.id JOIN seat_service.seats st ON st.seat_map_id = sm.id WHERE st.status = 'Sold' GROUP BY e.id, e.name ORDER BY sold_seats DESC;",
+    "verified": true
+  },
+  {
+    "id": "007",
+    "difficulty": "medium",
+    "question": "Org nào doanh thu cao nhất quý này",
+    "involves_services": [
+      "org",
+      "payment"
+    ],
+    "gold_sql": "SELECT org.\"Name\", SUM(o.total_amount) AS revenue FROM org_service.\"Organizations\" org JOIN payment_service.orders o ON o.org_id = org.\"Id\" WHERE o.status = 'Paid' AND o.paid_at >= DATE_TRUNC('quarter', CURRENT_DATE) GROUP BY org.\"Id\", org.\"Name\" ORDER BY revenue DESC LIMIT 1;",
+    "verified": true
+  },
+  {
+    "id": "008",
+    "difficulty": "easy",
+    "question": "Số lượng lời mời tham gia mỗi org",
+    "involves_services": [
+      "org"
+    ],
+    "gold_sql": "SELECT org.\"Name\", COUNT(i.\"Id\") AS invitations FROM org_service.\"Organizations\" org LEFT JOIN org_service.\"Invitations\" i ON i.\"OrganizationId\" = org.\"Id\" GROUP BY org.\"Id\", org.\"Name\" ORDER BY invitations DESC;",
+    "verified": true
+  },
+  {
+    "id": "009",
+    "difficulty": "easy",
+    "question": "Sự kiện đang chờ duyệt",
+    "involves_services": [
+      "event"
+    ],
+    "gold_sql": "SELECT e.id, e.name FROM event_service.events e WHERE e.status = 1 AND NOT e.is_deleted;",
+    "verified": true
+  },
+  {
+    "id": "010",
+    "difficulty": "medium",
+    "question": "Khách hàng chi tiêu nhiều nhất top 10",
+    "involves_services": [
+      "user",
+      "payment"
+    ],
+    "gold_sql": "SELECT u.\"Username\", SUM(o.total_amount) AS spend FROM user_service.\"Users\" u JOIN payment_service.orders o ON o.user_id = u.\"Id\" WHERE o.status = 'Paid' GROUP BY u.\"Id\", u.\"Username\" ORDER BY spend DESC LIMIT 10;",
+    "verified": true
+  },
+  {
+    "id": "011",
+    "difficulty": "easy",
+    "question": "Phí platform đã thu trong tháng này",
+    "involves_services": [
+      "payment"
+    ],
+    "gold_sql": "SELECT SUM(o.platform_fee) AS fees FROM payment_service.orders o WHERE o.status = 'Paid' AND o.paid_at >= DATE_TRUNC('month', CURRENT_DATE);",
+    "verified": true
+  },
+  {
+    "id": "012",
+    "difficulty": "hard",
+    "question": "Tỉ lệ ghế VIP đã bán",
+    "involves_services": [
+      "seat",
+      "event"
+    ],
+    "gold_sql": "SELECT COUNT(*) FILTER (WHERE st.status = 'Sold') * 1.0 / NULLIF(COUNT(*), 0) AS vip_sold_ratio FROM seat_service.seats st JOIN event_service.legends l ON l.id = st.legend_id WHERE l.name = 'VIP';",
+    "verified": true
+  },
+  {
+    "id": "013",
+    "difficulty": "medium",
+    "question": "So sánh doanh thu Q1 vs Q2 năm nay",
+    "involves_services": [
+      "payment"
+    ],
+    "gold_sql": "SELECT EXTRACT(QUARTER FROM o.paid_at) AS quarter, SUM(o.total_amount) AS revenue FROM payment_service.orders o WHERE o.status = 'Paid' AND EXTRACT(YEAR FROM o.paid_at) = EXTRACT(YEAR FROM CURRENT_DATE) AND EXTRACT(QUARTER FROM o.paid_at) IN (1, 2) GROUP BY 1 ORDER BY 1;",
+    "verified": true
+  },
+  {
+    "id": "014",
+    "difficulty": "easy",
+    "question": "Sự kiện có nhiều session nhất",
+    "involves_services": [
+      "event"
+    ],
+    "gold_sql": "SELECT e.name, COUNT(s.id) AS n_sessions FROM event_service.events e JOIN event_service.sessions s ON s.event_id = e.id GROUP BY e.id, e.name ORDER BY n_sessions DESC LIMIT 1;",
+    "verified": true
+  },
+  {
+    "id": "015",
+    "difficulty": "easy",
+    "question": "User bị ban gần đây",
+    "involves_services": [
+      "user"
+    ],
+    "gold_sql": "SELECT u.\"Username\", b.\"Reason\", b.\"CreatedAt\" FROM user_service.\"Users\" u JOIN user_service.\"BanHistories\" b ON b.\"UserId\" = u.\"Id\" ORDER BY b.\"CreatedAt\" DESC LIMIT 10;",
+    "verified": true
+  },
+  {
+    "id": "016",
+    "difficulty": "hard",
+    "question": "Số sơ đồ ghế template chưa được publish",
+    "involves_services": [
+      "seat"
+    ],
+    "gold_sql": "SELECT COUNT(*) AS unpublished_templates FROM seat_service.seat_maps WHERE session_id IS NULL AND status <> 'Published';",
+    "verified": true
+  },
+  {
+    "id": "017",
+    "difficulty": "medium",
+    "question": "Doanh thu trung bình mỗi vé",
+    "involves_services": [
+      "event",
+      "payment"
+    ],
+    "gold_sql": "SELECT SUM(o.total_amount) / NULLIF(COUNT(t.id), 0) AS avg_per_ticket FROM payment_service.orders o JOIN event_service.tickets t ON t.order_id = o.id WHERE o.status = 'Paid';",
+    "verified": true
+  },
+  {
+    "id": "018",
+    "difficulty": "medium",
+    "question": "Legend nào được dùng nhiều nhất trong các sơ đồ ghế",
+    "involves_services": [
+      "event",
+      "seat"
+    ],
+    "gold_sql": "SELECT l.name, COUNT(st.id) AS usage FROM event_service.legends l JOIN seat_service.seats st ON st.legend_id = l.id GROUP BY l.name ORDER BY usage DESC LIMIT 1;",
+    "verified": true
+  },
+  {
+    "id": "019",
+    "difficulty": "medium",
+    "question": "Org nào chưa connect Stripe",
+    "involves_services": [
+      "org"
+    ],
+    "gold_sql": "SELECT org.\"Name\" FROM org_service.\"Organizations\" org WHERE org.\"PaymentStatus\" = 0 AND NOT org.\"IsDeleted\";",
+    "verified": true
+  },
+  {
+    "id": "020",
+    "difficulty": "easy",
+    "question": "Số order Failed trong tuần qua",
+    "involves_services": [
+      "payment"
+    ],
+    "gold_sql": "SELECT COUNT(*) AS failed_orders FROM payment_service.orders o WHERE o.status = 'Failed' AND o.created_at >= CURRENT_DATE - INTERVAL '7 days';",
+    "verified": true
+  },
+  {
+    "id": "021",
+    "difficulty": "cross-service",
+    "question": "Top 10 khách hàng mua ghế VIP chi tiêu cao nhất",
+    "involves_services": [
+      "user",
+      "payment",
+      "seat",
+      "event"
+    ],
+    "gold_sql": "SELECT u.\"Username\", SUM(oi.price) AS vip_spend FROM user_service.\"Users\" u JOIN payment_service.orders o ON o.user_id = u.\"Id\" JOIN payment_service.order_items oi ON oi.order_id = o.id JOIN seat_service.seats st ON st.id = oi.seat_id JOIN event_service.legends l ON l.id = st.legend_id WHERE o.status = 'Paid' AND l.name = 'VIP' GROUP BY u.\"Id\", u.\"Username\" ORDER BY vip_spend DESC LIMIT 10;",
+    "verified": true
+  },
+  {
+    "id": "022",
+    "difficulty": "cross-service",
+    "question": "Doanh thu và phí platform theo từng sự kiện của mỗi tổ chức",
+    "involves_services": [
+      "org",
+      "event",
+      "payment"
+    ],
+    "gold_sql": "SELECT org.\"Name\" AS org_name, e.name AS event_name, SUM(o.total_amount) AS gross, SUM(o.platform_fee) AS fees FROM org_service.\"Organizations\" org JOIN event_service.events e ON e.organization_id = org.\"Id\" JOIN event_service.sessions s ON s.event_id = e.id JOIN payment_service.orders o ON o.session_id = s.id WHERE o.status = 'Paid' GROUP BY org.\"Id\", org.\"Name\", e.id, e.name ORDER BY gross DESC;",
+    "verified": true
+  },
+  {
+    "id": "023",
+    "difficulty": "cross-service",
+    "question": "Sự kiện nào có chủ tổ chức đã bị ban",
+    "involves_services": [
+      "event",
+      "org",
+      "user"
+    ],
+    "gold_sql": "SELECT e.name AS event_name, u.\"Username\" AS owner, b.\"Reason\" FROM event_service.events e JOIN org_service.\"Organizations\" org ON org.\"Id\" = e.organization_id JOIN user_service.\"Users\" u ON u.\"Id\" = org.\"OwnerId\" JOIN user_service.\"BanHistories\" b ON b.\"UserId\" = u.\"Id\";",
+    "verified": true
+  },
+  {
+    "id": "024",
+    "difficulty": "easy",
+    "question": "Tổng số tổ chức trên hệ thống",
+    "involves_services": [
+      "org"
+    ],
+    "gold_sql": "SELECT COUNT(*) AS total_orgs FROM org_service.\"Organizations\" WHERE NOT \"IsDeleted\";",
+    "verified": true
+  },
+  {
+    "id": "025",
+    "difficulty": "easy",
+    "question": "Số sự kiện đã publish",
+    "involves_services": [
+      "event"
+    ],
+    "gold_sql": "SELECT COUNT(*) AS published FROM event_service.events WHERE status = 4 AND NOT is_deleted;",
+    "verified": true
+  },
+  {
+    "id": "026",
+    "difficulty": "easy",
+    "question": "Số ghế còn trống",
+    "involves_services": [
+      "seat"
+    ],
+    "gold_sql": "SELECT COUNT(*) AS available_seats FROM seat_service.seats WHERE status = 'Available';",
+    "verified": true
+  },
+  {
+    "id": "027",
+    "difficulty": "easy",
+    "question": "Tổng số vé đã phát hành",
+    "involves_services": [
+      "event"
+    ],
+    "gold_sql": "SELECT COUNT(*) AS tickets FROM event_service.tickets;",
+    "verified": true
+  },
+  {
+    "id": "028",
+    "difficulty": "easy",
+    "question": "Số đơn hàng theo trạng thái",
+    "involves_services": [
+      "payment"
+    ],
+    "gold_sql": "SELECT status, COUNT(*) AS n FROM payment_service.orders GROUP BY status ORDER BY n DESC;",
+    "verified": true
+  },
+  {
+    "id": "029",
+    "difficulty": "easy",
+    "question": "Số user đang bị ban",
+    "involves_services": [
+      "user"
+    ],
+    "gold_sql": "SELECT COUNT(*) AS banned FROM user_service.\"Users\" WHERE \"IsBanned\" = TRUE;",
+    "verified": true
+  },
+  {
+    "id": "030",
+    "difficulty": "easy",
+    "question": "Số sự kiện theo từng trạng thái",
+    "involves_services": [
+      "event"
+    ],
+    "gold_sql": "SELECT status, COUNT(*) AS n FROM event_service.events GROUP BY status ORDER BY status;",
+    "verified": true
+  },
+  {
+    "id": "031",
+    "difficulty": "easy",
+    "question": "Số ghế theo từng loại ghế",
+    "involves_services": [
+      "seat"
+    ],
+    "gold_sql": "SELECT seat_type, COUNT(*) AS n FROM seat_service.seats GROUP BY seat_type ORDER BY seat_type;",
+    "verified": true
+  },
+  {
+    "id": "032",
+    "difficulty": "easy",
+    "question": "Số lời mời theo trạng thái",
+    "involves_services": [
+      "org"
+    ],
+    "gold_sql": "SELECT \"Status\", COUNT(*) AS n FROM org_service.\"Invitations\" GROUP BY \"Status\" ORDER BY \"Status\";",
+    "verified": true
+  },
+  {
+    "id": "033",
+    "difficulty": "easy",
+    "question": "Tổng doanh thu toàn hệ thống",
+    "involves_services": [
+      "payment"
+    ],
+    "gold_sql": "SELECT SUM(total_amount) AS revenue FROM payment_service.orders WHERE status = 'Paid';",
+    "verified": true
+  },
+  {
+    "id": "034",
+    "difficulty": "easy",
+    "question": "Tổng số session đã tạo",
+    "involves_services": [
+      "event"
+    ],
+    "gold_sql": "SELECT COUNT(*) AS sessions FROM event_service.sessions WHERE NOT is_deleted;",
+    "verified": true
+  },
+  {
+    "id": "035",
+    "difficulty": "easy",
+    "question": "Mức phí hiện tại của nền tảng",
+    "involves_services": [
+      "org"
+    ],
+    "gold_sql": "SELECT \"CurrentFeeRate\" FROM org_service.\"PlatformConfigs\" ORDER BY \"Id\" LIMIT 1;",
+    "verified": true
+  },
+  {
+    "id": "036",
+    "difficulty": "easy",
+    "question": "Số tổ chức đã kết nối Stripe",
+    "involves_services": [
+      "org"
+    ],
+    "gold_sql": "SELECT COUNT(*) AS active FROM org_service.\"Organizations\" WHERE \"PaymentStatus\" = 2;",
+    "verified": true
+  },
+  {
+    "id": "037",
+    "difficulty": "easy",
+    "question": "Số vé đã check-in",
+    "involves_services": [
+      "event"
+    ],
+    "gold_sql": "SELECT COUNT(*) AS checked_in FROM event_service.tickets WHERE is_checked_in = TRUE;",
+    "verified": true
+  },
+  {
+    "id": "038",
+    "difficulty": "easy",
+    "question": "Số sơ đồ ghế đã publish",
+    "involves_services": [
+      "seat"
+    ],
+    "gold_sql": "SELECT COUNT(*) AS published_maps FROM seat_service.seat_maps WHERE status = 'Published';",
+    "verified": true
+  },
+  {
+    "id": "039",
+    "difficulty": "easy",
+    "question": "Giá vé trung bình trên toàn bộ loại vé",
+    "involves_services": [
+      "event"
+    ],
+    "gold_sql": "SELECT AVG(price) AS avg_price FROM event_service.legends;",
+    "verified": true
+  },
+  {
+    "id": "040",
+    "difficulty": "easy",
+    "question": "Số đơn hàng đã thanh toán hôm nay",
+    "involves_services": [
+      "payment"
+    ],
+    "gold_sql": "SELECT COUNT(*) AS paid_today FROM payment_service.orders WHERE status = 'Paid' AND paid_at >= DATE_TRUNC('day', CURRENT_DATE);",
+    "verified": true
+  },
+  {
+    "id": "041",
+    "difficulty": "medium",
+    "question": "Doanh thu theo từng tổ chức",
+    "involves_services": [
+      "org",
+      "payment"
+    ],
+    "gold_sql": "SELECT org.\"Name\", SUM(o.total_amount) AS revenue FROM org_service.\"Organizations\" org JOIN payment_service.orders o ON o.org_id = org.\"Id\" WHERE o.status = 'Paid' GROUP BY org.\"Id\", org.\"Name\" ORDER BY revenue DESC;",
+    "verified": true
+  },
+  {
+    "id": "042",
+    "difficulty": "medium",
+    "question": "Số vé bán theo từng sự kiện",
+    "involves_services": [
+      "event"
+    ],
+    "gold_sql": "SELECT e.name, COUNT(t.id) AS tickets FROM event_service.events e JOIN event_service.sessions s ON s.event_id = e.id JOIN event_service.tickets t ON t.session_id = s.id GROUP BY e.id, e.name ORDER BY tickets DESC;",
+    "verified": true
+  },
+  {
+    "id": "043",
+    "difficulty": "medium",
+    "question": "Top 10 sự kiện doanh thu cao nhất",
+    "involves_services": [
+      "event",
+      "payment"
+    ],
+    "gold_sql": "SELECT e.name, SUM(o.total_amount) AS revenue FROM event_service.events e JOIN event_service.sessions s ON s.event_id = e.id JOIN payment_service.orders o ON o.session_id = s.id WHERE o.status = 'Paid' GROUP BY e.id, e.name ORDER BY revenue DESC LIMIT 10;",
+    "verified": true
+  },
+  {
+    "id": "044",
+    "difficulty": "medium",
+    "question": "Số ghế đã bán theo từng tổ chức",
+    "involves_services": [
+      "seat"
+    ],
+    "gold_sql": "SELECT sm.organization_id, COUNT(*) AS sold FROM seat_service.seat_maps sm JOIN seat_service.seats st ON st.seat_map_id = sm.id WHERE st.status = 'Sold' GROUP BY sm.organization_id ORDER BY sold DESC;",
+    "verified": true
+  },
+  {
+    "id": "045",
+    "difficulty": "medium",
+    "question": "Doanh thu theo từng loại vé",
+    "involves_services": [
+      "payment"
+    ],
+    "gold_sql": "SELECT oi.legend_name, SUM(oi.price) AS revenue FROM payment_service.order_items oi JOIN payment_service.orders o ON o.id = oi.order_id WHERE o.status = 'Paid' GROUP BY oi.legend_name ORDER BY revenue DESC;",
+    "verified": true
+  },
+  {
+    "id": "046",
+    "difficulty": "medium",
+    "question": "Số đơn hàng của mỗi khách hàng",
+    "involves_services": [
+      "user",
+      "payment"
+    ],
+    "gold_sql": "SELECT u.\"Username\", COUNT(o.id) AS orders FROM user_service.\"Users\" u JOIN payment_service.orders o ON o.user_id = u.\"Id\" GROUP BY u.\"Id\", u.\"Username\" ORDER BY orders DESC;",
+    "verified": true
+  },
+  {
+    "id": "047",
+    "difficulty": "medium",
+    "question": "Số sự kiện của mỗi tổ chức",
+    "involves_services": [
+      "org",
+      "event"
+    ],
+    "gold_sql": "SELECT org.\"Name\", COUNT(e.id) AS events FROM org_service.\"Organizations\" org JOIN event_service.events e ON e.organization_id = org.\"Id\" GROUP BY org.\"Id\", org.\"Name\" ORDER BY events DESC;",
+    "verified": true
+  },
+  {
+    "id": "048",
+    "difficulty": "medium",
+    "question": "Tỉ lệ ghế đã bán của mỗi sơ đồ ghế",
+    "involves_services": [
+      "seat"
+    ],
+    "gold_sql": "SELECT seat_map_id, COUNT(*) FILTER (WHERE status = 'Sold') * 1.0 / COUNT(*) AS sold_ratio FROM seat_service.seats GROUP BY seat_map_id ORDER BY sold_ratio DESC;",
+    "verified": true
+  },
+  {
+    "id": "049",
+    "difficulty": "medium",
+    "question": "Giá trị đơn hàng trung bình theo tổ chức",
+    "involves_services": [
+      "org",
+      "payment"
+    ],
+    "gold_sql": "SELECT org.\"Name\", AVG(o.total_amount) AS avg_order FROM org_service.\"Organizations\" org JOIN payment_service.orders o ON o.org_id = org.\"Id\" WHERE o.status = 'Paid' GROUP BY org.\"Id\", org.\"Name\" ORDER BY avg_order DESC;",
+    "verified": true
+  },
+  {
+    "id": "050",
+    "difficulty": "medium",
+    "question": "Số vé check-in theo từng sự kiện",
+    "involves_services": [
+      "event"
+    ],
+    "gold_sql": "SELECT e.name, COUNT(*) FILTER (WHERE t.is_checked_in) AS checked_in FROM event_service.events e JOIN event_service.sessions s ON s.event_id = e.id JOIN event_service.tickets t ON t.session_id = s.id GROUP BY e.id, e.name ORDER BY checked_in DESC;",
+    "verified": true
+  },
+  {
+    "id": "051",
+    "difficulty": "medium",
+    "question": "Top 5 khách hàng có nhiều đơn nhất",
+    "involves_services": [
+      "user",
+      "payment"
+    ],
+    "gold_sql": "SELECT u.\"Username\", COUNT(o.id) AS orders FROM user_service.\"Users\" u JOIN payment_service.orders o ON o.user_id = u.\"Id\" WHERE o.status = 'Paid' GROUP BY u.\"Id\", u.\"Username\" ORDER BY orders DESC LIMIT 5;",
+    "verified": true
+  },
+  {
+    "id": "052",
+    "difficulty": "medium",
+    "question": "Tổng số ghế của mỗi sự kiện",
+    "involves_services": [
+      "event",
+      "seat"
+    ],
+    "gold_sql": "SELECT e.name, COUNT(st.id) AS seats FROM event_service.events e JOIN event_service.sessions s ON s.event_id = e.id JOIN seat_service.seat_maps sm ON sm.session_id = s.id JOIN seat_service.seats st ON st.seat_map_id = sm.id GROUP BY e.id, e.name ORDER BY seats DESC;",
+    "verified": true
+  },
+  {
+    "id": "053",
+    "difficulty": "medium",
+    "question": "Doanh thu theo tỉnh thành",
+    "involves_services": [
+      "event",
+      "payment"
+    ],
+    "gold_sql": "SELECT e.province_name, SUM(o.total_amount) AS revenue FROM event_service.events e JOIN event_service.sessions s ON s.event_id = e.id JOIN payment_service.orders o ON o.session_id = s.id WHERE o.status = 'Paid' GROUP BY e.province_name ORDER BY revenue DESC;",
+    "verified": true
+  },
+  {
+    "id": "054",
+    "difficulty": "medium",
+    "question": "Số session của mỗi sự kiện",
+    "involves_services": [
+      "event"
+    ],
+    "gold_sql": "SELECT e.name, COUNT(s.id) AS sessions FROM event_service.events e JOIN event_service.sessions s ON s.event_id = e.id GROUP BY e.id, e.name ORDER BY sessions DESC;",
+    "verified": true
+  },
+  {
+    "id": "055",
+    "difficulty": "medium",
+    "question": "Tổng phí nền tảng thu được theo tổ chức",
+    "involves_services": [
+      "org",
+      "payment"
+    ],
+    "gold_sql": "SELECT org.\"Name\", SUM(o.platform_fee) AS fees FROM org_service.\"Organizations\" org JOIN payment_service.orders o ON o.org_id = org.\"Id\" WHERE o.status = 'Paid' GROUP BY org.\"Id\", org.\"Name\" ORDER BY fees DESC;",
+    "verified": true
+  },
+  {
+    "id": "056",
+    "difficulty": "medium",
+    "question": "Số loại vé của mỗi sự kiện",
+    "involves_services": [
+      "event"
+    ],
+    "gold_sql": "SELECT e.name, COUNT(l.id) AS legends FROM event_service.events e JOIN event_service.legends l ON l.event_id = e.id GROUP BY e.id, e.name ORDER BY legends DESC;",
+    "verified": true
+  },
+  {
+    "id": "057",
+    "difficulty": "medium",
+    "question": "Số đơn hàng thất bại theo tổ chức",
+    "involves_services": [
+      "org",
+      "payment"
+    ],
+    "gold_sql": "SELECT org.\"Name\", COUNT(o.id) AS failed FROM org_service.\"Organizations\" org JOIN payment_service.orders o ON o.org_id = org.\"Id\" WHERE o.status = 'Failed' GROUP BY org.\"Id\", org.\"Name\" ORDER BY failed DESC;",
+    "verified": true
+  },
+  {
+    "id": "058",
+    "difficulty": "medium",
+    "question": "Doanh thu theo tháng của từng tổ chức",
+    "involves_services": [
+      "org",
+      "payment"
+    ],
+    "gold_sql": "SELECT org.\"Name\", DATE_TRUNC('month', o.paid_at) AS month, SUM(o.total_amount) AS revenue FROM org_service.\"Organizations\" org JOIN payment_service.orders o ON o.org_id = org.\"Id\" WHERE o.status = 'Paid' GROUP BY org.\"Id\", org.\"Name\", 2 ORDER BY org.\"Name\", month;",
+    "verified": true
+  },
+  {
+    "id": "059",
+    "difficulty": "medium",
+    "question": "Số khách hàng duy nhất đã mua vé mỗi sự kiện",
+    "involves_services": [
+      "event",
+      "payment"
+    ],
+    "gold_sql": "SELECT e.name, COUNT(DISTINCT o.user_id) AS buyers FROM event_service.events e JOIN event_service.sessions s ON s.event_id = e.id JOIN payment_service.orders o ON o.session_id = s.id WHERE o.status = 'Paid' GROUP BY e.id, e.name ORDER BY buyers DESC;",
+    "verified": true
+  },
+  {
+    "id": "060",
+    "difficulty": "medium",
+    "question": "Giá vé cao nhất của mỗi sự kiện",
+    "involves_services": [
+      "event"
+    ],
+    "gold_sql": "SELECT e.name, MAX(l.price) AS max_price FROM event_service.events e JOIN event_service.legends l ON l.event_id = e.id GROUP BY e.id, e.name ORDER BY max_price DESC;",
+    "verified": true
+  },
+  {
+    "id": "061",
+    "difficulty": "medium",
+    "question": "Số ghế VIP của mỗi sự kiện",
+    "involves_services": [
+      "event",
+      "seat"
+    ],
+    "gold_sql": "SELECT e.name, COUNT(st.id) AS vip_seats FROM event_service.events e JOIN event_service.sessions s ON s.event_id = e.id JOIN seat_service.seat_maps sm ON sm.session_id = s.id JOIN seat_service.seats st ON st.seat_map_id = sm.id JOIN event_service.legends l ON l.id = st.legend_id WHERE l.name = 'VIP' GROUP BY e.id, e.name ORDER BY vip_seats DESC;",
+    "verified": true
+  },
+  {
+    "id": "062",
+    "difficulty": "medium",
+    "question": "Tỉ lệ đơn đã thanh toán trên tổng đơn theo tổ chức",
+    "involves_services": [
+      "payment"
+    ],
+    "gold_sql": "SELECT org_id, COUNT(*) FILTER (WHERE status = 'Paid') * 1.0 / COUNT(*) AS paid_ratio FROM payment_service.orders GROUP BY org_id ORDER BY paid_ratio DESC;",
+    "verified": true
+  },
+  {
+    "id": "063",
+    "difficulty": "medium",
+    "question": "Số thành viên là designer của mỗi tổ chức",
+    "involves_services": [
+      "org"
+    ],
+    "gold_sql": "SELECT org.\"Name\", COUNT(m.\"Id\") AS designers FROM org_service.\"Organizations\" org JOIN org_service.\"Permissions\" p ON p.\"OrganizationId\" = org.\"Id\" AND p.\"IsDesigner\" JOIN org_service.\"Members\" m ON m.\"PermissionId\" = p.\"Id\" GROUP BY org.\"Id\", org.\"Name\" ORDER BY designers DESC;",
+    "verified": true
+  },
+  {
+    "id": "064",
+    "difficulty": "hard",
+    "question": "Top 3 loại vé doanh thu cao nhất của mỗi sự kiện",
+    "involves_services": [
+      "event",
+      "payment"
+    ],
+    "gold_sql": "SELECT * FROM (SELECT e.name AS event_name, oi.legend_name, SUM(oi.price) AS revenue, RANK() OVER (PARTITION BY e.id ORDER BY SUM(oi.price) DESC) AS rk FROM payment_service.order_items oi JOIN payment_service.orders o ON o.id = oi.order_id AND o.status = 'Paid' JOIN event_service.sessions s ON s.id = o.session_id JOIN event_service.events e ON e.id = s.event_id GROUP BY e.id, e.name, oi.legend_name) r WHERE rk <= 3 ORDER BY event_name, rk;",
+    "verified": true
+  },
+  {
+    "id": "065",
+    "difficulty": "hard",
+    "question": "Sự kiện có doanh thu vượt mức trung bình",
+    "involves_services": [
+      "event",
+      "payment"
+    ],
+    "gold_sql": "SELECT e.name, SUM(o.total_amount) AS revenue FROM event_service.events e JOIN event_service.sessions s ON s.event_id = e.id JOIN payment_service.orders o ON o.session_id = s.id WHERE o.status = 'Paid' GROUP BY e.id, e.name HAVING SUM(o.total_amount) > (SELECT AVG(ev_rev) FROM (SELECT SUM(o2.total_amount) AS ev_rev FROM event_service.sessions s2 JOIN payment_service.orders o2 ON o2.session_id = s2.id WHERE o2.status = 'Paid' GROUP BY s2.event_id) x) ORDER BY revenue DESC;",
+    "verified": true
+  },
+  {
+    "id": "066",
+    "difficulty": "hard",
+    "question": "Khách hàng quay lại mua nhiều lần",
+    "involves_services": [
+      "user",
+      "payment"
+    ],
+    "gold_sql": "SELECT u.\"Username\", COUNT(o.id) AS orders FROM user_service.\"Users\" u JOIN payment_service.orders o ON o.user_id = u.\"Id\" WHERE o.status = 'Paid' GROUP BY u.\"Id\", u.\"Username\" HAVING COUNT(o.id) > 1 ORDER BY orders DESC;",
+    "verified": true
+  },
+  {
+    "id": "067",
+    "difficulty": "hard",
+    "question": "Tỉ lệ check-in của mỗi session",
+    "involves_services": [
+      "event"
+    ],
+    "gold_sql": "SELECT s.name, CASE WHEN COUNT(t.id) = 0 THEN 0 ELSE COUNT(*) FILTER (WHERE t.is_checked_in) * 1.0 / COUNT(t.id) END AS checkin_ratio FROM event_service.sessions s JOIN event_service.tickets t ON t.session_id = s.id GROUP BY s.id, s.name ORDER BY checkin_ratio DESC;",
+    "verified": true
+  },
+  {
+    "id": "068",
+    "difficulty": "hard",
+    "question": "So sánh doanh thu tháng này với tháng trước theo tổ chức",
+    "involves_services": [
+      "org",
+      "payment"
+    ],
+    "gold_sql": "SELECT o.org_id, SUM(o.total_amount) FILTER (WHERE DATE_TRUNC('month', o.paid_at) = DATE_TRUNC('month', CURRENT_DATE)) AS this_month, SUM(o.total_amount) FILTER (WHERE DATE_TRUNC('month', o.paid_at) = DATE_TRUNC('month', CURRENT_DATE - INTERVAL '1 month')) AS last_month FROM payment_service.orders o WHERE o.status = 'Paid' GROUP BY o.org_id ORDER BY this_month DESC NULLS LAST;",
+    "verified": true
+  },
+  {
+    "id": "069",
+    "difficulty": "hard",
+    "question": "Top 5 tổ chức theo doanh thu kèm phần trăm đóng góp",
+    "involves_services": [
+      "org",
+      "payment"
+    ],
+    "gold_sql": "SELECT org.\"Name\", SUM(o.total_amount) AS revenue, SUM(o.total_amount) * 100.0 / SUM(SUM(o.total_amount)) OVER () AS pct FROM org_service.\"Organizations\" org JOIN payment_service.orders o ON o.org_id = org.\"Id\" WHERE o.status = 'Paid' GROUP BY org.\"Id\", org.\"Name\" ORDER BY revenue DESC LIMIT 5;",
+    "verified": true
+  },
+  {
+    "id": "070",
+    "difficulty": "hard",
+    "question": "Sự kiện chưa bán được vé nào",
+    "involves_services": [
+      "event"
+    ],
+    "gold_sql": "SELECT e.id, e.name FROM event_service.events e WHERE NOT EXISTS (SELECT 1 FROM event_service.sessions s JOIN event_service.tickets t ON t.session_id = s.id WHERE s.event_id = e.id);",
+    "verified": true
+  },
+  {
+    "id": "071",
+    "difficulty": "hard",
+    "question": "Khách hàng chi tiêu trên mức trung bình",
+    "involves_services": [
+      "user",
+      "payment"
+    ],
+    "gold_sql": "SELECT u.\"Username\", SUM(o.total_amount) AS spend FROM user_service.\"Users\" u JOIN payment_service.orders o ON o.user_id = u.\"Id\" WHERE o.status = 'Paid' GROUP BY u.\"Id\", u.\"Username\" HAVING SUM(o.total_amount) > (SELECT AVG(s) FROM (SELECT SUM(total_amount) AS s FROM payment_service.orders WHERE status = 'Paid' GROUP BY user_id) t) ORDER BY spend DESC;",
+    "verified": true
+  },
+  {
+    "id": "072",
+    "difficulty": "hard",
+    "question": "Xếp hạng sự kiện theo vé bán trong từng tổ chức",
+    "involves_services": [
+      "org",
+      "event"
+    ],
+    "gold_sql": "SELECT * FROM (SELECT e.organization_id, e.name, COUNT(t.id) AS sold, RANK() OVER (PARTITION BY e.organization_id ORDER BY COUNT(t.id) DESC) AS rk FROM event_service.events e JOIN event_service.sessions s ON s.event_id = e.id JOIN event_service.tickets t ON t.session_id = s.id GROUP BY e.organization_id, e.id, e.name) r WHERE rk = 1 ORDER BY sold DESC;",
+    "verified": true
+  },
+  {
+    "id": "073",
+    "difficulty": "hard",
+    "question": "Sự kiện có tỉ lệ lấp đầy ghế trên 20%",
+    "involves_services": [
+      "event",
+      "seat"
+    ],
+    "gold_sql": "SELECT e.name, COUNT(*) FILTER (WHERE st.status = 'Sold') * 1.0 / COUNT(*) AS fill_rate FROM event_service.events e JOIN event_service.sessions s ON s.event_id = e.id JOIN seat_service.seat_maps sm ON sm.session_id = s.id JOIN seat_service.seats st ON st.seat_map_id = sm.id GROUP BY e.id, e.name HAVING COUNT(*) FILTER (WHERE st.status = 'Sold') * 1.0 / COUNT(*) > 0.2 ORDER BY fill_rate DESC;",
+    "verified": true
+  },
+  {
+    "id": "074",
+    "difficulty": "hard",
+    "question": "Doanh thu lũy kế theo tháng",
+    "involves_services": [
+      "payment"
+    ],
+    "gold_sql": "SELECT m, rev, SUM(rev) OVER (ORDER BY m) AS cumulative FROM (SELECT DATE_TRUNC('month', paid_at) AS m, SUM(total_amount) AS rev FROM payment_service.orders WHERE status = 'Paid' GROUP BY 1) t ORDER BY m;",
+    "verified": true
+  },
+  {
+    "id": "075",
+    "difficulty": "hard",
+    "question": "Sự kiện có hơn 3 vé đã check-in",
+    "involves_services": [
+      "event"
+    ],
+    "gold_sql": "SELECT e.name, COUNT(*) FILTER (WHERE t.is_checked_in) AS checked_in FROM event_service.events e JOIN event_service.sessions s ON s.event_id = e.id JOIN event_service.tickets t ON t.session_id = s.id GROUP BY e.id, e.name HAVING COUNT(*) FILTER (WHERE t.is_checked_in) > 3 ORDER BY checked_in DESC;",
+    "verified": true
+  },
+  {
+    "id": "076",
+    "difficulty": "hard",
+    "question": "Loại vé phổ biến nhất trong từng tổ chức",
+    "involves_services": [
+      "org",
+      "seat",
+      "event"
+    ],
+    "gold_sql": "SELECT * FROM (SELECT sm.organization_id, l.name, COUNT(st.id) AS n, RANK() OVER (PARTITION BY sm.organization_id ORDER BY COUNT(st.id) DESC) AS rk FROM seat_service.seat_maps sm JOIN seat_service.seats st ON st.seat_map_id = sm.id JOIN event_service.legends l ON l.id = st.legend_id GROUP BY sm.organization_id, l.name) r WHERE rk = 1 ORDER BY n DESC;",
+    "verified": true
+  },
+  {
+    "id": "077",
+    "difficulty": "cross-service",
+    "question": "Báo cáo doanh thu và phí theo tổ chức kèm số ghế đã bán",
+    "involves_services": [
+      "org",
+      "event",
+      "seat",
+      "payment"
+    ],
+    "gold_sql": "SELECT org.\"Name\", SUM(o.total_amount) AS revenue, SUM(o.platform_fee) AS fees, (SELECT COUNT(*) FROM seat_service.seat_maps sm JOIN seat_service.seats st ON st.seat_map_id = sm.id WHERE sm.organization_id = org.\"Id\" AND st.status = 'Sold') AS sold_seats FROM org_service.\"Organizations\" org JOIN payment_service.orders o ON o.org_id = org.\"Id\" WHERE o.status = 'Paid' GROUP BY org.\"Id\", org.\"Name\" ORDER BY revenue DESC;",
+    "verified": true
+  },
+  {
+    "id": "078",
+    "difficulty": "cross-service",
+    "question": "Khách hàng mua vé ở nhiều sự kiện nhất",
+    "involves_services": [
+      "user",
+      "payment",
+      "event"
+    ],
+    "gold_sql": "SELECT u.\"Username\", COUNT(DISTINCT s.event_id) AS events FROM user_service.\"Users\" u JOIN payment_service.orders o ON o.user_id = u.\"Id\" JOIN event_service.sessions s ON s.id = o.session_id WHERE o.status = 'Paid' GROUP BY u.\"Id\", u.\"Username\" ORDER BY events DESC LIMIT 10;",
+    "verified": true
+  },
+  {
+    "id": "079",
+    "difficulty": "cross-service",
+    "question": "Top khách hàng mua ghế VIP nhiều nhất",
+    "involves_services": [
+      "user",
+      "payment",
+      "seat",
+      "event"
+    ],
+    "gold_sql": "SELECT u.\"Username\", COUNT(*) AS vip_tickets FROM user_service.\"Users\" u JOIN payment_service.orders o ON o.user_id = u.\"Id\" JOIN payment_service.order_items oi ON oi.order_id = o.id JOIN seat_service.seats st ON st.id = oi.seat_id JOIN event_service.legends l ON l.id = st.legend_id WHERE o.status = 'Paid' AND l.name = 'VIP' GROUP BY u.\"Id\", u.\"Username\" ORDER BY vip_tickets DESC LIMIT 10;",
+    "verified": true
+  },
+  {
+    "id": "080",
+    "difficulty": "cross-service",
+    "question": "Doanh thu mỗi tổ chức kèm số sự kiện và số vé bán",
+    "involves_services": [
+      "org",
+      "event",
+      "payment"
+    ],
+    "gold_sql": "SELECT org.\"Name\", COUNT(DISTINCT e.id) AS events, COUNT(t.id) AS tickets, COALESCE(SUM(o.total_amount), 0) AS revenue FROM org_service.\"Organizations\" org JOIN event_service.events e ON e.organization_id = org.\"Id\" JOIN event_service.sessions s ON s.event_id = e.id LEFT JOIN event_service.tickets t ON t.session_id = s.id LEFT JOIN payment_service.orders o ON o.id = t.order_id AND o.status = 'Paid' GROUP BY org.\"Id\", org.\"Name\" ORDER BY revenue DESC;",
+    "verified": true
+  },
+  {
+    "id": "081",
+    "difficulty": "cross-service",
+    "question": "Tổ chức mà mỗi khách hàng chi tiêu nhiều nhất",
+    "involves_services": [
+      "user",
+      "org",
+      "payment"
+    ],
+    "gold_sql": "SELECT * FROM (SELECT u.\"Username\", org.\"Name\" AS org_name, SUM(o.total_amount) AS spend, RANK() OVER (PARTITION BY u.\"Id\" ORDER BY SUM(o.total_amount) DESC) AS rk FROM user_service.\"Users\" u JOIN payment_service.orders o ON o.user_id = u.\"Id\" JOIN org_service.\"Organizations\" org ON org.\"Id\" = o.org_id WHERE o.status = 'Paid' GROUP BY u.\"Id\", u.\"Username\", org.\"Id\", org.\"Name\") r WHERE rk = 1 ORDER BY spend DESC LIMIT 20;",
+    "verified": true
+  },
+  {
+    "id": "082",
+    "difficulty": "cross-service",
+    "question": "Top 10 sự kiện theo doanh thu kèm tên tổ chức và số ghế đã bán",
+    "involves_services": [
+      "event",
+      "org",
+      "seat",
+      "payment"
+    ],
+    "gold_sql": "SELECT e.name AS event_name, org.\"Name\" AS org_name, SUM(o.total_amount) AS revenue, (SELECT COUNT(*) FROM seat_service.seat_maps sm JOIN seat_service.seats st ON st.seat_map_id = sm.id WHERE sm.event_id = e.id AND st.status = 'Sold') AS sold_seats FROM event_service.events e JOIN org_service.\"Organizations\" org ON org.\"Id\" = e.organization_id JOIN event_service.sessions s ON s.event_id = e.id JOIN payment_service.orders o ON o.session_id = s.id AND o.status = 'Paid' GROUP BY e.id, e.name, org.\"Name\" ORDER BY revenue DESC LIMIT 10;",
+    "verified": true
+  },
+  {
+    "id": "083",
+    "difficulty": "cross-service",
+    "question": "Toàn cảnh mỗi tổ chức: số sự kiện, số vé bán, doanh thu",
+    "involves_services": [
+      "org",
+      "event",
+      "payment"
+    ],
+    "gold_sql": "SELECT org.\"Name\", (SELECT COUNT(*) FROM event_service.events e WHERE e.organization_id = org.\"Id\") AS events, (SELECT COUNT(t.id) FROM event_service.events e JOIN event_service.sessions s ON s.event_id = e.id JOIN event_service.tickets t ON t.session_id = s.id WHERE e.organization_id = org.\"Id\") AS tickets, COALESCE((SELECT SUM(o.total_amount) FROM payment_service.orders o WHERE o.org_id = org.\"Id\" AND o.status = 'Paid'), 0) AS revenue FROM org_service.\"Organizations\" org ORDER BY revenue DESC;",
+    "verified": true
+  }
+]

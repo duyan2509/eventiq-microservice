@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using Eventiq.PaymentService.Application.Service.Interface;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -29,5 +30,15 @@ public class AnalyticsController : ControllerBase
     [HttpGet("org/{orgId:guid}")]
     [Authorize(Roles = "Organization,Staff")]
     public async Task<IActionResult> GetOrgAnalytics(Guid orgId)
-        => Ok(await _analytics.GetOrgAnalyticsAsync(orgId));
+    {
+        // Role alone is not enough: ensure the caller belongs to the org they
+        // ask for. The orgId in the signed JWT is the source of truth, not the
+        // route param — otherwise any Org/Staff user could read another org's
+        // revenue by swapping the GUID in the URL.
+        var tokenOrgId = User.FindFirstValue("orgId");
+        if (!Guid.TryParse(tokenOrgId, out var parsed) || parsed != orgId)
+            return Forbid();
+
+        return Ok(await _analytics.GetOrgAnalyticsAsync(orgId));
+    }
 }
