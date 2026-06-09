@@ -37,18 +37,32 @@ az containerapp env create `
   --name $ACA_ENV --resource-group $RG --location $LOCATION `
   --logs-workspace-id $LOG_ID --logs-workspace-key $LOG_KEY --only-show-errors | Out-Null
 
-Write-Host "==> PostgreSQL Flexible Server $PG_SERVER (B1ms)" -ForegroundColor Cyan
+Write-Host "==> PostgreSQL Flexible Server $PG_SERVER ($PG_SKU)" -ForegroundColor Cyan
 az postgres flexible-server create `
   --resource-group $RG --name $PG_SERVER `
   --admin-user $PG_ADMIN --admin-password $PG_PASSWORD `
-  --sku-name Standard_B1ms --tier Burstable --storage-size 32 `
+  --sku-name $PG_SKU --tier $PG_TIER --storage-size 32 `
   --version 16 --public-access 0.0.0.0 --yes --only-show-errors | Out-Null
 # Allow all Azure services (ACA egress IPs are dynamic) — 0.0.0.0 rule = "Azure services"
 az postgres flexible-server firewall-rule create `
   --resource-group $RG --name $PG_SERVER --rule-name AllowAzure `
   --start-ip-address 0.0.0.0 --end-ip-address 0.0.0.0 --only-show-errors | Out-Null
+# database-per-service: one database per data-owning service on this one server
+foreach ($db in $PG_DATABASES) {
+  Write-Host "    - database $db" -ForegroundColor DarkCyan
+  az postgres flexible-server db create `
+    --resource-group $RG --server-name $PG_SERVER --database-name $db --only-show-errors | Out-Null
+}
+# Central federation DB for analytics + allowlist postgres_fdw (Azure requires the
+# extension to be in azure.extensions before CREATE EXTENSION works). Dynamic param,
+# no restart needed. setup_fdw.sql (05) imports the 5 schemas into this DB.
+Write-Host "    - database $PG_DB_ANALYTICS (analytics federation)" -ForegroundColor DarkCyan
 az postgres flexible-server db create `
-  --resource-group $RG --server-name $PG_SERVER --database-name $PG_DB --only-show-errors | Out-Null
+  --resource-group $RG --server-name $PG_SERVER --database-name $PG_DB_ANALYTICS --only-show-errors | Out-Null
+Write-Host "==> Allowlisting postgres_fdw extension" -ForegroundColor Cyan
+az postgres flexible-server parameter set `
+  --resource-group $RG --server-name $PG_SERVER `
+  --name azure.extensions --value POSTGRES_FDW --only-show-errors | Out-Null
 
 Write-Host "==> Azure Cache for Redis $REDIS_NAME (C0 Basic)" -ForegroundColor Cyan
 az redis create `

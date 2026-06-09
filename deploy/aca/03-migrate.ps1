@@ -21,24 +21,25 @@ if (-not (Get-Command dotnet-ef -ErrorAction SilentlyContinue)) {
 # Production env so the host registers Azure Service Bus (conn string present);
 # the bus is never started during a design-time migration.
 $env:ASPNETCORE_ENVIRONMENT          = "Production"
-$env:ConnectionStrings__Postgres     = $PG_CONN
 $env:AzureServiceBus__ConnectionString = $SB_CONN
 
+# database-per-service: each project migrates into its own database
 $projects = @(
-  "Eventiq.UserService",
-  "Eventiq.OrganizationService",
-  "Eventiq.EventService",
-  "Eventiq.SeatService",
-  "Eventiq.PaymentService"
+  @{ Name = "Eventiq.UserService";         Conn = $PG_CONN_USER    },
+  @{ Name = "Eventiq.OrganizationService"; Conn = $PG_CONN_ORG     },
+  @{ Name = "Eventiq.EventService";        Conn = $PG_CONN_EVENT   },
+  @{ Name = "Eventiq.SeatService";         Conn = $PG_CONN_SEAT    },
+  @{ Name = "Eventiq.PaymentService";      Conn = $PG_CONN_PAYMENT }
 )
 
 Push-Location $REPO_ROOT
 try {
   foreach ($p in $projects) {
-    Write-Host "==> dotnet ef database update -p $p" -ForegroundColor Cyan
-    dotnet ef database update --project $p --startup-project $p
+    Write-Host "==> dotnet ef database update -p $($p.Name)" -ForegroundColor Cyan
+    $env:ConnectionStrings__Postgres = $p.Conn
+    dotnet ef database update --project $p.Name --startup-project $p.Name
   }
 }
 finally { Pop-Location }
 
-Write-Host "All migrations applied to $PG_HOST/$PG_DB" -ForegroundColor Green
+Write-Host "All migrations applied to $PG_HOST (database-per-service)" -ForegroundColor Green
