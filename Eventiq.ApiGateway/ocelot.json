@@ -334,9 +334,21 @@
       }
     },
     {
+      "DownstreamPathTemplate": "/api/analytics/chat",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [{ "Host": "localhost", "Port": 5238 }],
+      "UpstreamPathTemplate": "/gateway/analytics/chat",
+      "UpstreamHttpMethod": ["POST"],
+      "AddHeadersToRequest": { "Authorization": "{Authorization}" },
+      "AuthenticationOptions": {
+        "AuthenticationProviderKey": "Bearer",
+        "AllowedScopes": []
+      }
+    },
+    {
       "DownstreamPathTemplate": "/api/analytics/{everything}",
       "DownstreamScheme": "http",
-      "DownstreamHostAndPorts": [{ "Host": "localhost", "Port": 5236 }],
+      "DownstreamHostAndPorts": [{ "Host": "localhost", "Port": 5238 }],
       "UpstreamPathTemplate": "/gateway/analytics/{everything}",
       "UpstreamHttpMethod": ["GET"],
       "AddHeadersToRequest": { "Authorization": "{Authorization}" },

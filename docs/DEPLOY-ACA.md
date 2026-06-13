@@ -20,11 +20,14 @@ For the local-dev runbook see [`DEPLOY.md`](DEPLOY.md). The older AKS notes in
 | `org-service` | internal | |
 | `event-service` | internal | |
 | `payment-service` | internal | Stripe webhook arrives via the gateway route `/gateway/stripe/webhook` |
-| `analytics-service` | internal | Python Text2SQL, reached via gateway `/gateway/analytics/query` |
+| `analytics-service` | internal | Python Text2SQL in **prod (FDW) mode** — queries `analytics_db`, which federates the 5 service DBs via `postgres_fdw` (see step 3b / `05-setup-fdw.ps1`). |
 | `email-service` | **none** | background Service Bus consumer, no HTTP |
 
 Backing services (all managed, outside ACA):
-- **PostgreSQL Flexible Server** — one server, one DB (`eventiq`), one schema per service.
+- **PostgreSQL Flexible Server** — one server, **five service databases** (database-per-service:
+  `user_db`, `org_db`, `event_db`, `seat_db`, `payment_db`), each holding that service's
+  EF schema, plus a 6th `analytics_db` that federates all five via `postgres_fdw` for
+  cross-service Text2SQL. Each service connects only to its own database.
 - **Azure Cache for Redis** — SeatService presence/selections + Redlock.
 - **Azure Service Bus** (Standard) — MassTransit transport in Production (the code
   switches RabbitMQ→Service Bus automatically when `ASPNETCORE_ENVIRONMENT != Development`).
@@ -87,7 +90,17 @@ strings are derived from them).
 # add your laptop IP to the Postgres firewall once, if running from your machine
 .\03-migrate.ps1
 ```
-Applies EF Core migrations for the 5 data-owning services against Azure Postgres.
+Applies EF Core migrations for the 5 data-owning services, each into its own
+database (`user_db`, `org_db`, …).
+
+### 3b. Wire up FDW federation for analytics
+```powershell
+.\05-setup-fdw.ps1
+```
+Imports the 5 service schemas into `analytics_db` as `postgres_fdw` foreign tables
+(same schema names), so AnalyticsService can run cross-service Text2SQL in prod
+mode. Must run **after** migrations (the source schemas have to exist). Prints a
+per-schema table count to verify the import.
 
 ### 4. Deploy the apps
 ```powershell

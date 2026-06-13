@@ -15,7 +15,9 @@ from groq import Groq, APIStatusError, RateLimitError
 load_dotenv()
 
 DEFAULT_MODEL = os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile")
-RATE_LIMIT_SLEEP = float(os.getenv("LLM_RATE_LIMIT_SLEEP", "2.5"))
+# Default 0 for live requests. Set LLM_RATE_LIMIT_SLEEP=2.5 when running batch eval
+# to stay under Groq free-tier 30 RPM.
+RATE_LIMIT_SLEEP = float(os.getenv("LLM_RATE_LIMIT_SLEEP", "0"))
 # When set, route through a generic OpenAI-compatible POST (SambaNova, Together,
 # Cerebras, ...). The Groq SDK rewrites the request path in a way some providers
 # reject, so for non-Groq endpoints we call /chat/completions directly via httpx.
