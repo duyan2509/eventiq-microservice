@@ -51,14 +51,14 @@ az postgres flexible-server firewall-rule create `
 foreach ($db in $PG_DATABASES) {
   Write-Host "    - database $db" -ForegroundColor DarkCyan
   az postgres flexible-server db create `
-    --resource-group $RG --server-name $PG_SERVER --database-name $db --only-show-errors | Out-Null
+    --resource-group $RG --server-name $PG_SERVER --name $db --only-show-errors | Out-Null
 }
 # Central federation DB for analytics + allowlist postgres_fdw (Azure requires the
 # extension to be in azure.extensions before CREATE EXTENSION works). Dynamic param,
 # no restart needed. setup_fdw.sql (05) imports the 5 schemas into this DB.
 Write-Host "    - database $PG_DB_ANALYTICS (analytics federation)" -ForegroundColor DarkCyan
 az postgres flexible-server db create `
-  --resource-group $RG --server-name $PG_SERVER --database-name $PG_DB_ANALYTICS --only-show-errors | Out-Null
+  --resource-group $RG --server-name $PG_SERVER --name $PG_DB_ANALYTICS --only-show-errors | Out-Null
 Write-Host "==> Allowlisting postgres_fdw extension" -ForegroundColor Cyan
 az postgres flexible-server parameter set `
   --resource-group $RG --server-name $PG_SERVER `

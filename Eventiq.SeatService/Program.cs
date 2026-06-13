@@ -11,8 +11,10 @@ var builder = WebApplication.CreateBuilder(args);
 // Http1AndHttp2 can't negotiate on plaintext (needs TLS+ALPN), so gRPC must have a dedicated h2 port.
 builder.WebHost.ConfigureKestrel(options =>
 {
-    options.ListenLocalhost(5234, o => o.Protocols = HttpProtocols.Http1AndHttp2);
-    options.ListenLocalhost(5334, o => o.Protocols = HttpProtocols.Http2);
+    // ACA ingress targets 8080 (must bind 0.0.0.0, not localhost). Keep 5234 for local dev, 5334 for gRPC.
+    options.ListenAnyIP(8080, o => o.Protocols = HttpProtocols.Http1AndHttp2);
+    options.ListenAnyIP(5234, o => o.Protocols = HttpProtocols.Http1AndHttp2);
+    options.ListenAnyIP(5334, o => o.Protocols = HttpProtocols.Http2);
 });
 
 builder.Services.AddControllers();

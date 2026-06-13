@@ -8,7 +8,9 @@
 # Re-runnable: if an app already exists it is `update`d in place, else created.
 # Secrets are stored as ACA secrets and referenced from env via secretref:.
 # =============================================================================
-$ErrorActionPreference = "Stop"
+# Continue (không Stop): az containerapp ghi stderr (vd ResourceNotFound khi check app
+# tồn tại) bị PS 5.1 promote thành terminating error dù đã 2>$null. Verify state sau khi xong.
+$ErrorActionPreference = "Continue"
 . "$PSScriptRoot\config.ps1"
 
 az account set --subscription $SUBSCRIPTION
@@ -160,6 +162,8 @@ Deploy-App -Name "email-service" -Image "email-service" -Ingress "none" `
 # the 5 service schemas as foreign tables. Same Text2SQL SQL as Neon dev mode,
 # but the cross-service JOINs resolve through postgres_fdw. Run 05-setup-fdw.ps1
 # (after 03-migrate) before relying on this.
+# analytics-service KHÔNG deploy cho load test seat-design/booking (bỏ qua)
+<# SKIPPED
 Deploy-App -Name "analytics-service" -Image "analytics-service" -Ingress "internal" `
   -Secrets @("pg-password=$PG_PASSWORD","groq-key=$GROQ_API_KEY") `
   -EnvVars @(
@@ -173,6 +177,7 @@ Deploy-App -Name "analytics-service" -Image "analytics-service" -Ingress "intern
     "GROQ_API_KEY=secretref:groq-key",
     "GROQ_MODEL=$GROQ_MODEL"
   )
+#>
 
 # --- report endpoints --------------------------------------------------------
 $gw = az containerapp show -n api-gateway  -g $RG --query "properties.configuration.ingress.fqdn" -o tsv

@@ -61,7 +61,7 @@ export default function ({ token }) {
     `${BASE_URL}/seat-maps`,
     JSON.stringify({
       eventId: EVENT_ID,
-      chartId: `c${__VU.toString().padStart(8, '0')}-0000-0000-0000-000000000000`,
+      chartId: `c${__VU.toString().padStart(7, '0')}-0000-0000-0000-000000000000`,
       name: `LoadTest-VU${__VU}-iter${__ITER}`,
     }),
     { headers, tags: { op: 'create' } }

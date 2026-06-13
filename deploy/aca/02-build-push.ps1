@@ -31,11 +31,12 @@ try {
       . --only-show-errors
   }
 
-  Write-Host "==> az acr build  analytics-service (Python)" -ForegroundColor Cyan
-  az acr build --registry $ACR `
-    --image "analytics-service:$IMAGE_TAG" `
-    --file "Eventiq.AnalyticsService/Dockerfile" `
-    "Eventiq.AnalyticsService" --only-show-errors
+  # analytics-service KHÔNG cần cho load test seat-design/booking — bỏ build cho nhanh
+  # Write-Host "==> az acr build  analytics-service (Python)" -ForegroundColor Cyan
+  # az acr build --registry $ACR `
+  #   --image "analytics-service:$IMAGE_TAG" `
+  #   --file "Eventiq.AnalyticsService/Dockerfile" `
+  #   "Eventiq.AnalyticsService" --only-show-errors
 }
 finally { Pop-Location }
 
