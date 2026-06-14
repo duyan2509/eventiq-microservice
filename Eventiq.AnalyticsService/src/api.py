@@ -14,7 +14,7 @@ from fastapi import FastAPI, Header, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
-from . import auth
+from . import auth, saved_queries
 from .org_scope import build_org_graph
 from .pipeline import run_pipeline, run_pipeline_org
 from .response_builder import generate_answer
@@ -113,6 +113,62 @@ def _authenticate(authorization: str | None) -> dict:
         return auth.principal_from_header(authorization)
     except auth.AuthError as e:
         raise HTTPException(status_code=401, detail=str(e))
+
+
+class SaveQueryRequest(BaseModel):
+    title: str = Field(..., min_length=1, max_length=200)
+    question: str = Field(..., min_length=2, max_length=500)
+    sql: str = Field(..., min_length=1)
+
+
+class SavedQueryResponse(BaseModel):
+    id: str
+    title: str
+    question: str
+    sql: str
+    createdAt: str
+
+
+def _require_org(principal: dict) -> str:
+    if principal["role"] not in (auth.ORGANIZATION, auth.STAFF):
+        raise HTTPException(status_code=403, detail="Only org users can manage saved queries")
+    org_id = principal["org_id"]
+    if not org_id:
+        raise HTTPException(status_code=403, detail="No organization context in token")
+    return org_id
+
+
+def _to_saved(row: dict) -> SavedQueryResponse:
+    return SavedQueryResponse(
+        id=str(row["id"]),
+        title=row["title"],
+        question=row["question"],
+        sql=row["sql"],
+        createdAt=row["created_at"].isoformat(),
+    )
+
+
+@app.post("/api/analytics/saved-queries", response_model=SavedQueryResponse, status_code=201)
+def save_query(req: SaveQueryRequest, authorization: str | None = Header(default=None)) -> SavedQueryResponse:
+    principal = _authenticate(authorization)
+    org_id = _require_org(principal)
+    row = saved_queries.create(org_id, principal["user_id"], req.title, req.question, req.sql)
+    return _to_saved(row)
+
+
+@app.get("/api/analytics/saved-queries", response_model=list[SavedQueryResponse])
+def list_saved_queries(authorization: str | None = Header(default=None)) -> list[SavedQueryResponse]:
+    principal = _authenticate(authorization)
+    org_id = _require_org(principal)
+    return [_to_saved(r) for r in saved_queries.list_for_org(org_id)]
+
+
+@app.delete("/api/analytics/saved-queries/{query_id}", status_code=204)
+def delete_saved_query(query_id: str, authorization: str | None = Header(default=None)) -> None:
+    principal = _authenticate(authorization)
+    org_id = _require_org(principal)
+    if not saved_queries.delete(query_id, org_id):
+        raise HTTPException(status_code=404, detail="Query not found")
 
 
 @app.post("/api/analytics/query", response_model=QueryResponse)
