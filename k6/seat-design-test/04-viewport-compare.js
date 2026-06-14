@@ -22,6 +22,7 @@
 import http from 'k6/http'
 import { check, sleep } from 'k6'
 import { Trend, Rate, Counter } from 'k6/metrics'
+import { textSummary } from 'https://jslib.k6.io/k6-summary/0.0.1/index.js'
 import { BASE_URL, SESSION_ID, loginOrg, authHeaders } from './config.js'
 
 const allDuration   = new Trend('seats_all_duration', true)
@@ -123,5 +124,8 @@ export function handleSummary(data) {
   console.log(`Error rate    : ${((d.seats_error_rate?.values?.rate ?? 0) * 100).toFixed(2)}%`)
   console.log('=======================================\n')
 
-  return { 'results/viewport-compare-summary.json': JSON.stringify(data, null, 2) }
+  return {
+    stdout: textSummary(data, { indent: ' ', enableColors: true }),
+    'results/viewport-compare-summary.json': JSON.stringify(data, null, 2),
+  }
 }

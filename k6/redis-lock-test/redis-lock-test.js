@@ -26,6 +26,7 @@
 import http from 'k6/http'
 import { check } from 'k6'
 import { Counter, Trend } from 'k6/metrics'
+import { textSummary } from 'https://jslib.k6.io/k6-summary/0.0.1/index.js'
 import { BASE_URL, SESSION_ID, loginOrg, authHeaders } from '../seat-design-test/config.js'
 
 const N    = Number(__ENV.CONTENDED || 100)   // contended seats
@@ -114,5 +115,8 @@ export function handleSummary(data) {
     : 'RESULT: FAIL — over-sell detected (no/broken lock)')
   console.log('==========================================\n')
 
-  return { 'results/redis-lock-summary.json': JSON.stringify(data, null, 2) }
+  return {
+    stdout: textSummary(data, { indent: ' ', enableColors: true }),
+    'results/redis-lock-summary.json': JSON.stringify(data, null, 2),
+  }
 }

@@ -19,6 +19,7 @@
 import http from 'k6/http'
 import { check, sleep } from 'k6'
 import { Trend, Rate, Counter } from 'k6/metrics'
+import { textSummary } from 'https://jslib.k6.io/k6-summary/0.0.1/index.js'
 import { BASE_URL, SESSION_ID, loginOrg, authHeaders } from './config.js'
 
 const layoutDuration  = new Trend('layout_req_duration', true)
@@ -99,5 +100,8 @@ export function handleSummary(data) {
   console.log(`Error rate     : ${errRate}%`)
   console.log('=====================================\n')
 
-  return { 'results/layout-cache-summary.json': JSON.stringify(data, null, 2) }
+  return {
+    stdout: textSummary(data, { indent: ' ', enableColors: true }),
+    'results/layout-cache-summary.json': JSON.stringify(data, null, 2),
+  }
 }

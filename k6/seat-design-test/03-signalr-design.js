@@ -33,6 +33,7 @@ import {
   loginOrg, authHeaders,
   signalrInvoke, signalrHandshake, signalrPong, parseSignalrMessages,
 } from './config.js'
+import { textSummary } from 'https://jslib.k6.io/k6-summary/0.0.1/index.js'
 
 const connectDuration  = new Trend('signalr_connect_duration', true)
 const joinDuration     = new Trend('signalr_join_duration', true)
@@ -89,6 +90,12 @@ export default function ({ token }) {
   const { connectionToken } = JSON.parse(negRes.body)
   connectDuration.add(Date.now() - connectStart)
 
+  // Carry the ACA sticky-session cookie so the WS connect lands on the SAME
+  // replica that issued the connectionToken — required once seat-service runs
+  // on >1 replica (browsers send it automatically; k6 must do it explicitly).
+  const aff = (negRes.headers['Set-Cookie'] || '').match(/acaAffinity="?[^";]+"?/)
+  const wsParams = aff ? { headers: { Cookie: aff[0] } } : {}
+
   // 2. Open WebSocket
   const wsUrl = `${SEAT_SVC_WS}/hubs/seat-design?id=${encodeURIComponent(connectionToken)}&access_token=${encodeURIComponent(token)}`
 
@@ -101,7 +108,7 @@ export default function ({ token }) {
   const label = `LT${__VU}-${__ITER}`
   const seatNumber = __VU * 100000 + __ITER
 
-  const res = ws.connect(wsUrl, {}, function (socket) {
+  const res = ws.connect(wsUrl, wsParams, function (socket) {
 
     socket.on('open', function () {
       socket.send(signalrHandshake())
@@ -177,7 +184,8 @@ export default function ({ token }) {
     }, 20000)
   })
 
-  check(res, { 'WS closed cleanly': r => r && r.status === 1000 })
+  // k6 ws returns the HTTP handshake status (101 = upgrade OK), not the close code.
+  check(res, { 'WS upgraded (101)': r => r && (r.status === 101 || r.status === 1000) })
   errorRate.add(errors > 0)
 
   sleep(1)
@@ -194,5 +202,8 @@ export function handleSummary(data) {
   console.log(`Error rate        : ${((d.signalr_error_rate?.values?.rate ?? 0) * 100).toFixed(2)}%`)
   console.log('=========================================\n')
 
-  return { 'results/signalr-design-summary.json': JSON.stringify(data, null, 2) }
+  return {
+    stdout: textSummary(data, { indent: ' ', enableColors: true }),
+    'results/signalr-design-summary.json': JSON.stringify(data, null, 2),
+  }
 }

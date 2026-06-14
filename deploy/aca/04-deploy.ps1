@@ -75,10 +75,13 @@ Deploy-App -Name "api-gateway" -Image "api-gateway" -Ingress "external" `
 
 # =============================== USER SERVICE ===============================
 Deploy-App -Name "user-service" -Image "user-service" -Ingress "internal" `
-  -Secrets @("pg-conn=$PG_CONN_USER","sb-conn=$SB_CONN","blob-conn=$BLOB_CONN","seed-admin-pwd=$SEED_ADMIN_PASSWORD") `
+  -Secrets @("pg-conn=$PG_CONN_USER","sb-conn=$SB_CONN","blob-conn=$BLOB_CONN","redis-conn=$REDIS_CONN","seed-admin-pwd=$SEED_ADMIN_PASSWORD") `
   -EnvVars @(
     $ASPNET, $URLS, $JWT_PUB, "Jwt__PrivateKeyPath=/app/keys/private.key",
     "ConnectionStrings__Postgres=secretref:pg-conn",
+    # BanCheckMiddleware đăng ký IBanBlacklistService chỉ khi có key phẳng "Redis"
+    # (DependencyInjection.cs:27). Thiếu → user-service 500 mọi request.
+    "Redis=secretref:redis-conn",
     "AzureServiceBus__ConnectionString=secretref:sb-conn",
     "AzureBlob__ConnectionString=secretref:blob-conn",
     "Frontend__BaseUrl=$FRONTEND_URL",

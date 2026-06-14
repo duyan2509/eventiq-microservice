@@ -25,6 +25,7 @@ import {
   SEAT_SVC_URL, SEAT_SVC_WS, SEAT_MAP_ID, ORG_ID, BASE_URL,
   loginOrg, authHeaders, signalrInvoke, signalrHandshake, signalrPong, parseSignalrMessages,
 } from './config.js'
+import { textSummary } from 'https://jslib.k6.io/k6-summary/0.0.1/index.js'
 
 const OBSERVERS        = Number(__ENV.OBSERVERS || 50)
 const DURATION         = __ENV.DURATION || '40s'
@@ -40,6 +41,8 @@ const joinRate  = new Rate('broadcast_join_ok')
 const errorRate = new Rate('broadcast_error_rate')
 
 export const options = {
+  // Mặc định k6 chỉ tính avg/min/med/max/p(90)/p(95) → summary p(50)/p(99) ra 0.
+  summaryTrendStats: ['avg', 'min', 'med', 'p(50)', 'p(95)', 'p(99)', 'max'],
   scenarios: {
     observers: { executor: 'constant-vus', vus: OBSERVERS, duration: DURATION, exec: 'observer' },
     editor:    { executor: 'constant-vus', vus: 1, duration: DURATION, exec: 'editor', startTime: EDITOR_START },
@@ -70,17 +73,22 @@ function negotiate(token) {
     { headers: { Authorization: `Bearer ${token}` } }
   )
   if (neg.status !== 200) { errorRate.add(true); return null }
-  try { return JSON.parse(neg.body).connectionToken } catch { errorRate.add(true); return null }
+  // Carry the ACA sticky-session cookie so the WS connect lands on the SAME
+  // replica that issued the connectionToken (real browsers do this automatically).
+  // Without it, at >1 replica the WS hits a random replica → handshake fails.
+  const aff = (neg.headers['Set-Cookie'] || '').match(/acaAffinity="?[^";]+"?/)
+  try { return { ct: JSON.parse(neg.body).connectionToken, cookie: aff ? aff[0] : '' } }
+  catch { errorRate.add(true); return null }
 }
 
 // An OBSERVER joins the map and only listens, timing every CursorMoved broadcast.
 export function observer({ token }) {
-  const ct = negotiate(token)
-  if (!ct) return
-  const wsUrl = `${SEAT_SVC_WS}/hubs/seat-design?id=${encodeURIComponent(ct)}&access_token=${encodeURIComponent(token)}`
+  const neg = negotiate(token)
+  if (!neg) return
+  const wsUrl = `${SEAT_SVC_WS}/hubs/seat-design?id=${encodeURIComponent(neg.ct)}&access_token=${encodeURIComponent(token)}`
   let joined = false
 
-  ws.connect(wsUrl, {}, function (socket) {
+  ws.connect(wsUrl, neg.cookie ? { headers: { Cookie: neg.cookie } } : {}, function (socket) {
     socket.on('open', () => socket.send(signalrHandshake()))
 
     socket.on('message', function (data) {
@@ -109,12 +117,12 @@ export function observer({ token }) {
 
 // The single EDITOR joins the map and emits a timestamped cursor move on an interval.
 export function editor({ token }) {
-  const ct = negotiate(token)
-  if (!ct) return
-  const wsUrl = `${SEAT_SVC_WS}/hubs/seat-design?id=${encodeURIComponent(ct)}&access_token=${encodeURIComponent(token)}`
+  const neg = negotiate(token)
+  if (!neg) return
+  const wsUrl = `${SEAT_SVC_WS}/hubs/seat-design?id=${encodeURIComponent(neg.ct)}&access_token=${encodeURIComponent(token)}`
   let joined = false
 
-  ws.connect(wsUrl, {}, function (socket) {
+  ws.connect(wsUrl, neg.cookie ? { headers: { Cookie: neg.cookie } } : {}, function (socket) {
     socket.on('open', () => socket.send(signalrHandshake()))
 
     socket.on('message', function (data) {
@@ -155,5 +163,8 @@ export function handleSummary(data) {
   line(`Join OK rate      : ${(g('broadcast_join_ok', 'rate') * 100).toFixed(1)} %`)
   line(`Error rate        : ${(g('broadcast_error_rate', 'rate') * 100).toFixed(2)} %`)
   line('====================================\n')
-  return { [`results/fanout-N${OBSERVERS}.json`]: JSON.stringify(data, null, 2) }
+  return {
+    stdout: textSummary(data, { indent: ' ', enableColors: true }),
+    [`results/fanout-N${OBSERVERS}.json`]: JSON.stringify(data, null, 2),
+  }
 }
