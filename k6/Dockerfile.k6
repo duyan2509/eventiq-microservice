@@ -1,0 +1,12 @@
+# In-region k6 runner for latency-sensitive tests (01 layout-cache, 04 viewport).
+# Build context = the k6/ folder, so scripts keep their relative imports
+# (seat-design-test/config.js, ../seat-design-test/config.js).
+#   az acr build --registry eventiqacr --image k6runner:latest --file k6/Dockerfile.k6 k6
+# Run as an ACI in southeastasia, then read `az container logs`.
+#
+# `krun <script>` wraps `k6 run` and strips non-ASCII output so that
+# `az container logs` on a Windows cp1252 console doesn't UnicodeEncodeError.
+FROM grafana/k6:latest
+COPY . /scripts/
+USER root
+RUN cp /scripts/krun.sh /usr/local/bin/krun && sed -i 's/\r$//' /usr/local/bin/krun && chmod +x /usr/local/bin/krun
