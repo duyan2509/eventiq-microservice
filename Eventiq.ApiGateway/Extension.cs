@@ -3,6 +3,7 @@ using System.Security.Claims;
 using Eventiq.Logging;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
+using StackExchange.Redis;
 
 namespace Eventiq.ApiGateway;
 
@@ -40,6 +41,15 @@ public static class Extension
                     .AllowAnyMethod()
                     .AllowCredentials());
         });
+        // Shared ban blacklist (same Redis + key as UserService). Optional: if no
+        // Redis is configured the gateway simply skips the ban check.
+        var redisConn = builder.Configuration["Redis"];
+        if (!string.IsNullOrEmpty(redisConn))
+        {
+            builder.Services.AddSingleton<IConnectionMultiplexer>(
+                _ => ConnectionMultiplexer.Connect(redisConn));
+        }
+
         JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
 
         builder.Services

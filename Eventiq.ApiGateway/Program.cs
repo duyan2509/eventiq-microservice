@@ -37,6 +37,8 @@ app.UseSerilogRequestLogging();
 app.UseCors("AllowFrontend");       
 app.UseAuthentication();
 app.UseAuthorization();
+// Reject banned users before proxying to any downstream service.
+app.UseMiddleware<BanCheckMiddleware>();
 await app.UseOcelot();
 
 app.Run();

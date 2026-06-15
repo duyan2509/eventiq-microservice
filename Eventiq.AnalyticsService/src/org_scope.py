@@ -86,7 +86,7 @@ CREATE VIEW org_analytics.seat_maps (  -- sơ đồ ghế của tổ chức
 CREATE VIEW org_analytics.submissions (  -- yêu cầu duyệt sự kiện của tổ chức
   id          uuid,
   event_id    uuid,
-  status      int,          -- 0=Pending 1=Approved 2=Rejected 3=Withdrawn
+  status      int,          -- 0=Draft 1=Pending 2=Approved 3=Rejected 4=Published 5=Cancelled
   message     text,
   created_at  timestamptz,
   event_name  text

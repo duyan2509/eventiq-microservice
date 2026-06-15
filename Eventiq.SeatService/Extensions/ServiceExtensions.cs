@@ -108,9 +108,16 @@ public static class ServiceExtensions
         builder.Services.AddMassTransit(x =>
         {
             x.AddConsumer<ChartDeletedConsumer>();
-            x.AddConsumer<StaffRemovedConsumer>();
             x.AddConsumer<EventApprovedConsumer>();
             x.AddConsumer<SessionSeatMapCloneConsumer>();
+            // Distinct endpoints: UserService also consumes StaffRemoved / StaffRoleChanged.
+            // Without unique queue names both services bind the default "staff-removed" /
+            // "staff-role-changed" queue and COMPETE — only one service receives each event,
+            // so the seat-design kick / permission refresh would fire only intermittently.
+            x.AddConsumer<StaffRemovedConsumer>()
+                .Endpoint(e => e.Name = "seat-service-staff-removed");
+            x.AddConsumer<StaffRoleChangedConsumer>()
+                .Endpoint(e => e.Name = "seat-service-staff-role-changed");
             // Explicit endpoint name so this consumer gets its own queue. EventService also
             // defines a PaymentCompletedConsumer; without a distinct name both would bind to the
             // same default "payment-completed" queue and compete for messages (only one service

@@ -163,7 +163,7 @@ def list_saved_queries(authorization: str | None = Header(default=None)) -> list
     return [_to_saved(r) for r in saved_queries.list_for_org(org_id)]
 
 
-@app.delete("/api/analytics/saved-queries/{query_id}", status_code=204)
+@app.delete("/api/analytics/saved-queries/{query_id}", status_code=204, response_model=None)
 def delete_saved_query(query_id: str, authorization: str | None = Header(default=None)) -> None:
     principal = _authenticate(authorization)
     org_id = _require_org(principal)

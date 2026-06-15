@@ -370,6 +370,32 @@
       }
     },
     {
+      "DownstreamPathTemplate": "/api/analytics/org/{orgId}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [{ "Host": "localhost", "Port": 5236 }],
+      "UpstreamPathTemplate": "/gateway/analytics/org/{orgId}",
+      "UpstreamHttpMethod": ["GET"],
+      "Priority": 2,
+      "AddHeadersToRequest": { "Authorization": "{Authorization}" },
+      "AuthenticationOptions": {
+        "AuthenticationProviderKey": "Bearer",
+        "AllowedScopes": []
+      }
+    },
+    {
+      "DownstreamPathTemplate": "/api/analytics/admin/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [{ "Host": "localhost", "Port": 5236 }],
+      "UpstreamPathTemplate": "/gateway/analytics/admin/{everything}",
+      "UpstreamHttpMethod": ["GET"],
+      "Priority": 2,
+      "AddHeadersToRequest": { "Authorization": "{Authorization}" },
+      "AuthenticationOptions": {
+        "AuthenticationProviderKey": "Bearer",
+        "AllowedScopes": []
+      }
+    },
+    {
       "DownstreamPathTemplate": "/api/analytics/{everything}",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [{ "Host": "localhost", "Port": 5238 }],

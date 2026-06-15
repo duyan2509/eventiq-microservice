@@ -28,6 +28,7 @@ import networkx as nx
 from .chart_picker import pick_chart
 from .column_linking import link_columns
 from .entity_extraction import extract_and_normalize
+from .enums import relabel_enum_values
 from .org_scope import ORG_SCHEMA
 from .response_builder import generate_title
 from .schema_linking import graph_traversal, keyword_matching, schema_link
@@ -106,6 +107,10 @@ def run_pipeline_org(
     rows, error, retries, final_sql = execute_with_retry(
         sql, link, ORG_SCHEMA, scope="org", org_id=org_id, org_mode=True
     )
+    # Map integer status codes (events/submissions = EventStatus) to labels so
+    # charts and tables read "Draft"/"Approved" instead of 0/2. The LLM still
+    # filters on the int codes via the DDL comments; only the output is relabeled.
+    rows = relabel_enum_values(rows)
     chart_config = pick_chart(rows, question)
 
     return {

@@ -6,8 +6,11 @@ directly, no axis-guessing required:
     {"type": "kpi",     "value": <col>}                  # single scalar
     {"type": "line",    "x": <col>, "y": [<num cols>]}   # time series
     {"type": "bar",     "x": <col>, "y": [<num cols>]}   # categorical default
-    {"type": "scatter", "x": <num col>, "y": <num col>}  # 2 numerics
+    {"type": "scatter", "x": <num col>, "y": [<num col>]}# 2 numerics
     {"type": "table"}                                     # fallback
+
+`y` is always a list of column names so the frontend can treat it
+uniformly (scatter uses the first entry).
 
 The type is chosen purely from the *shape* of the data (column count,
 column types, row count) — never from the wording of the question.
@@ -30,13 +33,28 @@ ChartType = str  # 'table' | 'kpi' | 'line' | 'pie' | 'scatter' | 'bar'
 
 _TIME_TOKENS: tuple[str, ...] = ("month", "date", "year", "day", "time", "week", "quarter")
 
+# Tokens that mark an integer column as a categorical enum (e.g. event_status
+# 0/1/2, ticket_type) rather than a measure to plot on a numeric axis.
+_CATEGORY_TOKENS: tuple[str, ...] = (
+    "status", "type", "state", "kind", "category", "gender", "role", "tier",
+)
+
 
 def _is_numeric(value) -> bool:
     return isinstance(value, (int, float, Decimal)) and not isinstance(value, bool)
 
 
+def _is_int(value) -> bool:
+    return isinstance(value, int) and not isinstance(value, bool)
+
+
 def _is_temporal(value) -> bool:
     return isinstance(value, (date, datetime))
+
+
+def _looks_categorical(col: str) -> bool:
+    low = col.lower()
+    return any(tok in low for tok in _CATEGORY_TOKENS)
 
 
 def pick_chart(rows: Iterable[dict], question: str) -> dict[str, Any]:
@@ -51,6 +69,15 @@ def pick_chart(rows: Iterable[dict], question: str) -> dict[str, Any]:
         return {"type": "table"}
 
     numeric_cols = [c for c in cols if _is_numeric(sample[c])]
+
+    # Integer columns named like an enum (status/type/…) are categorical labels,
+    # not measures — e.g. event_status 0/1/2. Reclassify them as non-numeric so
+    # they anchor a bar chart instead of producing a meaningless scatter of codes.
+    enum_cols = [
+        c for c in numeric_cols
+        if _looks_categorical(c) and all(_is_int(r.get(c)) for r in rows)
+    ]
+    numeric_cols = [c for c in numeric_cols if c not in enum_cols]
     non_numeric = [c for c in cols if c not in numeric_cols]
     first = cols[0]
     first_lower = first.lower()
@@ -73,7 +100,7 @@ def pick_chart(rows: Iterable[dict], question: str) -> dict[str, Any]:
 
     # Two or more numeric columns, no categorical anchor → scatter.
     if len(numeric_cols) >= 2:
-        return {"type": "scatter", "x": numeric_cols[0], "y": numeric_cols[1]}
+        return {"type": "scatter", "x": numeric_cols[0], "y": [numeric_cols[1]]}
 
     return {"type": "table"}
 
