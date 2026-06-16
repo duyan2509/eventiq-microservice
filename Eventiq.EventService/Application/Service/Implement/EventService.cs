@@ -25,12 +25,14 @@ public class EventService : IEventService
         string? province,
         Guid? organizationId,
         string? organizationName = null,
+        DateTime? startFrom = null,
+        DateTime? startTo = null,
         bool newest = true,
         bool increasePrice = true,
         int page = 1,
         int size = 10)
     {
-        var rs = await _uow.Events.GetAllEventsAsync(query, status, province, organizationId, organizationName, newest, increasePrice, page, size);
+        var rs = await _uow.Events.GetAllEventsAsync(query, status, province, organizationId, organizationName, startFrom, startTo, newest, increasePrice, page, size);
 
         var data = rs.Data.Select(ToQuickView);
 

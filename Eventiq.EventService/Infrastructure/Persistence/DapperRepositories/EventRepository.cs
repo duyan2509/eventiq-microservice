@@ -66,6 +66,8 @@ public class EventRepository : BaseRepository, IEventRepository
         string? province,
         Guid? organizationId,
         string? organizationName,
+        DateTime? startFrom,
+        DateTime? startTo,
         bool newest,
         bool increasePrice,
         int page,
@@ -74,31 +76,43 @@ public class EventRepository : BaseRepository, IEventRepository
         if (page <= 0) page = 1;
         if (size <= 0) size = 10;
 
+        // Columns are prefixed with the `e` alias so the predicates are
+        // unambiguous when reused in the legends-joined data query below.
         var whereBuilder = new StringBuilder("WHERE 1=1");
 
         if (!string.IsNullOrWhiteSpace(query))
         {
-            whereBuilder.Append(" AND (name ILIKE @Query OR description ILIKE @Query)");
+            whereBuilder.Append(" AND (e.name ILIKE @Query OR e.description ILIKE @Query)");
         }
 
         if (status.HasValue)
         {
-            whereBuilder.Append(" AND status = @Status");
+            whereBuilder.Append(" AND e.status = @Status");
         }
 
         if (!string.IsNullOrWhiteSpace(province))
         {
-            whereBuilder.Append(" AND (province_code = @Province OR province_name = @Province)");
+            whereBuilder.Append(" AND (e.province_code = @Province OR e.province_name = @Province)");
         }
 
         if (organizationId.HasValue)
         {
-            whereBuilder.Append(" AND organization_id = @OrganizationId");
+            whereBuilder.Append(" AND e.organization_id = @OrganizationId");
         }
 
         if (!string.IsNullOrWhiteSpace(organizationName))
         {
-            whereBuilder.Append(" AND organization_name ILIKE @OrgName");
+            whereBuilder.Append(" AND e.organization_name ILIKE @OrgName");
+        }
+
+        if (startFrom.HasValue)
+        {
+            whereBuilder.Append(" AND e.start_time >= @StartFrom");
+        }
+
+        if (startTo.HasValue)
+        {
+            whereBuilder.Append(" AND e.start_time <= @StartTo");
         }
 
         var orderClause = new StringBuilder();
@@ -173,6 +187,8 @@ public class EventRepository : BaseRepository, IEventRepository
                 Province = string.IsNullOrWhiteSpace(province) ? null : province.Trim(),
                 OrganizationId = organizationId,
                 OrgName = !string.IsNullOrWhiteSpace(organizationName) ? $"%{organizationName.Trim()}%" : null,
+                StartFrom = startFrom,
+                StartTo = startTo,
                 Offset = (page - 1) * size,
                 PageSize = size
             },

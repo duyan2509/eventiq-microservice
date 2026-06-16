@@ -15,6 +15,8 @@ public interface IEventRepository
         string? province,
         Guid? organizationId,
         string? organizationName,
+        DateTime? startFrom,
+        DateTime? startTo,
         bool newest,
         bool increasePrice,
         int page,
