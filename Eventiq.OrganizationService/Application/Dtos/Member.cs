@@ -13,3 +13,10 @@ public class ChangePermission
 {
     public Guid PermissionId { get; set; }
 }
+
+public class UserOrganizationItem
+{
+    public Guid OrgId { get; set; }
+    public string OrgName { get; set; }
+    public string RoleName { get; set; }
+}

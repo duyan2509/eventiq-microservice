@@ -49,6 +49,16 @@ public class OrganizationController : ControllerBase
             throw new NotFoundException($"Organization with id {id} does not exist");
         return Ok(item);
     }
+    [Authorize(Roles = nameof(AppRoles.Admin))]
+    [HttpGet("by-user/{userId:guid}")]
+    public async Task<ActionResult<List<UserOrganizationItem>>> GetOrgsByUser(
+        Guid userId,
+        CancellationToken cancellationToken = default)
+    {
+        var result = await _organizationService.GetOrgsByUserAsync(userId, cancellationToken);
+        return Ok(result);
+    }
+
     [Authorize]
     [HttpGet("me")]
     public async Task<ActionResult<PaginatedResult<OrganizationDetail>>> GetMyOrganizations(

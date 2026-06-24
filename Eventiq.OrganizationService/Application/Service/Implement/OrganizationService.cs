@@ -106,4 +106,9 @@ public class OrganizationService : IOrganizationService
         await _unitOfWork.SaveChangesAsync(cancellationToken);
         return _mapper.Map<OrganizationResponse>(organization);
     }
+
+    public async Task<List<UserOrganizationItem>> GetOrgsByUserAsync(Guid userId, CancellationToken cancellationToken = default)
+    {
+        return await _memberRepository.GetOrgsByUserIdAsync(userId, cancellationToken);
+    }
 }

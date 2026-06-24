@@ -28,7 +28,7 @@ public class BanHistoryRepository:IBanHistoryRepository
     {
         var query =  _banHistory.AsNoTracking()
             .Where(history => history.BannedById == Guid.Parse(adminId))
-            .OrderDescending();
+            .OrderByDescending(history => history.CreatedAt);
         int total = await query.CountAsync();
         var data = new List<BanHistoryModel>();
         if ((page-1) * size < total)
@@ -57,7 +57,7 @@ public class BanHistoryRepository:IBanHistoryRepository
     {
         var query =  _banHistory.AsNoTracking()
             .Where(history => history.UserId == Guid.Parse(userId))
-            .OrderDescending();
+            .OrderByDescending(history => history.CreatedAt);
         int total = await query.CountAsync();
         var data = new List<BanHistoryModel>();
         if ((page-1) * size < total)

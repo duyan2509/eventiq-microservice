@@ -270,6 +270,11 @@ public class UserService:IUserService
         return true;
     }
 
+    public async Task<PaginatedResult<BanHistoryModel>> GetUserBanHistory(Guid userId, int page, int size)
+    {
+        return await _banHistoryRepository.GetBanHistoryByUserId(userId.ToString(), page, size);
+    }
+
     public async Task<UserDto> ChangePassword(Guid userId, ChangePasswordRequest dto)
     {
         var user = await _userRepository.GetTrackingUserById(userId);

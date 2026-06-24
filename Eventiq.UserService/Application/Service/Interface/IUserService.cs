@@ -18,6 +18,7 @@ public interface IUserService
 
     Task<bool> BanUser(Guid adminId, Guid userId, BanUserRequest dto);
     Task<bool> UnbanUser(Guid adminId, Guid userId);
+    Task<PaginatedResult<BanHistoryModel>> GetUserBanHistory(Guid userId, int page, int size);
     
     Task<UserDto> ChangePassword(Guid userId, ChangePasswordRequest dto);
     Task<SwitchRoleRepsponse> SwitchRole(Guid userId, Guid organizationId, string? orgName = null);

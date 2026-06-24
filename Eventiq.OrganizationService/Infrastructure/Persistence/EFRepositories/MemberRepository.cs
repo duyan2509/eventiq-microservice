@@ -80,4 +80,17 @@ public class MemberRepository:IMemberRepository
             .FirstOrDefaultAsync(m => m.UserId == userId && m.OrganizationId == orgId, cancellationToken);
         return member == null ? null : _mapper.Map<MemberReponse>(member);
     }
+
+    public async Task<List<UserOrganizationItem>> GetOrgsByUserIdAsync(Guid userId, CancellationToken cancellationToken = default)
+    {
+        return await _members.AsNoTracking()
+            .Where(m => m.UserId == userId)
+            .Select(m => new UserOrganizationItem
+            {
+                OrgId = m.OrganizationId,
+                OrgName = m.Organization.Name,
+                RoleName = m.Permission.Name
+            })
+            .ToListAsync(cancellationToken);
+    }
 }

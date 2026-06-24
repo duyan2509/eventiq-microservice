@@ -2,6 +2,7 @@
 using Eventiq.UserService.Application.Dto;
 using Eventiq.UserService.Application.Service;
 using Eventiq.UserService.Domain.Enums;
+using Eventiq.UserService.Model;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -44,6 +45,15 @@ public class UserController:ControllerBase
         if (page <= 0 || size <= 0)
             return BadRequest("Page and size must be greater than 0");
         var rs = await _userService.GetAllUsers(page, size, query);
+        return Ok(rs);
+    }
+
+    [HttpGet("{userId}/ban-history")]
+    public async Task<ActionResult<PaginatedResult<BanHistoryModel>>> GetUserBanHistory([FromRoute] Guid userId, [FromQuery] int page = 1, [FromQuery] int size = 10)
+    {
+        if (page <= 0 || size <= 0)
+            return BadRequest("Page and size must be greater than 0");
+        var rs = await _userService.GetUserBanHistory(userId, page, size);
         return Ok(rs);
     }
 }
