@@ -19,4 +19,6 @@ public interface ISeatMapRepository
     Task<SeatMap> AddAsync(SeatMap seatMap);
     Task UpdateAsync(SeatMap seatMap);
     Task<bool> DeleteAsync(Guid id);
+    Task<int> IncrementAndGetNextSeatNumberAsync(Guid seatMapId);
+    Task<int> IncrementAndGetNextSeatNumberByAsync(Guid seatMapId, int count);
 }

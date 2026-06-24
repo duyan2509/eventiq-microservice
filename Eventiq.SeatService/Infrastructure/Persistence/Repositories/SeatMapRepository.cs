@@ -96,4 +96,30 @@ public class SeatMapRepository : ISeatMapRepository
         entity.MarkDeleted();
         return true;
     }
+
+    public async Task<int> IncrementAndGetNextSeatNumberAsync(Guid seatMapId)
+    {
+        var result = await _ctx.Database
+            .SqlQuery<int>($"""
+                UPDATE seat_service.seat_maps
+                SET next_seat_number = next_seat_number + 1
+                WHERE id = {seatMapId}
+                RETURNING next_seat_number
+                """)
+            .ToListAsync();
+        return result[0];
+    }
+
+    public async Task<int> IncrementAndGetNextSeatNumberByAsync(Guid seatMapId, int count)
+    {
+        var result = await _ctx.Database
+            .SqlQuery<int>($"""
+                UPDATE seat_service.seat_maps
+                SET next_seat_number = next_seat_number + {count}
+                WHERE id = {seatMapId}
+                RETURNING next_seat_number
+                """)
+            .ToListAsync();
+        return result[0];
+    }
 }

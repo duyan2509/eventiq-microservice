@@ -24,6 +24,7 @@ public class SeatMap : BaseEntity
     /// </summary>
     public int Version { get; set; } = 1;
     public int TotalSeats { get; set; }
+    public int NextSeatNumber { get; set; }
 
     public virtual ICollection<Seat> Seats { get; set; } = new List<Seat>();
     public virtual ICollection<SeatObject> Objects { get; set; } = new List<SeatObject>();

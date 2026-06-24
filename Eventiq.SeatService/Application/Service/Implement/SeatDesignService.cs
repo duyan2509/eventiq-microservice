@@ -27,12 +27,14 @@ public class SeatDesignService : ISeatDesignService
     {
         var seatMap = await GetAndValidateSeatMap(seatMapId, orgId);
 
+        var nextNum = await _uow.SeatMaps.IncrementAndGetNextSeatNumberAsync(seatMapId);
+
         var seat = new Seat
         {
             Id = Guid.NewGuid(),
             SeatMapId = seatMapId,
-            Label = dto.Label,
-            SeatNumber = dto.SeatNumber,
+            Label = $"S{nextNum}",
+            SeatNumber = nextNum,
             SeatType = dto.SeatType,
             Status = SeatStatus.Available,
             Position = dto.Position,
@@ -45,6 +47,33 @@ public class SeatDesignService : ISeatDesignService
         await _uow.SaveChangesAsync();
 
         return _mapper.Map<SeatResponse>(seat);
+    }
+
+    public async Task<List<SeatResponse>> AddSeatsAsync(Guid seatMapId, Guid orgId, AddSeatsBatchDto dto)
+    {
+        var seatMap = await GetAndValidateSeatMap(seatMapId, orgId);
+
+        var endNum = await _uow.SeatMaps.IncrementAndGetNextSeatNumberByAsync(seatMapId, dto.Positions.Count);
+        var startNum = endNum - dto.Positions.Count + 1;
+
+        var seats = dto.Positions.Select((pos, i) => new Seat
+        {
+            Id = Guid.NewGuid(),
+            SeatMapId = seatMapId,
+            Label = $"S{startNum + i}",
+            SeatNumber = startNum + i,
+            SeatType = dto.SeatType,
+            Status = SeatStatus.Available,
+            Position = pos,
+            LegendId = dto.LegendId,
+        }).ToList();
+
+        await _uow.Seats.AddRangeAsync(seats);
+        seatMap.IncrementVersion();
+        await _uow.SeatMaps.UpdateAsync(seatMap);
+        await _uow.SaveChangesAsync();
+
+        return _mapper.Map<List<SeatResponse>>(seats);
     }
 
     public async Task<List<SeatResponse>> BatchUpdateSeatsAsync(Guid seatMapId, Guid orgId, BatchUpdateSeatsDto dto)

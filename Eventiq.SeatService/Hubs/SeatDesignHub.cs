@@ -117,6 +117,16 @@ public class SeatDesignHub : Hub
         await TriggerAutoSave(seatMapId);
     }
 
+    public async Task AddSeats(Guid seatMapId, AddSeatsBatchDto dto)
+    {
+        var orgId = GetOrgId();
+        dto.SeatMapId = seatMapId;
+        var result = await _designService.AddSeatsAsync(seatMapId, orgId, dto);
+
+        await Clients.Group(GetGroupName(seatMapId)).SendAsync("SeatsAdded", result);
+        await TriggerAutoSave(seatMapId);
+    }
+
     public async Task UpdateSeats(Guid seatMapId, BatchUpdateSeatsDto dto)
     {
         var orgId = GetOrgId();

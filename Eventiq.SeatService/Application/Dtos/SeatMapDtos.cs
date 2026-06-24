@@ -76,10 +76,16 @@ public class SeatLayoutChunkResponse
 public class AddSeatDto
 {
     public Guid SeatMapId { get; set; }
-    public string Label { get; set; } = string.Empty;
-    public int SeatNumber { get; set; }
     public int SeatType { get; set; } = 1;
     public string? Position { get; set; }
+    public Guid? LegendId { get; set; }
+}
+
+public class AddSeatsBatchDto
+{
+    public Guid SeatMapId { get; set; }
+    public int SeatType { get; set; } = 1;
+    public List<string> Positions { get; set; } = [];
     public Guid? LegendId { get; set; }
 }
 
