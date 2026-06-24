@@ -28,6 +28,7 @@ public class SeatDesignService : ISeatDesignService
         var seatMap = await GetAndValidateSeatMap(seatMapId, orgId);
 
         var nextNum = await _uow.SeatMaps.IncrementAndGetNextSeatNumberAsync(seatMapId);
+        seatMap.NextSeatNumber = nextNum;
 
         var seat = new Seat
         {
@@ -55,6 +56,7 @@ public class SeatDesignService : ISeatDesignService
 
         var endNum = await _uow.SeatMaps.IncrementAndGetNextSeatNumberByAsync(seatMapId, dto.Positions.Count);
         var startNum = endNum - dto.Positions.Count + 1;
+        seatMap.NextSeatNumber = endNum;
 
         var seats = dto.Positions.Select((pos, i) => new Seat
         {

@@ -16,18 +16,24 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from src.db import connect, current_mode  # noqa: E402
 
-fake = Faker("vi_VN")
+fake = Faker("en_US")
 Faker.seed(20242025)
 random.seed(20242025)
 NOW = datetime.now(timezone.utc)
 
-LEGEND_CATALOG = [("VIP", 2_000_000, 2), ("Premium", 1_000_000, 1),
-                  ("Standard", 500_000, 3), ("Economy", 200_000, 4)]
-SEAT_STATUS_WEIGHTS = (["Sold"] * 35 + ["Available"] * 60 + ["Holding"] * 3 + ["Blocked"] * 2)
-EVENT_STATUS_DIST = {0: 5, 1: 8, 2: 20, 3: 5, 4: 37, 5: 5}
+
+LEGEND_CATALOG = [("VIP", 80, 2), ("Premium", 40, 1),
+                  ("Standard", 20, 3), ("Economy", 10, 4)]
+SEAT_STATUS_WEIGHTS = ["Sold"] * 35 + ["Available"] * 65
+# Draft:8, Pending:12, Published:60 — no Cancelled/Rejected
+# Past 70% (56 events): Draft:8, Pending:12, Published:36
+# Future 30% (24 events): Published:24
+PAST_STATUSES  = [0] * 8 + [1] * 12 + [2] * 36
+FUTURE_STATUSES = [2] * 24
 
 BUSINESS_TABLES = [
     'event_service.tickets', 'payment_service.order_items', 'payment_service.orders',
+    'payment_service.webhook_events',
     'seat_service.versions', 'seat_service.objects', 'seat_service.seats',
     'seat_service.seat_maps', 'event_service.submissions', 'event_service.sessions',
     'event_service.legends', 'event_service.charts', 'event_service.org_payment_info',
@@ -52,6 +58,9 @@ def rand_dt(days_back_min, days_back_max):
 
 
 def seed(cur):
+    # SHA256("Admin@123") in Base64 — matches the app's PasswordHash.SHA256Hash logic
+    SHARED_HASH = "6G94qKPK8LYNjnTllCqm2G3BUM08AzOK7yW30tfjrMc="
+
     for tbl in BUSINESS_TABLES:
         cur.execute(f"TRUNCATE TABLE {tbl} CASCADE;")
 
@@ -61,46 +70,32 @@ def seed(cur):
            [(rid, name, NOW, False) for name, rid in roles.items()])
 
     # ---- Users ----
-    users = []
+    admin_id = uuid.uuid4()
+    admin_user = (admin_id, "eventiq@gmail.com", "eventiq", False,
+                  SHARED_HASH, "", rand_dt(200, 300), None, None, False)
+    users = [admin_user]
     for i in range(200):
         users.append((uuid.uuid4(), f"user{i}_{fake.user_name()}@example.com",
                       f"{fake.user_name()}{i}", False,
-                      "$2a$11$" + uuid.uuid4().hex + uuid.uuid4().hex[:21], "",
+                      SHARED_HASH, "",
                       rand_dt(0, 180), None, None, False))
     insert(cur, 'user_service."Users"',
            ['"Id"', '"Email"', '"Username"', '"IsBanned"', '"PasswordHash"', '"Avatar"',
             '"CreatedAt"', '"UpdatedAt"', '"DeletedAt"', '"IsDeleted"'], users)
-    uid = [u[0] for u in users]
+    uid = [u[0] for u in users[1:]]  # exclude admin from regular uid pool
     uname = {u[0]: u[2] for u in users}
     uemail = {u[0]: u[1] for u in users}
 
     org_owners, customers, staffs = uid[:30], uid[30:200], uid[180:190]
-    user_roles = ([(uuid.uuid4(), o, roles["Organization"], None, NOW, False) for o in org_owners]
-                  + [(uuid.uuid4(), c, roles["User"], None, NOW, False) for c in customers]
-                  + [(uuid.uuid4(), s, roles["Staff"], None, NOW, False) for s in staffs])
-    insert(cur, 'user_service."UserRoles"',
-           ['"Id"', '"UserId"', '"RoleId"', '"OrganizationId"', '"CreatedAt"', '"IsDeleted"'],
-           user_roles)
 
-    banned = random.sample(uid, 10)
-    insert(cur, 'user_service."BanHistories"',
-           ['"Id"', '"UserId"', '"Reason"', '"BannedById"', '"CreatedAt"', '"IsDeleted"'],
-           [(uuid.uuid4(), b, fake.sentence(), roles["Admin"] and random.choice(org_owners),
-             rand_dt(0, 90), False) for b in banned])
-    insert(cur, 'user_service."RefreshTokens"',
-           ['"Id"', '"Token"', '"Expires"', '"UserId"', '"CreatedAt"', '"IsDeleted"'],
-           [(uuid.uuid4(), uuid.uuid4().hex, NOW + timedelta(days=7), random.choice(uid),
-             NOW, False) for _ in range(100)])
-    insert(cur, 'user_service."PasswordResetTokens"',
-           ['"Id"', '"Token"', '"Expires"', '"UserId"', '"CreatedAt"', '"IsDeleted"'],
-           [(uuid.uuid4(), uuid.uuid4().hex, NOW + timedelta(days=1), u, NOW, False)
-            for u in random.sample(uid, 20)])
-
-    # ---- Organizations ----
+    # ---- Organizations ---- (pre-generated so OrganizationId can go into UserRoles)
     orgs = []
+    owner_to_org = {}
     for i, owner in enumerate(org_owners):
         active = i < 20
-        orgs.append((uuid.uuid4(), fake.company(), fake.catch_phrase(), owner, uemail[owner],
+        oid = uuid.uuid4()
+        owner_to_org[owner] = oid
+        orgs.append((oid, fake.company(), fake.catch_phrase(), owner, uemail[owner],
                      f"acct_test_{uuid.uuid4().hex[:14]}" if active else None,
                      2 if active else 0,
                      rand_dt(30, 200) if active else None,
@@ -112,6 +107,31 @@ def seed(cur):
     org_ids = [o[0] for o in orgs]
     org_name = {o[0]: o[1] for o in orgs}
     org_active = {o[0]: (o[6] == 2) for o in orgs}
+
+    staffs_set = set(staffs)
+    user_roles = ([(uuid.uuid4(), admin_id, roles["Admin"], None, NOW, False)]
+                  + [(uuid.uuid4(), o, roles["Organization"], owner_to_org[o], NOW, False) for o in org_owners]
+                  + [(uuid.uuid4(), o, roles["User"], None, NOW, False) for o in org_owners]
+                  + [(uuid.uuid4(), c, roles["User"], None, NOW, False) for c in customers if c not in staffs_set]
+                  + [(uuid.uuid4(), s, roles["Staff"], None, NOW, False) for s in staffs]
+                  + [(uuid.uuid4(), s, roles["User"], None, NOW, False) for s in staffs])
+    insert(cur, 'user_service."UserRoles"',
+           ['"Id"', '"UserId"', '"RoleId"', '"OrganizationId"', '"CreatedAt"', '"IsDeleted"'],
+           user_roles)
+
+    banned = random.sample(uid, 10)
+    insert(cur, 'user_service."BanHistories"',
+           ['"Id"', '"UserId"', '"Reason"', '"BannedById"', '"CreatedAt"', '"IsDeleted"'],
+           [(uuid.uuid4(), b, fake.sentence(), random.choice(org_owners),
+             rand_dt(0, 90), False) for b in banned])
+    insert(cur, 'user_service."RefreshTokens"',
+           ['"Id"', '"Token"', '"Expires"', '"UserId"', '"CreatedAt"', '"IsDeleted"'],
+           [(uuid.uuid4(), uuid.uuid4().hex, NOW + timedelta(days=7), random.choice(uid),
+             NOW, False) for _ in range(100)])
+    insert(cur, 'user_service."PasswordResetTokens"',
+           ['"Id"', '"Token"', '"Expires"', '"UserId"', '"CreatedAt"', '"IsDeleted"'],
+           [(uuid.uuid4(), uuid.uuid4().hex, NOW + timedelta(days=1), u, NOW, False)
+            for u in random.sample(uid, 20)])
 
     # ---- Permissions (2/org), Members, Invitations, PayoutLogs ----
     perms, perm_by_org = [], {}
@@ -148,7 +168,7 @@ def seed(cur):
     insert(cur, 'org_service."PayoutLogs"',
            ['"Id"', '"OrgId"', '"StripePayoutId"', '"Amount"', '"Currency"', '"TriggeredAt"'],
            [(uuid.uuid4(), oid, f"po_{uuid.uuid4().hex[:12]}", random.randint(500_000, 50_000_000),
-             "vnd", rand_dt(0, 180)) for oid in org_ids if org_active[oid]])
+             "usd", rand_dt(0, 180)) for oid in org_ids if org_active[oid]])
 
     insert(cur, 'org_service."PlatformConfigs"',
            ['"Id"', '"CurrentFeeRate"', '"PendingFeeRate"', '"EffectiveDate"',
@@ -156,15 +176,27 @@ def seed(cur):
            [(1, 0.05, 0.05, NOW - timedelta(days=120), 5, NOW, random.choice(org_owners))])
 
     # ---- Events + children ----
-    status_pool = [s for s, n in EVENT_STATUS_DIST.items() for _ in range(n)]
-    random.shuffle(status_pool)
+    # Build (status, start, end) pool: 56 past (end < NOW), 24 future (start > 2026-07-04)
+    past_pool = list(PAST_STATUSES)
+    random.shuffle(past_pool)
+    future_pool = list(FUTURE_STATUSES)
+
+    event_pool = []
+    for s in past_pool:
+        start = NOW - timedelta(days=random.randint(20, 200))
+        end = start + timedelta(days=random.randint(1, 5))
+        event_pool.append((s, start, end))
+    for s in future_pool:
+        # start strictly after 2026-07-04 (10 days from 2026-06-24)
+        start = NOW + timedelta(days=random.randint(11, 180))
+        end = start + timedelta(days=random.randint(1, 5))
+        event_pool.append((s, start, end))
+    random.shuffle(event_pool)
 
     events, charts, legends, sessions, submissions, opi = [], [], [], [], [], []
     ev_status, ev_legends, sess_meta = {}, {}, []  # sess_meta: (sid, eid, chart_id, status)
-    for status in status_pool:
+    for status, start, end in event_pool:
         eid, oid = uuid.uuid4(), random.choice(org_ids)
-        start = NOW + timedelta(days=random.randint(-120, 90))
-        end = start + timedelta(days=random.randint(1, 5))
         events.append((eid, oid, org_name[oid], None, None, fake.catch_phrase()[:60],
                        fake.text(120), fake.street_address(), "79", "760", "Hồ Chí Minh",
                        "Quận 1", status, start, end, rand_dt(10, 150), None, None, False))
@@ -229,7 +261,7 @@ def seed(cur):
         sm_id = uuid.uuid4()
         seat_maps.append((sm_id, chart_id, eid, oid, f"Map {fake.word()}", "Published",
                           Json({"width": 1000, "height": 800}), 1, NOW, None, None, False,
-                          sid, 100))
+                          sid, 100, 100))
         elg = ev_legends[eid]
         pool = []
         for r in range(10):
@@ -252,7 +284,7 @@ def seed(cur):
     insert(cur, 'seat_service.seat_maps',
            ['id', 'chart_id', 'event_id', 'organization_id', 'name', 'status', 'canvas_settings',
             'version', 'created_at', 'updated_at', 'deleted_at', 'is_deleted', 'session_id',
-            'total_seats'], seat_maps)
+            'total_seats', 'next_seat_number'], seat_maps)
     insert(cur, 'seat_service.seats',
            ['id', 'label', 'seat_number', 'status', 'seat_type', 'position', 'legend_id',
             'custom_properties', 'created_at', 'updated_at', 'deleted_at', 'is_deleted',
@@ -281,7 +313,7 @@ def seed(cur):
         sm_id = session_to_sm[sid]
         eid = sm_to_event[sm_id]
         oid = uuid.uuid4()
-        status = random.choices(["Paid", "Pending", "Failed"], weights=[70, 20, 10])[0]
+        status = random.choices(["Paid", "Failed"], weights=[85, 15])[0]
         buyer = random.choice(customers)
         sess = sess_by_id[sid]
 
@@ -304,6 +336,39 @@ def seed(cur):
                                     (paid_at + timedelta(days=1)) if random.random() < 0.4 else None,
                                     paid_at, NOW, None, None, False))
 
+    # ---- Webhook events (1 per Paid/Failed order; Pending = no webhook received) ----
+    webhook_events = []
+    for order in orders:
+        # order tuple: (id, user_id, org_id, session_id, stripe_session_id, status,
+        #               total, fee, event_name, sess_name, sess_date,
+        #               paid_at, created_at, updated_at, deleted_at, is_deleted, settled_by)
+        ord_id, _, _, _, stripe_sid, ord_status = order[0], order[1], order[2], order[3], order[4], order[5]
+        ord_paid_at, ord_created = order[11], order[12]
+        if ord_status == "Paid":
+            evt_type = "checkout.session.completed"
+            wh_status = "Processed"
+            received = ord_paid_at
+            processed = ord_paid_at + timedelta(seconds=random.randint(1, 5))
+            error = None
+        elif ord_status == "Failed":
+            evt_type = "checkout.session.expired"
+            wh_status = "Processed"
+            received = ord_created + timedelta(minutes=30)
+            processed = received + timedelta(seconds=random.randint(1, 3))
+            error = None
+        else:
+            continue  # Pending — no webhook
+        webhook_events.append((
+            uuid.uuid4(), f"evt_{uuid.uuid4().hex[:24]}", evt_type, wh_status,
+            f'{{"id":"{stripe_sid}","type":"{evt_type}"}}',
+            error, 1, received, processed,
+            received, None, None, False,
+        ))
+    insert(cur, 'payment_service.webhook_events',
+           ['id', 'stripe_event_id', 'event_type', 'status', 'payload',
+            'error', 'attempt_count', 'received_at', 'processed_at',
+            'created_at', 'updated_at', 'deleted_at', 'is_deleted'], webhook_events)
+
     insert(cur, 'payment_service.orders',
            ['id', 'user_id', 'org_id', 'session_id', 'stripe_session_id', 'status',
             'total_amount', 'platform_fee', 'event_name', 'session_name', 'session_date',
@@ -319,7 +384,8 @@ def seed(cur):
 
     return {"users": len(users), "orgs": len(orgs), "events": len(events),
             "sessions": len(sessions), "seat_maps": len(seat_maps), "seats": len(seats),
-            "orders": len(orders), "order_items": len(order_items), "tickets": len(tickets)}
+            "orders": len(orders), "order_items": len(order_items), "tickets": len(tickets),
+            "webhook_events": len(webhook_events)}
 
 
 def main() -> int:

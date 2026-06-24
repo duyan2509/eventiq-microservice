@@ -47,15 +47,9 @@ public static class Extensions
 
         builder.Services.AddMassTransit(x =>
         {
-            x.AddEntityFrameworkOutbox<EvtOrganizationDbContext>(o =>
-            {
-                o.UsePostgres();     
-                o.UseBusOutbox();    
-            });
             if(builder.Environment.IsDevelopment())
                 x.UsingRabbitMq((context, cfg) =>
                 {
-                    
                     cfg.Host(
                         new Uri(builder.Configuration["MessageBus:RabbitMq:ConnectionString"] ?? string.Empty)
                     );
