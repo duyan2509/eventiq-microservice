@@ -78,7 +78,7 @@ public class SeatDesignService : ISeatDesignService
         return _mapper.Map<List<SeatResponse>>(seats);
     }
 
-    public async Task<List<SeatResponse>> BatchUpdateSeatsAsync(Guid seatMapId, Guid orgId, BatchUpdateSeatsDto dto)
+    public async Task<SeatMutationResult> BatchUpdateSeatsAsync(Guid seatMapId, Guid orgId, BatchUpdateSeatsDto dto)
     {
         var seatMap = await GetAndValidateSeatMap(seatMapId, orgId);
 
@@ -86,45 +86,92 @@ public class SeatDesignService : ISeatDesignService
         var seats = await _uow.Seats.GetByIdsAsync(seatIds);
         var seatById = seats.ToDictionary(s => s.Id);
 
+        var updated = new List<Seat>();
+        var conflicted = new List<SeatConflict>();
+
         foreach (var seatDto in dto.Seats)
         {
             if (!seatById.TryGetValue(seatDto.SeatId, out var seat)) continue;
+
+            if (seatDto.ExpectedGeometryVersion.HasValue && seat.GeometryVersion != seatDto.ExpectedGeometryVersion.Value)
+            {
+                conflicted.Add(new SeatConflict
+                {
+                    SeatId = seat.Id,
+                    CurrentVersion = seat.GeometryVersion,
+                    PropertyGroup = "geometry"
+                });
+                continue;
+            }
 
             if (seatDto.Label != null) seat.Label = seatDto.Label;
             if (seatDto.SeatNumber.HasValue) seat.SeatNumber = seatDto.SeatNumber.Value;
             if (seatDto.Status.HasValue) seat.Status = seatDto.Status.Value;
             if (seatDto.SeatType.HasValue) seat.SeatType = seatDto.SeatType.Value;
             if (seatDto.Position != null) seat.Position = seatDto.Position;
-            if (seatDto.LegendId.HasValue) seat.LegendId = seatDto.LegendId;
             if (seatDto.CustomProperties != null) seat.CustomProperties = seatDto.CustomProperties;
+            seat.IncrementGeometryVersion();
             seat.MarkUpdated();
+            updated.Add(seat);
         }
 
-        await _uow.Seats.UpdateRangeAsync(seats);
-        seatMap.IncrementVersion();
-        await _uow.SeatMaps.UpdateAsync(seatMap);
-        await _uow.SaveChangesAsync();
+        if (updated.Count > 0)
+        {
+            await _uow.Seats.UpdateRangeAsync(updated);
+            seatMap.IncrementVersion();
+            await _uow.SeatMaps.UpdateAsync(seatMap);
+            await _uow.SaveChangesAsync();
+        }
 
-        return _mapper.Map<List<SeatResponse>>(seats);
+        return new SeatMutationResult
+        {
+            Updated = _mapper.Map<List<SeatResponse>>(updated),
+            Conflicted = conflicted
+        };
     }
 
-    public async Task<List<SeatResponse>> SetSeatLegendAsync(Guid seatMapId, Guid orgId, List<Guid> seatIds, Guid? legendId)
+    public async Task<SeatMutationResult> SetSeatLegendAsync(Guid seatMapId, Guid orgId, List<Guid> seatIds, Guid? legendId, Dictionary<Guid, int>? expectedStyleVersions = null)
     {
         var seatMap = await GetAndValidateSeatMap(seatMapId, orgId);
 
         var seats = await _uow.Seats.GetByIdsAsync(seatIds);
+        var updated = new List<Seat>();
+        var conflicted = new List<SeatConflict>();
+
         foreach (var seat in seats)
         {
+            if (expectedStyleVersions != null &&
+                expectedStyleVersions.TryGetValue(seat.Id, out var expectedVer) &&
+                seat.StyleVersion != expectedVer)
+            {
+                conflicted.Add(new SeatConflict
+                {
+                    SeatId = seat.Id,
+                    CurrentVersion = seat.StyleVersion,
+                    PropertyGroup = "style"
+                });
+                continue;
+            }
+
             seat.LegendId = legendId;
+            seat.IncrementStyleVersion();
             seat.MarkUpdated();
+            updated.Add(seat);
         }
 
-        await _uow.Seats.UpdateRangeAsync(seats);
-        seatMap.IncrementVersion();
-        await _uow.SeatMaps.UpdateAsync(seatMap);
-        await _uow.SaveChangesAsync();
+        if (updated.Count > 0)
+        {
+            await _uow.Seats.UpdateRangeAsync(updated);
+            seatMap.IncrementVersion();
+            await _uow.SeatMaps.UpdateAsync(seatMap);
+            await _uow.SaveChangesAsync();
+        }
 
-        return _mapper.Map<List<SeatResponse>>(seats);
+        return new SeatMutationResult
+        {
+            Updated = _mapper.Map<List<SeatResponse>>(updated),
+            Conflicted = conflicted
+        };
     }
 
     public async Task DeleteSeatsAsync(Guid seatMapId, Guid orgId, List<Guid> seatIds)

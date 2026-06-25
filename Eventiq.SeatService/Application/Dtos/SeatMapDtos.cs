@@ -99,6 +99,7 @@ public class UpdateSeatDto
     public string? Position { get; set; }
     public Guid? LegendId { get; set; }
     public string? CustomProperties { get; set; }
+    public int? ExpectedGeometryVersion { get; set; }
 }
 
 public class BatchUpdateSeatsDto
@@ -117,6 +118,21 @@ public class SeatResponse
     public string? Position { get; set; }
     public Guid? LegendId { get; set; }
     public string? CustomProperties { get; set; }
+    public int GeometryVersion { get; set; }
+    public int StyleVersion { get; set; }
+}
+
+public class SeatConflict
+{
+    public Guid SeatId { get; set; }
+    public int CurrentVersion { get; set; }
+    public string PropertyGroup { get; set; } = string.Empty;
+}
+
+public class SeatMutationResult
+{
+    public List<SeatResponse> Updated { get; set; } = [];
+    public List<SeatConflict> Conflicted { get; set; } = [];
 }
 
 public class SeatLayoutResponse

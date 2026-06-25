@@ -132,7 +132,11 @@ public class SeatDesignHub : Hub
         var orgId = GetOrgId();
         var result = await _designService.BatchUpdateSeatsAsync(seatMapId, orgId, dto);
 
-        await Clients.Group(GetGroupName(seatMapId)).SendAsync("SeatsUpdated", result);
+        if (result.Updated.Count > 0)
+            await Clients.Group(GetGroupName(seatMapId)).SendAsync("SeatsUpdated", result.Updated);
+        if (result.Conflicted.Count > 0)
+            await Clients.Caller.SendAsync("SeatsConflicted", result.Conflicted);
+
         await TriggerAutoSave(seatMapId);
     }
 
@@ -145,12 +149,16 @@ public class SeatDesignHub : Hub
         await TriggerAutoSave(seatMapId);
     }
 
-    public async Task SetSeatLegend(Guid seatMapId, List<Guid> seatIds, Guid? legendId)
+    public async Task SetSeatLegend(Guid seatMapId, List<Guid> seatIds, Guid? legendId, Dictionary<Guid, int>? expectedStyleVersions = null)
     {
         var orgId = GetOrgId();
-        var result = await _designService.SetSeatLegendAsync(seatMapId, orgId, seatIds, legendId);
+        var result = await _designService.SetSeatLegendAsync(seatMapId, orgId, seatIds, legendId, expectedStyleVersions);
 
-        await Clients.Group(GetGroupName(seatMapId)).SendAsync("SeatsUpdated", result);
+        if (result.Updated.Count > 0)
+            await Clients.Group(GetGroupName(seatMapId)).SendAsync("SeatsUpdated", result.Updated);
+        if (result.Conflicted.Count > 0)
+            await Clients.Caller.SendAsync("SeatsConflicted", result.Conflicted);
+
         await TriggerAutoSave(seatMapId);
     }
 

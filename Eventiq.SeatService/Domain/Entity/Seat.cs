@@ -33,6 +33,15 @@ public class Seat : BaseEntity
     public Guid? HeldBy { get; set; }
     public DateTime? HeldUntil { get; set; }
 
+    // Per-property versioning for collaborative conflict detection.
+    // Geometry covers position/label/seatType; style covers legendId.
+    // Two concurrent writes on different groups never conflict.
+    public int GeometryVersion { get; set; } = 1;
+    public int StyleVersion { get; set; } = 1;
+
+    public void IncrementGeometryVersion() => GeometryVersion++;
+    public void IncrementStyleVersion() => StyleVersion++;
+
     public void Hold(Guid userId, TimeSpan duration)
     {
         Status = SeatStatus.Holding;

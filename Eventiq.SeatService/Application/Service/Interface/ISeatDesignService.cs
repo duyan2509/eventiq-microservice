@@ -11,8 +11,8 @@ public interface ISeatDesignService
     // Seats
     Task<SeatResponse> AddSeatAsync(Guid seatMapId, Guid orgId, AddSeatDto dto);
     Task<List<SeatResponse>> AddSeatsAsync(Guid seatMapId, Guid orgId, AddSeatsBatchDto dto);
-    Task<List<SeatResponse>> BatchUpdateSeatsAsync(Guid seatMapId, Guid orgId, BatchUpdateSeatsDto dto);
-    Task<List<SeatResponse>> SetSeatLegendAsync(Guid seatMapId, Guid orgId, List<Guid> seatIds, Guid? legendId);
+    Task<SeatMutationResult> BatchUpdateSeatsAsync(Guid seatMapId, Guid orgId, BatchUpdateSeatsDto dto);
+    Task<SeatMutationResult> SetSeatLegendAsync(Guid seatMapId, Guid orgId, List<Guid> seatIds, Guid? legendId, Dictionary<Guid, int>? expectedStyleVersions = null);
     Task DeleteSeatsAsync(Guid seatMapId, Guid orgId, List<Guid> seatIds);
 
     // Objects
