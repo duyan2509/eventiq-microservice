@@ -86,7 +86,7 @@ def print_report(results: list[dict]) -> None:
     ]
     db_stats.sort(key=lambda x: x[1] / x[2])
     if db_stats:
-        print(f"\n  Hardest databases (≥3 questions, by EX%):")
+        print(f"\n  Hardest databases (>=3 questions, by EX%):")
         for db, c, n in db_stats[:5]:
             print(f"    {db:<28} {c}/{n} = {c/n*100:.0f}%")
 

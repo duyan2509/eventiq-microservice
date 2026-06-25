@@ -11,5 +11,7 @@ scripts/.eval_cache/
 new_eval.md
 session.log
 eval/data/
-eval/results/
+eval/results/*.jsonl
+eval/results/*.json
+!eval/results/spider_eval_report.md
 eval/.env
