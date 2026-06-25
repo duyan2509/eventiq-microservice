@@ -12,6 +12,7 @@ public interface IMemberRepository
     Task<Member?> GetAsync(Guid memberId, CancellationToken cancellationToken = default);
     Task<PaginatedResult<MemberReponse>> GetOrgMembersAsync(Guid orgId, int page = 1, int size =10, CancellationToken cancellationToken = default);
     Task<bool> AnyByPermissionIdAsync(Guid permissionId, CancellationToken cancellationToken = default);
+    Task<List<Guid>> GetUserIdsByPermissionIdAsync(Guid permissionId, CancellationToken cancellationToken = default);
     Task<MemberReponse?> GetByUserIdAndOrgIdAsync(Guid userId, Guid orgId, CancellationToken cancellationToken = default);
     Task<List<UserOrganizationItem>> GetOrgsByUserIdAsync(Guid userId, CancellationToken cancellationToken = default);
 }

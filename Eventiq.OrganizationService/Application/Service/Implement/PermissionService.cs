@@ -1,9 +1,11 @@
 using AutoMapper;
+using Eventiq.Contracts;
 using Eventiq.OrganizationService.Domain;
 using Eventiq.OrganizationService.Domain.Entity;
 using Eventiq.OrganizationService.Domain.Repositories;
 using Eventiq.OrganizationService.Dtos;
 using Eventiq.OrganizationService.Guards;
+using MassTransit;
 
 
 namespace Eventiq.OrganizationService.Application.Service;
@@ -16,8 +18,9 @@ public class PermissionService : IPermissionService
     private readonly IOrganizationRepository _organizationRepository;
     private readonly IUnitOfWork _unitOfWork;
     private readonly IMemberRepository _memberRepository;
+    private readonly IPublishEndpoint _publishEndpoint;
 
-    public PermissionService(IPermissionRepository permissionRepository, ILogger<PermissionService> logger, IMapper mapper, IOrganizationRepository organizationRepository, IUnitOfWork unitOfWork, IMemberRepository memberRepository)
+    public PermissionService(IPermissionRepository permissionRepository, ILogger<PermissionService> logger, IMapper mapper, IOrganizationRepository organizationRepository, IUnitOfWork unitOfWork, IMemberRepository memberRepository, IPublishEndpoint publishEndpoint)
     {
         _permissionRepository = permissionRepository;
         _logger = logger;
@@ -25,6 +28,7 @@ public class PermissionService : IPermissionService
         _organizationRepository = organizationRepository;
         _unitOfWork = unitOfWork;
         _memberRepository = memberRepository;
+        _publishEndpoint = publishEndpoint;
     }
 
     public async Task<PaginatedResult<PermissionResponse>> GetPermissionsAsync(Guid userId, Guid orgId, int page = 1 , int size = 10, CancellationToken cancellationToken = default)
@@ -57,10 +61,26 @@ public class PermissionService : IPermissionService
         PermissionGuards.EnsureNotOwnerPermission(permission);
         if(dto.Name != null)
             permission.Name = dto.Name;
+        bool isDesignerChanged = dto.IsDesigner.HasValue && dto.IsDesigner.Value != permission.IsDesigner;
         if(dto.IsDesigner!=null)
-            permission.IsDesigner = dto.IsDesigner.Value ;
+            permission.IsDesigner = dto.IsDesigner.Value;
         await _permissionRepository.UpdateAsync(permission, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        if (isDesignerChanged)
+        {
+            var affectedUserIds = await _memberRepository.GetUserIdsByPermissionIdAsync(permission.Id, cancellationToken);
+            foreach (var affectedUserId in affectedUserIds)
+            {
+                await _publishEndpoint.Publish(new StaffRoleChanged
+                {
+                    UserId = affectedUserId,
+                    OrganizationId = orgId,
+                    NewRoleName = permission.Name
+                }, cancellationToken);
+            }
+        }
+
         return _mapper.Map<PermissionResponse>(permission);
     }
 

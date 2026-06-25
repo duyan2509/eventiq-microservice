@@ -73,6 +73,14 @@ public class MemberRepository:IMemberRepository
         return await _members.AnyAsync(m => m.PermissionId == permissionId, cancellationToken);
     }
 
+    public async Task<List<Guid>> GetUserIdsByPermissionIdAsync(Guid permissionId, CancellationToken cancellationToken = default)
+    {
+        return await _members
+            .Where(m => m.PermissionId == permissionId && m.UserId.HasValue)
+            .Select(m => m.UserId!.Value)
+            .ToListAsync(cancellationToken);
+    }
+
     public async Task<MemberReponse?> GetByUserIdAndOrgIdAsync(Guid userId, Guid orgId, CancellationToken cancellationToken = default)
     {
         var member = await _members.AsNoTracking()

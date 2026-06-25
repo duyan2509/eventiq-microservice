@@ -61,6 +61,15 @@ public class SeatDesignHub : Hub
             orgId = await _designService.GetSeatMapOrgIdAsync(seatMapId);
             lock (_orgCacheLock) { _seatMapOrgCache[seatMapId] = orgId; }
         }
+
+        var role = Context.User?.FindFirstValue(ClaimTypes.Role) ?? "";
+        var orgIdClaim = Context.User?.FindFirstValue("orgId");
+        var isAdmin = role == "Admin";
+        var hasOrgAccess = isAdmin ||
+            (Guid.TryParse(orgIdClaim, out var claimedOrgId) && claimedOrgId == orgId);
+        if (!hasOrgAccess)
+            throw new HubException("You don't have access to this seat map.");
+
         lock (_orgIdLock) { _connectionOrgId[Context.ConnectionId] = orgId; }
 
         await Groups.AddToGroupAsync(Context.ConnectionId, groupName);
