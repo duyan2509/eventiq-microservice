@@ -8,3 +8,8 @@ __pycache__/
 schema_dump.json
 test_questions_report.json
 scripts/.eval_cache/
+new_eval.md
+session.log
+eval/data/
+eval/results/
+eval/.env

@@ -64,3 +64,11 @@ nunit-*.xml
 .env
 **/.env
 !**/.env.example
+!**/.env.eval.example
+
+# Spider eval artifacts (large dataset + raw results)
+new_eval.md
+session.log
+results/
+Eventiq.AnalyticsService/eval/data/
+Eventiq.AnalyticsService/eval/results/
