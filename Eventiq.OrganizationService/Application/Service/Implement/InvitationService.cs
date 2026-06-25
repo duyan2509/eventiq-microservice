@@ -90,6 +90,13 @@ public class InvitationService : IInvitationService
         InvitationGuards.EnsureExist(invitation);
         InvitationGuards.EnsureCanResponse(invitation);
         InvitationGuards.EnsureOrgInvitation(invitation, orgId);
+        // Remove any stale ACCEPTED invitation for same user+org (can exist if member was kicked
+        // with old code that didn't clean up the invitation record).
+        var stale = await _invitationRepository.GetAcceptedByEmailAndOrgIdAsync(
+            invitation.UserEmail, orgId, invitationId, cancellationToken);
+        if (stale != null)
+            await _invitationRepository.RemoveAsync(stale, cancellationToken);
+
         invitation.Status = InvitationStatus.ACCEPTED;
         invitation.UserId =  userId;
         await _invitationRepository.UpdateAsync(invitation, cancellationToken);

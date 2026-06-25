@@ -136,6 +136,21 @@
       }
     },
     {
+      "DownstreamPathTemplate": "/api/organizations/{id}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 5230
+        }
+      ],
+      "UpstreamPathTemplate": "/gateway/organizations/{id}",
+      "UpstreamHttpMethod": [
+        "GET"
+      ],
+      "RouteIsCaseSensitive": false
+    },
+    {
       "DownstreamPathTemplate": "/api/organizations/{everything}",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
@@ -146,7 +161,6 @@
       ],
       "UpstreamPathTemplate": "/gateway/organizations/{everything}",
       "UpstreamHttpMethod": [
-        "GET",
         "POST",
         "PATCH",
         "DELETE"
@@ -229,6 +243,21 @@
       "RouteIsCaseSensitive": false
     },
     {
+      "DownstreamPathTemplate": "/api/events/{id}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 5232
+        }
+      ],
+      "UpstreamPathTemplate": "/gateway/events/{id}",
+      "UpstreamHttpMethod": [
+        "GET"
+      ],
+      "RouteIsCaseSensitive": false
+    },
+    {
       "DownstreamPathTemplate": "/api/events/{everything}",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
@@ -239,7 +268,6 @@
       ],
       "UpstreamPathTemplate": "/gateway/events/{everything}",
       "UpstreamHttpMethod": [
-        "GET",
         "POST",
         "PATCH",
         "DELETE"

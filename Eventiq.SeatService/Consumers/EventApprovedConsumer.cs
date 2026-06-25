@@ -27,32 +27,40 @@ public class EventApprovedConsumer : IConsumer<EventApproved>
             "EventApproved received: EventId={EventId}, Sessions={Count}",
             msg.EventId, msg.Sessions.Length);
 
-        // Publish all templates first (one per unique chart) so clone consumers find them ready
-        var processedCharts = new HashSet<Guid>();
-        foreach (var pair in msg.Sessions)
+        // Load all seat map templates for this event (SessionId == null).
+        // CheckSeatMapDesign only verified *some* template exists — it does not guarantee
+        // that each session's ChartId has a 1:1 matching template. We publish every
+        // Draft template and then let SessionSeatMapCloneConsumer pick the right one
+        // (by ChartId first, event fallback second).
+        var allMaps = await _uow.SeatMaps.GetByEventIdAsync(msg.EventId);
+        var templates = allMaps.Where(m => m.SessionId == null).ToList();
+
+        if (templates.Count == 0)
         {
-            if (!processedCharts.Add(pair.ChartId)) continue;
-
-            var template = await _uow.SeatMaps.GetTemplateByChartIdWithDetailsAsync(pair.ChartId);
-            if (template == null)
-            {
-                _logger.LogWarning(
-                    "No seat map template for ChartId={ChartId}, skipping", pair.ChartId);
-                continue;
-            }
-
-            if (template.Status != SeatMapStatus.Published)
-            {
-                template.Publish();
-                await _uow.SeatMaps.UpdateAsync(template);
-                _logger.LogInformation(
-                    "Published template {TemplateId} for ChartId={ChartId}", template.Id, pair.ChartId);
-            }
+            _logger.LogWarning(
+                "No seat map template found for EventId={EventId}, skipping all clones",
+                msg.EventId);
+            return;
         }
 
-        await _uow.SaveChangesAsync();
+        // Publish every Draft template so clone consumers can find them.
+        bool needsSave = false;
+        foreach (var t in templates)
+        {
+            if (t.Status == SeatMapStatus.Draft)
+            {
+                t.Publish();
+                await _uow.SeatMaps.UpdateAsync(t);
+                needsSave = true;
+                _logger.LogInformation("Published template {TemplateId} for EventId={EventId}", t.Id, msg.EventId);
+            }
+        }
+        if (needsSave) await _uow.SaveChangesAsync();
 
-        // Enqueue one clone job per session — processed independently in background
+        // Enqueue a clone job for every session.
+        // SessionSeatMapCloneConsumer resolves the template by ChartId then falls back
+        // to any event-level template, so sessions without an exact ChartId match are
+        // still covered.
         foreach (var pair in msg.Sessions)
         {
             await _publishEndpoint.Publish(new SessionSeatMapCloneRequested

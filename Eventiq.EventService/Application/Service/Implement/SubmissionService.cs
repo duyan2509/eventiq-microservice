@@ -5,6 +5,7 @@ using Eventiq.EventService.Domain.Repositories;
 using Eventiq.EventService.Dtos;
 using Eventiq.EventService.Extensions;
 using Eventiq.EventService.Guards;
+using Eventiq.EventService.Infrastructure.Persistence;
 using MassTransit;
 
 namespace Eventiq.EventService.Application.Service;
@@ -16,19 +17,22 @@ public class SubmissionService : ISubmissionService
     private readonly IOrgPaymentRepository _orgPayment;
     private readonly ISeatServiceClient _seatServiceClient;
     private readonly IPublishEndpoint _publishEndpoint;
+    private readonly EvtEventDbContext _dbContext;
 
     public SubmissionService(
         IMapper mapper,
         IUnitOfWork uow,
         IOrgPaymentRepository orgPayment,
         ISeatServiceClient seatServiceClient,
-        IPublishEndpoint publishEndpoint)
+        IPublishEndpoint publishEndpoint,
+        EvtEventDbContext dbContext)
     {
         _mapper = mapper;
         _uow = uow;
         _orgPayment = orgPayment;
         _seatServiceClient = seatServiceClient;
         _publishEndpoint = publishEndpoint;
+        _dbContext = dbContext;
     }
 
     public async Task<PaginatedResult<SubmissionResponse>> GetAllSubmissionByEventIdAsync(Guid userId, Guid eventId, int page = 1, int size = 20)
@@ -123,6 +127,10 @@ public class SubmissionService : ISubmissionService
                 .ToArray(),
             ApprovedAt = DateTime.UtcNow
         });
+        // EventService uses Dapper for business logic so EF Core SaveChanges is never called
+        // in the request pipeline. Calling it here flushes the outbox message to the DB
+        // immediately so the background delivery job picks it up in ~1s instead of minutes.
+        await _dbContext.SaveChangesAsync();
 
         return result;
     }

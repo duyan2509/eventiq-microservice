@@ -125,22 +125,11 @@ public static class ServiceExtensions
             x.AddConsumer<PaymentCompletedConsumer>()
                 .Endpoint(e => e.Name = "seat-service-payment-completed");
 
-            if (builder.Environment.IsDevelopment())
+            x.UsingRabbitMq((context, cfg) =>
             {
-                x.UsingRabbitMq((context, cfg) =>
-                {
-                    cfg.Host(new Uri(builder.Configuration["RabbitMq:ConnectionString"] ?? string.Empty));
-                    cfg.ConfigureEndpoints(context);
-                });
-            }
-            else
-            {
-                x.UsingAzureServiceBus((context, cfg) =>
-                {
-                    cfg.Host(builder.Configuration["AzureServiceBus:ConnectionString"]);
-                    cfg.ConfigureEndpoints(context);
-                });
-            }
+                cfg.Host(new Uri(builder.Configuration["RabbitMq:ConnectionString"] ?? string.Empty));
+                cfg.ConfigureEndpoints(context);
+            });
         });
     }
 }

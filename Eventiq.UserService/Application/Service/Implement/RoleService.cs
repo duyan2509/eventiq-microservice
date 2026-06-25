@@ -42,8 +42,12 @@ public class RoleService:IRoleService
         UserGuards.EnsureExist(user);
         var orgRole = await _roleRepository.GetRoleByName(nameof(AppRoles.Staff));
         RoleGuards.EnsureExist(orgRole);
-        var useRole = await _userRoleRepository.GetUserRoleByOrgIdUserIdRoleIdAsync(organizationId,userId,orgRole.Id);
-        RoleGuards.EnsureUserRoleNotFound(useRole);
+        var existing = await _userRoleRepository.GetUserRoleByOrgIdUserIdRoleIdAsync(organizationId, userId, orgRole.Id);
+        if (existing != null)
+        {
+            _logger.LogInformation("User {UserId} already has Staff role in org {OrgId}, skipping assign", userId, organizationId);
+            return;
+        }
         await _userRoleRepository.AddUserRole(new UserRole()
         {
             UserId = userId,
@@ -58,8 +62,12 @@ public class RoleService:IRoleService
         UserGuards.EnsureExist(user);
         var orgRole = await _roleRepository.GetRoleByName(nameof(AppRoles.Staff));
         RoleGuards.EnsureExist(orgRole);
-        var useRole = await _userRoleRepository.GetUserRoleByOrgIdUserIdRoleIdAsync(organizationId,userId,orgRole.Id);
-        RoleGuards.EnsureUserRoleExist(useRole);
+        var useRole = await _userRoleRepository.GetUserRoleByOrgIdUserIdRoleIdAsync(organizationId, userId, orgRole.Id);
+        if (useRole == null)
+        {
+            _logger.LogInformation("User {UserId} has no Staff role in org {OrgId}, nothing to remove", userId, organizationId);
+            return;
+        }
         await _userRoleRepository.RemoveUserRole(useRole);
     }
 

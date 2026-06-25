@@ -20,4 +20,5 @@ public interface ISeatMapService
     Task<SeatMapStatsResponse> GetStatsAsync(Guid seatMapId);
     Task<bool> HasPublishedTemplateForEventAsync(Guid eventId);
     Task<bool> HasSeatMapDesignAsync(Guid eventId);
+    Task<SeatMapResponse> RecoverSessionCloneAsync(Guid sessionId, Guid? eventId);
 }

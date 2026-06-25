@@ -77,6 +77,12 @@ public class SeatMapRepository : ISeatMapRepository
             .Where(m => m.OrganizationId == organizationId)
             .ToListAsync();
 
+    public async Task<List<SeatMap>> GetAllTemplatesAsync()
+        => await _ctx.SeatMaps
+            .Where(m => m.SessionId == null)
+            .OrderByDescending(m => m.CreatedAt)
+            .ToListAsync();
+
     public async Task<SeatMap> AddAsync(SeatMap seatMap)
     {
         await _ctx.SeatMaps.AddAsync(seatMap);

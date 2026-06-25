@@ -157,6 +157,78 @@ public class SeatMapService : ISeatMapService
     public async Task<bool> HasSeatMapDesignAsync(Guid eventId)
         => await _uow.SeatMaps.HasTemplateForEventAsync(eventId);
 
+    public async Task<SeatMapResponse> RecoverSessionCloneAsync(Guid sessionId, Guid? eventId)
+    {
+        var existing = await _uow.SeatMaps.GetBySessionIdAsync(sessionId);
+        if (existing != null)
+            return _mapper.Map<SeatMapResponse>(existing);
+
+        Domain.Entity.SeatMap? templateMeta;
+        if (eventId.HasValue)
+        {
+            var eventMaps = await _uow.SeatMaps.GetByEventIdAsync(eventId.Value);
+            templateMeta = eventMaps.FirstOrDefault(m => m.SessionId == null);
+        }
+        else
+        {
+            // Fallback: find any template in the DB (useful in dev with a single event)
+            var allMaps = await _uow.SeatMaps.GetAllTemplatesAsync();
+            templateMeta = allMaps.FirstOrDefault();
+        }
+        if (templateMeta == null)
+            throw new NotFoundException($"No seat map template found for event {eventId}");
+
+        var template = await _uow.SeatMaps.GetByIdWithDetailsAsync(templateMeta.Id)
+            ?? throw new NotFoundException($"Template {templateMeta.Id} not found");
+
+        var clone = new Domain.Entity.SeatMap
+        {
+            Id = Guid.NewGuid(),
+            ChartId = template.ChartId,
+            EventId = template.EventId,
+            OrganizationId = template.OrganizationId,
+            SessionId = sessionId,
+            Name = template.Name,
+            Status = SeatMapStatus.Published,
+            Version = 1,
+            TotalSeats = template.Seats.Count,
+            CanvasSettings = template.CanvasSettings,
+            CreatedAt = DateTime.UtcNow
+        };
+
+        foreach (var seat in template.Seats)
+            clone.Seats.Add(new Domain.Entity.Seat
+            {
+                Id = Guid.NewGuid(),
+                SeatMapId = clone.Id,
+                Label = seat.Label,
+                SeatNumber = seat.SeatNumber,
+                SeatType = seat.SeatType,
+                Status = SeatStatus.Available,
+                Position = seat.Position,
+                LegendId = seat.LegendId,
+                CustomProperties = seat.CustomProperties,
+                CreatedAt = DateTime.UtcNow
+            });
+
+        foreach (var obj in template.Objects)
+            clone.Objects.Add(new Domain.Entity.SeatObject
+            {
+                Id = Guid.NewGuid(),
+                SeatMapId = clone.Id,
+                ObjectType = obj.ObjectType,
+                Label = obj.Label,
+                Geometry = obj.Geometry,
+                Style = obj.Style,
+                ZIndex = obj.ZIndex,
+                CreatedAt = DateTime.UtcNow
+            });
+
+        await _uow.SeatMaps.AddAsync(clone);
+        await _uow.SaveChangesAsync();
+        return _mapper.Map<SeatMapResponse>(clone);
+    }
+
     public async Task<SeatMapStatsResponse> GetStatsAsync(Guid seatMapId)
     {
         var seatMap = await _uow.SeatMaps.GetByIdWithDetailsAsync(seatMapId);

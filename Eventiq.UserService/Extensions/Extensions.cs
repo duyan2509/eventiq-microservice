@@ -51,22 +51,11 @@ public static class Extensions
             x.AddConsumer<StaffAcceptedConsumer>();
             x.AddConsumer<StaffRemovedConsumer>();
             x.AddConsumer<StaffRoleChangedConsumer>();
-            if (builder.Environment.IsDevelopment())
+            x.UsingRabbitMq((context, cfg) =>
             {
-                x.UsingRabbitMq((context, cfg) =>
-                {
-                    cfg.Host(new Uri(builder.Configuration["RabbitMq:ConnectionString"] ?? string.Empty));
-                    cfg.ConfigureEndpoints(context);
-                });
-            }
-            else
-            {
-                x.UsingAzureServiceBus((context, cfg) =>
-                {
-                    cfg.Host(builder.Configuration["AzureServiceBus:ConnectionString"]);
-                    cfg.ConfigureEndpoints(context);
-                });
-            }
+                cfg.Host(new Uri(builder.Configuration["RabbitMq:ConnectionString"] ?? string.Empty));
+                cfg.ConfigureEndpoints(context);
+            });
         });
 
     }

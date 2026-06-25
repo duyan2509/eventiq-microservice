@@ -9,7 +9,9 @@ public interface IInvitationRepository
     Task<PaginatedResult<InviationResponse>> GetUserInvitationsAsync(string userEmail, int page, int size, CancellationToken cancellationToken = default);
     Task<Invitation?> GetInvitatioByIDAsync(Guid invitationId, CancellationToken cancellationToken = default);
     Task UpdateAsync(Invitation? invitation, CancellationToken cancellationToken = default);
+    Task RemoveAsync(Invitation invitation, CancellationToken cancellationToken = default);
     Task AddAsync(Invitation invitation, CancellationToken cancellationToken = default);
 
     Task<Invitation?> GetInvitationByEmailAndOrgId(string userEmail, Guid orgId, CancellationToken cancellationToken);
+    Task<Invitation?> GetAcceptedByEmailAndOrgIdAsync(string userEmail, Guid orgId, Guid excludeInvitationId, CancellationToken cancellationToken);
 }

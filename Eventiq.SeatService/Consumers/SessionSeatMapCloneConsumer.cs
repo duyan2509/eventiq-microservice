@@ -28,14 +28,24 @@ public class SessionSeatMapCloneConsumer : IConsumer<SessionSeatMapCloneRequeste
             return;
         }
 
-        var template = await _uow.SeatMaps.GetPublishedTemplateByChartIdAsync(msg.ChartId);
+        // Find template regardless of status — it may still be Draft if EventApprovedConsumer
+        // hasn't marked it Published yet, or if the design was never explicitly published.
+        var template = await _uow.SeatMaps.GetTemplateByChartIdWithDetailsAsync(msg.ChartId);
+        if (template == null)
+        {
+            // Fallback: find any template for this event (handles ChartId mismatch)
+            var eventMaps = await _uow.SeatMaps.GetByEventIdAsync(msg.EventId);
+            var fallback = eventMaps.FirstOrDefault(m => m.SessionId == null);
+            if (fallback != null)
+                template = await _uow.SeatMaps.GetByIdWithDetailsAsync(fallback.Id);
+        }
+
         if (template == null)
         {
             _logger.LogWarning(
-                "No published template for ChartId={ChartId}, cannot clone SessionId={SessionId}",
-                msg.ChartId, msg.SessionId);
-            throw new InvalidOperationException(
-                $"Published template not found for ChartId={msg.ChartId}");
+                "No template for ChartId={ChartId} or EventId={EventId}, skipping clone for SessionId={SessionId}",
+                msg.ChartId, msg.EventId, msg.SessionId);
+            return;
         }
 
         var clone = CloneSeatMap(template, msg.SessionId);

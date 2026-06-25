@@ -2,6 +2,7 @@ using AutoMapper;
 using Eventiq.Contracts;
 using Eventiq.OrganizationService.Domain;
 using Eventiq.OrganizationService.Domain.Entity;
+using Eventiq.OrganizationService.Domain.Enum;
 using Eventiq.OrganizationService.Domain.Repositories;
 using Eventiq.OrganizationService.Dtos;
 using Eventiq.OrganizationService.Guards;
@@ -17,6 +18,7 @@ public class MemberService : IMemberService
     private readonly IMapper _mapper;
     private readonly IPublishEndpoint _publishEndpoint;
     private readonly IOrganizationRepository _organizationRepository;
+    private readonly IInvitationRepository _invitationRepository;
     private readonly IUnitOfWork _unitOfWork;
 
     public MemberService(IMemberRepository memberRepository,
@@ -25,9 +27,11 @@ public class MemberService : IMemberService
         IMapper mapper,
         IOrganizationRepository organizationRepository,
         IPublishEndpoint publishEndpoint,
+        IInvitationRepository invitationRepository,
         IUnitOfWork unitOfWork)
     {
         _memberRepository = memberRepository;
+        _invitationRepository = invitationRepository;
         _logger = logger;
         _permissionRepository = permissionRepository;
         _mapper = mapper;
@@ -87,7 +91,11 @@ public class MemberService : IMemberService
         MemberGuards.EnsureExists(member);
         MemberGuards.EnsureNotOwner(member);
         await _memberRepository.RemoveAsync(member, cancellationToken);
-        // send message
+
+        var invitation = await _invitationRepository.GetInvitationByEmailAndOrgId(member.Email, orgId, cancellationToken);
+        if (invitation != null && invitation.Status == InvitationStatus.ACCEPTED)
+            await _invitationRepository.RemoveAsync(invitation, cancellationToken);
+
         await _publishEndpoint.Publish(new StaffRemoved()
         {
             OrganizationId = orgId,

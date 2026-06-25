@@ -47,22 +47,13 @@ public static class Extensions
 
         builder.Services.AddMassTransit(x =>
         {
-            if(builder.Environment.IsDevelopment())
-                x.UsingRabbitMq((context, cfg) =>
-                {
-                    cfg.Host(
-                        new Uri(builder.Configuration["MessageBus:RabbitMq:ConnectionString"] ?? string.Empty)
-                    );
-                    cfg.ConfigureEndpoints(context);
-                });
-            else
+            x.UsingRabbitMq((context, cfg) =>
             {
-                x.UsingAzureServiceBus((context, cfg) =>
-                {
-                    cfg.Host(builder.Configuration["AzureServiceBus:ConnectionString"]);
-                    cfg.ConfigureEndpoints(context);
-                });
-            }
+                cfg.Host(
+                    new Uri(builder.Configuration["MessageBus:RabbitMq:ConnectionString"] ?? string.Empty)
+                );
+                cfg.ConfigureEndpoints(context);
+            });
         });
         
     }

@@ -113,6 +113,13 @@ public class SeatMapController : ControllerBase
         return Ok(result);
     }
 
+    [HttpPost("sessions/{sessionId:guid}/recover-clone")]
+    public async Task<IActionResult> RecoverSessionClone(Guid sessionId, [FromQuery] Guid? eventId = null)
+    {
+        var result = await _seatMapService.RecoverSessionCloneAsync(sessionId, eventId);
+        return Ok(result);
+    }
+
     private Guid GetUserId()
     {
         var sub = User.FindFirst("sub")?.Value

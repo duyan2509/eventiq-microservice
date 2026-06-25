@@ -1,5 +1,6 @@
 using AutoMapper;
 using Eventiq.OrganizationService.Domain.Entity;
+using Eventiq.OrganizationService.Domain.Enum;
 using Eventiq.OrganizationService.Domain.Repositories;
 using Eventiq.OrganizationService.Dtos;
 using Microsoft.EntityFrameworkCore;
@@ -71,6 +72,12 @@ public class InvitationRepository:IInvitationRepository
         _invitations.Update(invitation);
         return Task.CompletedTask;
     }
+
+    public Task RemoveAsync(Invitation invitation, CancellationToken cancellationToken = default)
+    {
+        _invitations.Remove(invitation);
+        return Task.CompletedTask;
+    }
     public Task AddAsync(Invitation? invitation, CancellationToken cancellationToken = default)
     {
         return _invitations.AddAsync(invitation, cancellationToken).AsTask();
@@ -81,6 +88,17 @@ public class InvitationRepository:IInvitationRepository
         return await _invitations.AsNoTracking()
             .Where(i=>i.UserEmail == userEmail && i.OrganizationId == orgId)
             .OrderByDescending(i => i.CreatedAt)
+            .FirstOrDefaultAsync(cancellationToken);
+    }
+
+    public async Task<Invitation?> GetAcceptedByEmailAndOrgIdAsync(string userEmail, Guid orgId, Guid excludeInvitationId, CancellationToken cancellationToken)
+    {
+        return await _invitations
+            .IgnoreQueryFilters()
+            .Where(i => i.UserEmail == userEmail
+                     && i.OrganizationId == orgId
+                     && i.Status == InvitationStatus.ACCEPTED
+                     && i.Id != excludeInvitationId)
             .FirstOrDefaultAsync(cancellationToken);
     }
 }

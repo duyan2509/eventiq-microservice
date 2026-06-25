@@ -16,6 +16,7 @@ public interface ISeatMapRepository
     Task<SeatMap?> GetBySessionIdWithDetailsAsync(Guid sessionId);
     Task<List<SeatMap>> GetByEventIdAsync(Guid eventId);
     Task<List<SeatMap>> GetByOrganizationIdAsync(Guid organizationId);
+    Task<List<SeatMap>> GetAllTemplatesAsync();
     Task<SeatMap> AddAsync(SeatMap seatMap);
     Task UpdateAsync(SeatMap seatMap);
     Task<bool> DeleteAsync(Guid id);
