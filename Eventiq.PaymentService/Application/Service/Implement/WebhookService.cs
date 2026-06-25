@@ -1,7 +1,9 @@
+using Eventiq.Contracts;
 using Eventiq.PaymentService.Application.Service.Interface;
 using Eventiq.PaymentService.Domain.Entity;
 using Eventiq.PaymentService.Domain.Enums;
 using Eventiq.PaymentService.Infrastructure.Persistence;
+using MassTransit;
 using Microsoft.EntityFrameworkCore;
 using Stripe;
 using Stripe.Checkout;
@@ -12,17 +14,20 @@ public class WebhookService : IWebhookService
 {
     private readonly PaymentDbContext _dbContext;
     private readonly IOrderSettlementService _settlement;
+    private readonly IPublishEndpoint _publishEndpoint;
     private readonly IConfiguration _config;
     private readonly ILogger<WebhookService> _logger;
 
     public WebhookService(
         PaymentDbContext dbContext,
         IOrderSettlementService settlement,
+        IPublishEndpoint publishEndpoint,
         IConfiguration config,
         ILogger<WebhookService> logger)
     {
         _dbContext = dbContext;
         _settlement = settlement;
+        _publishEndpoint = publishEndpoint;
         _config = config;
         _logger = logger;
     }
@@ -129,9 +134,30 @@ public class WebhookService : IWebhookService
 
     private async Task HandleExpiredAsync(Session session)
     {
-        await _dbContext.Orders
-            .Where(o => o.StripeSessionId == session.Id && o.Status == OrderStatus.Pending)
-            .ExecuteUpdateAsync(s => s.SetProperty(o => o.Status, OrderStatus.Failed));
+        var order = await _dbContext.Orders
+            .Include(o => o.Items)
+            .FirstOrDefaultAsync(o => o.StripeSessionId == session.Id && o.Status == OrderStatus.Pending);
+
+        if (order == null) return;
+
+        order.Status = OrderStatus.Failed;
+        try
+        {
+            await _dbContext.SaveChangesAsync();
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            // Concurrently settled as Paid — seats are being marked Sold, no need to release.
+            _logger.LogInformation("Expired checkout concurrency conflict for session {StripeSessionId}, order may have been paid", session.Id);
+            return;
+        }
+
+        await _publishEndpoint.Publish(new CheckoutExpired
+        {
+            OrderId = order.Id,
+            UserId = order.UserId,
+            SeatIds = order.Items.Select(i => i.SeatId).ToList()
+        });
     }
 
     // Update the audit row on a clean tracker so a failed business SaveChanges above

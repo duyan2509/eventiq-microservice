@@ -1,8 +1,10 @@
+using Eventiq.Contracts;
 using Eventiq.Contracts.Grpc;
 using Eventiq.PaymentService.Application.Service.Interface;
 using Eventiq.PaymentService.Domain.Entity;
 using Eventiq.PaymentService.Domain.Enums;
 using Eventiq.PaymentService.Infrastructure.Persistence;
+using MassTransit;
 using Microsoft.EntityFrameworkCore;
 using Stripe;
 using Stripe.Checkout;
@@ -15,6 +17,7 @@ public class CheckoutService : ICheckoutService
     private readonly EventInternal.EventInternalClient _eventClient;
     private readonly SeatInternal.SeatInternalClient _seatClient;
     private readonly OrgInternal.OrgInternalClient _orgClient;
+    private readonly IPublishEndpoint _publishEndpoint;
     private readonly IConfiguration _config;
 
     public CheckoutService(
@@ -22,12 +25,14 @@ public class CheckoutService : ICheckoutService
         EventInternal.EventInternalClient eventClient,
         SeatInternal.SeatInternalClient seatClient,
         OrgInternal.OrgInternalClient orgClient,
+        IPublishEndpoint publishEndpoint,
         IConfiguration config)
     {
         _dbContext = dbContext;
         _eventClient = eventClient;
         _seatClient = seatClient;
         _orgClient = orgClient;
+        _publishEndpoint = publishEndpoint;
         _config = config;
     }
 
@@ -170,6 +175,14 @@ public class CheckoutService : ICheckoutService
         order.StripeSessionId = session.Id;
         _dbContext.Orders.Add(order);
         await _dbContext.SaveChangesAsync();
+
+        await _publishEndpoint.Publish(new BookingInitiated
+        {
+            OrderId = order.Id,
+            UserId = userId,
+            SessionId = sessionId,
+            SeatIds = seatIds
+        });
 
         return session.Url;
     }

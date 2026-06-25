@@ -124,6 +124,8 @@ public static class ServiceExtensions
             // would receive each PaymentCompleted), leaving seats stuck as Holding after payment.
             x.AddConsumer<PaymentCompletedConsumer>()
                 .Endpoint(e => e.Name = "seat-service-payment-completed");
+            x.AddConsumer<CheckoutExpiredConsumer>()
+                .Endpoint(e => e.Name = "seat-service-checkout-expired");
 
             x.UsingRabbitMq((context, cfg) =>
             {

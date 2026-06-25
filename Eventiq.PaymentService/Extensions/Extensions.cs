@@ -5,6 +5,7 @@ using Eventiq.PaymentService.Application.Service.Interface;
 using Eventiq.PaymentService.Helper;
 using Eventiq.PaymentService.Infrastructure.BackgroundServices;
 using Eventiq.PaymentService.Infrastructure.Persistence;
+using Eventiq.PaymentService.Sagas;
 using Eventiq.Logging;
 using MassTransit;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -88,6 +89,14 @@ public static class Extensions
                 o.UsePostgres();
                 o.UseBusOutbox();
             });
+
+            x.AddSagaStateMachine<BookingSagaStateMachine, BookingSagaState>()
+                .EntityFrameworkRepository(r =>
+                {
+                    r.ConcurrencyMode = ConcurrencyMode.Pessimistic;
+                    r.ExistingDbContext<PaymentDbContext>();
+                    r.UsePostgres();
+                });
 
             x.UsingRabbitMq((context, cfg) =>
             {

@@ -1,4 +1,5 @@
 using Eventiq.PaymentService.Domain.Entity;
+using Eventiq.PaymentService.Sagas;
 using MassTransit;
 using Microsoft.EntityFrameworkCore;
 
@@ -11,6 +12,7 @@ public sealed class PaymentDbContext : DbContext
     public DbSet<Order> Orders => Set<Order>();
     public DbSet<OrderItem> OrderItems => Set<OrderItem>();
     public DbSet<WebhookEvent> WebhookEvents => Set<WebhookEvent>();
+    public DbSet<BookingSagaState> BookingSagas => Set<BookingSagaState>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -56,6 +58,13 @@ public sealed class PaymentDbContext : DbContext
             e.Property(x => x.Status).HasConversion<string>();
             e.HasIndex(x => x.StripeEventId);  // lookup for idempotency (code-level dedupe)
             e.HasIndex(x => x.Status);          // query Failed events for tracing
+        });
+
+        modelBuilder.Entity<BookingSagaState>(e =>
+        {
+            e.HasKey(x => x.CorrelationId);
+            e.Property(x => x.CurrentState).HasMaxLength(64);
+            e.Property(x => x.SeatIdsJson).HasColumnType("jsonb");
         });
 
         modelBuilder.AddInboxStateEntity();
