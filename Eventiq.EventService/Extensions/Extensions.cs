@@ -60,15 +60,14 @@ public static class Extensions
         builder.Services.AddMassTransit(x =>
         {
             x.AddConsumer<PaymentConfiguredConsumer>();
-            // Explicit endpoint name so this consumer gets its own queue, separate from
-            // SeatService's identically-named PaymentCompletedConsumer (otherwise both bind to the
-            // same default "payment-completed" queue and compete, so seats never get marked Sold).
-            x.AddConsumer<PaymentCompletedConsumer>(c =>
+            // Saga orchestration: saga sends IssueTicketsCommand after seats are marked sold.
+            // Consumer issues ticket records and publishes TicketsIssued so saga can finalize.
+            x.AddConsumer<IssueTicketsConsumer>(c =>
             {
                 c.UseMessageRetry(r =>
                     r.Exponential(5, TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(5)));
             })
-                .Endpoint(e => e.Name = "event-service-payment-completed");
+                .Endpoint(e => e.Name = "event-service-issue-tickets");
 
             x.AddEntityFrameworkOutbox<EvtEventDbContext>(o =>
             {

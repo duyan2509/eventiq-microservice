@@ -118,14 +118,12 @@ public static class ServiceExtensions
                 .Endpoint(e => e.Name = "seat-service-staff-removed");
             x.AddConsumer<StaffRoleChangedConsumer>()
                 .Endpoint(e => e.Name = "seat-service-staff-role-changed");
-            // Explicit endpoint name so this consumer gets its own queue. EventService also
-            // defines a PaymentCompletedConsumer; without a distinct name both would bind to the
-            // same default "payment-completed" queue and compete for messages (only one service
-            // would receive each PaymentCompleted), leaving seats stuck as Holding after payment.
-            x.AddConsumer<PaymentCompletedConsumer>()
-                .Endpoint(e => e.Name = "seat-service-payment-completed");
-            x.AddConsumer<CheckoutExpiredConsumer>()
-                .Endpoint(e => e.Name = "seat-service-checkout-expired");
+            // Saga orchestration: saga sends MarkSeatsSoldCommand / ReleaseSeatsCommand;
+            // consumers reply with SeatsMarkedSold / SeatsReleased so saga can advance state.
+            x.AddConsumer<MarkSeatsSoldConsumer>()
+                .Endpoint(e => e.Name = "seat-service-mark-sold");
+            x.AddConsumer<ReleaseSeatsConsumer>()
+                .Endpoint(e => e.Name = "seat-service-release-seats");
 
             x.UsingRabbitMq((context, cfg) =>
             {

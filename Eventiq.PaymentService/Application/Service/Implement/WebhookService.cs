@@ -135,7 +135,6 @@ public class WebhookService : IWebhookService
     private async Task HandleExpiredAsync(Session session)
     {
         var order = await _dbContext.Orders
-            .Include(o => o.Items)
             .FirstOrDefaultAsync(o => o.StripeSessionId == session.Id && o.Status == OrderStatus.Pending);
 
         if (order == null) return;
@@ -147,17 +146,14 @@ public class WebhookService : IWebhookService
         }
         catch (DbUpdateConcurrencyException)
         {
-            // Concurrently settled as Paid — seats are being marked Sold, no need to release.
+            // Concurrently settled as Paid — saga will continue the success path, no need to cancel.
             _logger.LogInformation("Expired checkout concurrency conflict for session {StripeSessionId}, order may have been paid", session.Id);
             return;
         }
 
-        await _publishEndpoint.Publish(new CheckoutExpired
-        {
-            OrderId = order.Id,
-            UserId = order.UserId,
-            SeatIds = order.Items.Select(i => i.SeatId).ToList()
-        });
+        // Saga receives this and orchestrates seat release via ReleaseSeatsCommand.
+        // The saga already holds SeatIds from BookingInitiated — no need to re-fetch them here.
+        await _publishEndpoint.Publish(new CheckoutSessionExpired { OrderId = order.Id });
     }
 
     // Update the audit row on a clean tracker so a failed business SaveChanges above

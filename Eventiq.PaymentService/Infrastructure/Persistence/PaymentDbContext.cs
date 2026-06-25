@@ -65,6 +65,7 @@ public sealed class PaymentDbContext : DbContext
             e.HasKey(x => x.CorrelationId);
             e.Property(x => x.CurrentState).HasMaxLength(64);
             e.Property(x => x.SeatIdsJson).HasColumnType("jsonb");
+            e.Property(x => x.SeatItemsJson).HasColumnType("jsonb");
         });
 
         modelBuilder.AddInboxStateEntity();
