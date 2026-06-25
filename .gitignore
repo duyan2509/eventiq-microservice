@@ -69,6 +69,4 @@ nunit-*.xml
 # Spider eval artifacts (large dataset + raw results)
 new_eval.md
 session.log
-results/
 Eventiq.AnalyticsService/eval/data/
-Eventiq.AnalyticsService/eval/results/
