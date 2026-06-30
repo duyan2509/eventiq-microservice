@@ -1,5 +1,6 @@
 """Stage 6 — execute generated SQL against the analytics DB.
 
+
 `execute_sql` runs a single read-only statement and returns
 (rows_as_dicts, error_or_None). The transaction is rolled back so a
 failed query never leaves the connection in a poisoned state.
@@ -10,6 +11,8 @@ subgraph DDL back to the LLM and asks for a corrected statement.
 Capped at one retry.
 """
 from __future__ import annotations
+
+import asyncio
 
 import psycopg2
 
@@ -116,4 +119,31 @@ def execute_with_retry(
     raw = llm_client.call(prompt, max_tokens=600, temperature=0.0)
     corrected = clean_sql(raw)
     rows, error = execute_sql(corrected, scope=scope, org_id=org_id)
+    return rows, error, 1, corrected
+
+
+async def async_execute_with_retry(
+    sql: str,
+    subgraph: dict,
+    schema: dict[str, str],
+    *,
+    scope: str = "admin",
+    org_id: str | None = None,
+    org_mode: bool = False,
+) -> tuple[list[dict], str | None, int, str]:
+    """Async variant — runs psycopg2 calls in a thread-pool executor so they
+    don't block the event loop."""
+    loop = asyncio.get_running_loop()
+    rows, error = await loop.run_in_executor(
+        None, lambda: execute_sql(sql, scope=scope, org_id=org_id)
+    )
+    if error is None:
+        return rows, None, 0, sql
+
+    prompt = _build_correction_prompt(sql, error, subgraph, schema, org_mode=org_mode)
+    raw = await llm_client.async_call(prompt, max_tokens=600, temperature=0.0)
+    corrected = clean_sql(raw)
+    rows, error = await loop.run_in_executor(
+        None, lambda: execute_sql(corrected, scope=scope, org_id=org_id)
+    )
     return rows, error, 1, corrected

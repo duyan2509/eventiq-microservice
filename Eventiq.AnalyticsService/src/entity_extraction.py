@@ -148,7 +148,8 @@ def entity_extraction(question: str) -> dict:
           "confidence": float,
         }
     """
-    raw = llm_client.call(_build_prompt(question), max_tokens=400, temperature=0.0,
+    raw = llm_client.call(_build_prompt(question), max_tokens=200, temperature=0.0,
+                          model="llama-3.1-8b-instant",
                           response_format={"type": "json_object"})
     try:
         parsed = _parse_json(raw)
@@ -180,6 +181,33 @@ def extract_and_normalize(question: str) -> dict:
             seen.append(canonical)
     result["normalized_tables"] = seen
     return result
+
+
+async def async_extract_and_normalize(question: str) -> dict:
+    """Async variant of `extract_and_normalize` for the streaming pipeline."""
+    raw = await llm_client.async_call(
+        _build_prompt(question), max_tokens=200, temperature=0.0,
+        model="llama-3.1-8b-instant",
+        response_format={"type": "json_object"},
+    )
+    try:
+        parsed = _parse_json(raw)
+    except (json.JSONDecodeError, ValueError):
+        parsed = {}
+    if not isinstance(parsed, dict):
+        parsed = {}
+    parsed.setdefault("tables", [])
+    parsed.setdefault("filters", [])
+    parsed.setdefault("aggregation", None)
+    parsed.setdefault("confidence", 0.0)
+    all_tables = list(SCHEMA.keys())
+    seen: list[str] = []
+    for raw_name in parsed["tables"]:
+        canonical = normalize_table_name(raw_name, all_tables)
+        if canonical and canonical not in seen:
+            seen.append(canonical)
+    parsed["normalized_tables"] = seen
+    return parsed
 
 
 if __name__ == "__main__":

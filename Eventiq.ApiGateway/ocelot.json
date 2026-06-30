@@ -374,6 +374,22 @@
       }
     },
     {
+      "DownstreamPathTemplate": "/api/analytics/query/stream",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [{ "Host": "localhost", "Port": 5238 }],
+      "UpstreamPathTemplate": "/gateway/analytics/query/stream",
+      "UpstreamHttpMethod": ["POST"],
+      "AddHeadersToRequest": { "Authorization": "{Authorization}" },
+      "AuthenticationOptions": {
+        "AuthenticationProviderKey": "Bearer",
+        "AllowedScopes": []
+      },
+      "HttpHandlerOptions": {
+        "AllowAutoRedirect": false,
+        "UseCookieContainer": false
+      }
+    },
+    {
       "DownstreamPathTemplate": "/api/analytics/query",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [{ "Host": "localhost", "Port": 5238 }],

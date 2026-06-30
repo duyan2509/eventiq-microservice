@@ -1,28 +1,49 @@
 """FastAPI HTTP wrapper for the Text2SQL pipeline.
 
 Exposes:
-  POST /api/analytics/query  { question }  -> result + sql + chart type
+  POST /api/analytics/query         { question }  -> result + sql + chart type
+  POST /api/analytics/query/stream  { question }  -> SSE progress events + result
   GET  /health
 """
 from __future__ import annotations
 
+import decimal
+import json
 import logging
+import uuid
 from contextlib import asynccontextmanager
+from datetime import datetime
 from typing import Any
 
 from fastapi import FastAPI, Header, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
 from . import auth, saved_queries
 from .org_scope import build_org_graph
-from .pipeline import run_pipeline, run_pipeline_org
+from .pipeline import run_pipeline, run_pipeline_org, run_pipeline_org_stream, run_pipeline_stream
 from .response_builder import generate_answer
 from .schema_dump import SCHEMA
 from .schema_graph import build_graph_from_db
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("analytics-api")
+
+
+class _PipelineEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, datetime):
+            return obj.isoformat()
+        if isinstance(obj, decimal.Decimal):
+            return float(obj)
+        if isinstance(obj, uuid.UUID):
+            return str(obj)
+        return super().default(obj)
+
+
+def _sse(data: dict) -> str:
+    return f"data: {json.dumps(data, cls=_PipelineEncoder, ensure_ascii=False)}\n\n"
 
 # Built once at startup; cheap to traverse per request.
 _state: dict[str, Any] = {"graph": None}
@@ -183,6 +204,45 @@ def query(req: QueryRequest, authorization: str | None = Header(default=None)) -
         logger.exception("Pipeline crashed for: %s", req.question)
         raise HTTPException(status_code=500, detail=f"Pipeline crashed: {e}")
     return _to_response(req.question, out)
+
+
+@app.post("/api/analytics/query/stream")
+async def query_stream(req: QueryRequest, authorization: str | None = Header(default=None)):
+    """SSE streaming endpoint — emits stage progress then the final result dict.
+
+    Events: {"stage": "extracting"|"generating_sql"|"executing"|"done"|"error", ...}
+    The "done" event carries a "result" key with the same shape as QueryResponse.
+    """
+    principal = _authenticate(authorization)
+    g = _state["graph"]
+    if g is None:
+        raise HTTPException(status_code=503, detail="Schema graph not loaded yet")
+
+    role = principal["role"]
+    org_id = principal["org_id"]
+
+    if role == auth.ADMIN:
+        pipeline_gen = run_pipeline_stream(req.question, g, SCHEMA)
+    elif role in (auth.ORGANIZATION, auth.STAFF):
+        if not org_id:
+            raise HTTPException(status_code=403, detail="No organization context in token")
+        pipeline_gen = run_pipeline_org_stream(req.question, _state["org_graph"], org_id)
+    else:
+        raise HTTPException(status_code=403, detail="Analytics not available for this role")
+
+    async def event_generator():
+        try:
+            async for event in pipeline_gen:
+                yield _sse(event)
+        except Exception as e:
+            logger.exception("Stream pipeline crashed for: %s", req.question)
+            yield _sse({"stage": "error", "message": str(e)})
+
+    return StreamingResponse(
+        event_generator(),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )
 
 
 @app.post("/api/analytics/chat", response_model=QueryResponse)

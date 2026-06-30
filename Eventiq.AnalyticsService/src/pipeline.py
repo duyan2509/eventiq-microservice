@@ -27,13 +27,13 @@ import networkx as nx
 
 from .chart_picker import pick_chart
 from .column_linking import link_columns
-from .entity_extraction import extract_and_normalize
+from .entity_extraction import async_extract_and_normalize, extract_and_normalize
 from .enums import relabel_enum_values
 from .org_scope import ORG_SCHEMA
 from .response_builder import generate_title
 from .schema_linking import graph_traversal, keyword_matching, schema_link
-from .sql_generation import generate_sql
-from .sql_runner import execute_with_retry
+from .sql_generation import async_generate_sql, generate_sql
+from .sql_runner import async_execute_with_retry, execute_with_retry
 from .value_linking import link_values
 
 
@@ -81,6 +81,94 @@ def run_pipeline(
         "chart_type": chart_config["type"],
         "chart_config": chart_config,
         "title": generate_title(question),
+    }
+
+
+async def run_pipeline_stream(
+    question: str,
+    g: nx.Graph,
+    schema: dict[str, str],
+):
+    """Async generator — yields {stage, message} progress events then {stage: 'done', result: ...}."""
+    yield {"stage": "extracting", "message": "Đang phân tích câu hỏi..."}
+    entity = await async_extract_and_normalize(question)
+    link = schema_link(question, entity, g, schema)
+
+    col = link_columns(question, entity, link, g)
+    columns = col["columns"] if col["covered"] else None
+    val = link_values(question, link)
+    values = val["values"] if val["covered"] else None
+
+    yield {"stage": "generating_sql", "message": "Đang tạo truy vấn SQL..."}
+    sql = await async_generate_sql(question, link, schema, columns=columns, values=values)
+
+    yield {"stage": "executing", "message": "Đang truy vấn dữ liệu..."}
+    rows, error, retries, final_sql = await async_execute_with_retry(sql, link, schema)
+    chart_config = pick_chart(rows, question)
+
+    yield {
+        "stage": "done",
+        "result": {
+            "question": question,
+            "predicted_sql": final_sql,
+            "first_sql": sql,
+            "result": rows,
+            "error": error,
+            "schema_linking_method": link["method"],
+            "relevant_tables": link["tables"],
+            "join_hints": link["join_hints"],
+            "column_hints": columns,
+            "value_hints": values,
+            "entity_confidence": entity["confidence"],
+            "retries": retries,
+            "chart_type": chart_config["type"],
+            "chart_config": chart_config,
+            "title": generate_title(question),
+        },
+    }
+
+
+async def run_pipeline_org_stream(
+    question: str,
+    org_graph: nx.Graph,
+    org_id: str,
+):
+    """Async generator — org-scoped variant of `run_pipeline_stream`."""
+    link = keyword_matching(question, ORG_SCHEMA)
+    hints = graph_traversal(link["tables"], org_graph)
+    link = {
+        "tables": hints["tables"] or link["tables"],
+        "join_hints": hints["join_hints"],
+        "method": "org_scope",
+    }
+
+    yield {"stage": "generating_sql", "message": "Đang tạo truy vấn SQL..."}
+    sql = await async_generate_sql(question, link, ORG_SCHEMA, org_mode=True)
+
+    yield {"stage": "executing", "message": "Đang truy vấn dữ liệu..."}
+    rows, error, retries, final_sql = await async_execute_with_retry(
+        sql, link, ORG_SCHEMA, scope="org", org_id=org_id, org_mode=True
+    )
+    rows = relabel_enum_values(rows)
+    chart_config = pick_chart(rows, question)
+
+    yield {
+        "stage": "done",
+        "result": {
+            "question": question,
+            "predicted_sql": final_sql,
+            "first_sql": sql,
+            "result": rows,
+            "error": error,
+            "schema_linking_method": link["method"],
+            "relevant_tables": link["tables"],
+            "join_hints": link["join_hints"],
+            "entity_confidence": 0.0,
+            "retries": retries,
+            "chart_type": chart_config["type"],
+            "chart_config": chart_config,
+            "title": generate_title(question),
+        },
     }
 
 

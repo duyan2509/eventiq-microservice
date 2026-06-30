@@ -58,6 +58,27 @@ def generate_sql(
     return clean_sql(raw)
 
 
+async def async_generate_sql(
+    question: str,
+    subgraph: dict,
+    schema: dict[str, str],
+    *,
+    columns=None,
+    values=None,
+    enrich: bool = False,
+    max_tokens: int = 600,
+    temperature: float = 0.0,
+    org_mode: bool = False,
+) -> str:
+    if org_mode:
+        prompt = build_org_prompt(question, subgraph, schema)
+    else:
+        prompt = build_prompt(question, subgraph, schema, columns=columns,
+                              values=values, enrich=enrich)
+    raw = await llm_client.async_call(prompt, max_tokens=max_tokens, temperature=temperature)
+    return clean_sql(raw)
+
+
 def generate_sql_full_schema(
     question: str,
     schema: dict[str, str],

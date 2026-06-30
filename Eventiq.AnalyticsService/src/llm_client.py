@@ -1,16 +1,17 @@
 """Groq LLM wrapper — single entry point for all LLM calls in the
 pipeline. Handles rate limiting (free tier: 30 RPM, 12k TPM, 1000 RPD)
-and exposes a `call()` returning plain text.
+and exposes `call()` (sync) and `async_call()` (async) returning plain text.
 """
 from __future__ import annotations
 
+import asyncio
 import os
 import time
 from typing import Iterable
 
 import httpx
 from dotenv import load_dotenv
-from groq import Groq, APIStatusError, RateLimitError
+from groq import AsyncGroq, Groq, APIStatusError, RateLimitError
 
 load_dotenv()
 
@@ -24,6 +25,7 @@ RATE_LIMIT_SLEEP = float(os.getenv("LLM_RATE_LIMIT_SLEEP", "0"))
 _LLM_BASE_URL = os.getenv("LLM_BASE_URL")
 
 _client: Groq | None = None
+_async_client: AsyncGroq | None = None
 _last_call_at: float = 0.0
 
 
@@ -32,6 +34,13 @@ def _get_client() -> Groq:
     if _client is None:
         _client = Groq(api_key=os.environ["GROQ_API_KEY"])
     return _client
+
+
+def _get_async_client() -> AsyncGroq:
+    global _async_client
+    if _async_client is None:
+        _async_client = AsyncGroq(api_key=os.environ["GROQ_API_KEY"])
+    return _async_client
 
 
 def _post_openai(payload: dict) -> str:
@@ -113,6 +122,44 @@ def call(
     except RateLimitError:
         time.sleep(30)
         resp = _get_client().chat.completions.create(**request_kwargs)
+    except APIStatusError as e:
+        raise RuntimeError(f"Groq API error {e.status_code}: {e.message}") from e
+
+    return (resp.choices[0].message.content or "").strip()
+
+
+async def async_call(
+    prompt: str,
+    *,
+    model: str | None = None,
+    max_tokens: int = 800,
+    temperature: float = 0.0,
+    system: str | None = None,
+    stop: Iterable[str] | None = None,
+    response_format: dict | None = None,
+) -> str:
+    """Async variant of `call()` for use inside async generators / endpoints."""
+    messages: list[dict] = []
+    if system:
+        messages.append({"role": "system", "content": system})
+    messages.append({"role": "user", "content": prompt})
+
+    request_kwargs = {
+        "model": model or DEFAULT_MODEL,
+        "messages": messages,
+        "max_tokens": max_tokens,
+        "temperature": temperature,
+    }
+    if stop:
+        request_kwargs["stop"] = list(stop)
+    if response_format:
+        request_kwargs["response_format"] = response_format
+
+    try:
+        resp = await _get_async_client().chat.completions.create(**request_kwargs)
+    except RateLimitError:
+        await asyncio.sleep(30)
+        resp = await _get_async_client().chat.completions.create(**request_kwargs)
     except APIStatusError as e:
         raise RuntimeError(f"Groq API error {e.status_code}: {e.message}") from e
 
