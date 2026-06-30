@@ -16,6 +16,9 @@ from groq import AsyncGroq, Groq, APIStatusError, RateLimitError
 load_dotenv()
 
 DEFAULT_MODEL = os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile")
+# Faster/smaller model for cheap classification tasks (entity extraction).
+# Together AI equivalent: meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo
+FAST_MODEL = os.getenv("LLM_FAST_MODEL", "llama-3.1-8b-instant")
 # Default 0 for live requests. Set LLM_RATE_LIMIT_SLEEP=2.5 when running batch eval
 # to stay under Groq free-tier 30 RPM.
 RATE_LIMIT_SLEEP = float(os.getenv("LLM_RATE_LIMIT_SLEEP", "0"))

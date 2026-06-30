@@ -149,7 +149,7 @@ def entity_extraction(question: str) -> dict:
         }
     """
     raw = llm_client.call(_build_prompt(question), max_tokens=200, temperature=0.0,
-                          model="llama-3.1-8b-instant",
+                          model=llm_client.FAST_MODEL,
                           response_format={"type": "json_object"})
     try:
         parsed = _parse_json(raw)
@@ -187,7 +187,7 @@ async def async_extract_and_normalize(question: str) -> dict:
     """Async variant of `extract_and_normalize` for the streaming pipeline."""
     raw = await llm_client.async_call(
         _build_prompt(question), max_tokens=200, temperature=0.0,
-        model="llama-3.1-8b-instant",
+        model=llm_client.FAST_MODEL,
         response_format={"type": "json_object"},
     )
     try:
