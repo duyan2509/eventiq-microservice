@@ -12,11 +12,13 @@ public class SessionService : ISessionService
 {
     private readonly IUnitOfWork _uow;
     private readonly IMapper _mapper;
+    private readonly ISeatServiceClient _seatServiceClient;
 
-    public SessionService(IUnitOfWork uow, IMapper mapper) 
+    public SessionService(IUnitOfWork uow, IMapper mapper, ISeatServiceClient seatServiceClient)
     {
         _uow = uow;
         _mapper = mapper;
+        _seatServiceClient = seatServiceClient;
     }
 
     public async Task<PaginatedResult<SessionResponse>> GetAllSessionByEventIdAsync(Guid eventId, int page = 1, int size = 10)
@@ -49,6 +51,8 @@ public class SessionService : ISessionService
                 throw new BusinessException("There is overlapping session time in event");
             await _uow.Sessions.AddAsync(eventId,session);
             await _uow.CommitAsync();
+
+            await _seatServiceClient.InitSessionSeatMapAsync(session.Id, dto.ChartId, eventId);
 
             return _mapper.Map<SessionResponse>(session);
         }

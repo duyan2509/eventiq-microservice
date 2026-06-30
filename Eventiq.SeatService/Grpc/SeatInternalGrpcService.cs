@@ -11,15 +11,18 @@ public class SeatInternalGrpcService : SeatInternal.SeatInternalBase
     private readonly ISeatRepository _seatRepository;
     private readonly ISeatMapRepository _seatMapRepository;
     private readonly ISeatReservationService _reservation;
+    private readonly ISeatMapService _seatMapService;
 
     public SeatInternalGrpcService(
         ISeatRepository seatRepository,
         ISeatMapRepository seatMapRepository,
-        ISeatReservationService reservation)
+        ISeatReservationService reservation,
+        ISeatMapService seatMapService)
     {
         _seatRepository = seatRepository;
         _seatMapRepository = seatMapRepository;
         _reservation = reservation;
+        _seatMapService = seatMapService;
     }
 
     public override async Task<GetSeatsResponse> GetSeats(GetSeatsRequest request, ServerCallContext context)
@@ -91,5 +94,23 @@ public class SeatInternalGrpcService : SeatInternal.SeatInternalBase
 
         var hasDesign = await _seatMapRepository.HasTemplateForEventAsync(eventId);
         return new CheckSeatMapDesignResponse { HasDesign = hasDesign };
+    }
+
+    public override async Task<InitSessionSeatMapResponse> InitSessionSeatMap(
+        InitSessionSeatMapRequest request, ServerCallContext context)
+    {
+        if (!Guid.TryParse(request.SessionId, out var sessionId))
+            throw new RpcException(new Status(StatusCode.InvalidArgument, "Invalid session_id"));
+        if (!Guid.TryParse(request.ChartId, out var chartId))
+            throw new RpcException(new Status(StatusCode.InvalidArgument, "Invalid chart_id"));
+        if (!Guid.TryParse(request.EventId, out var eventId))
+            throw new RpcException(new Status(StatusCode.InvalidArgument, "Invalid event_id"));
+
+        var result = await _seatMapService.CloneForSessionAsync(sessionId, chartId, eventId);
+        return new InitSessionSeatMapResponse
+        {
+            Success = result != null,
+            SeatMapId = result?.Id.ToString() ?? string.Empty
+        };
     }
 }

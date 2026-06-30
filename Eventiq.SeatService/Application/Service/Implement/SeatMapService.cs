@@ -157,6 +157,30 @@ public class SeatMapService : ISeatMapService
     public async Task<bool> HasSeatMapDesignAsync(Guid eventId)
         => await _uow.SeatMaps.HasTemplateForEventAsync(eventId);
 
+    public async Task<SeatMapResponse?> CloneForSessionAsync(Guid sessionId, Guid chartId, Guid eventId)
+    {
+        var existing = await _uow.SeatMaps.GetBySessionIdAsync(sessionId);
+        if (existing != null)
+            return _mapper.Map<SeatMapResponse>(existing);
+
+        var template = await _uow.SeatMaps.GetTemplateByChartIdWithDetailsAsync(chartId);
+        if (template == null)
+        {
+            var eventMaps = await _uow.SeatMaps.GetByEventIdAsync(eventId);
+            var fallback = eventMaps.FirstOrDefault(m => m.SessionId == null);
+            if (fallback != null)
+                template = await _uow.SeatMaps.GetByIdWithDetailsAsync(fallback.Id);
+        }
+
+        if (template == null)
+            return null;
+
+        var clone = BuildClone(template, sessionId);
+        await _uow.SeatMaps.AddAsync(clone);
+        await _uow.SaveChangesAsync();
+        return _mapper.Map<SeatMapResponse>(clone);
+    }
+
     public async Task<SeatMapResponse> RecoverSessionCloneAsync(Guid sessionId, Guid? eventId)
     {
         var existing = await _uow.SeatMaps.GetBySessionIdAsync(sessionId);
@@ -171,7 +195,6 @@ public class SeatMapService : ISeatMapService
         }
         else
         {
-            // Fallback: find any template in the DB (useful in dev with a single event)
             var allMaps = await _uow.SeatMaps.GetAllTemplatesAsync();
             templateMeta = allMaps.FirstOrDefault();
         }
@@ -181,6 +204,14 @@ public class SeatMapService : ISeatMapService
         var template = await _uow.SeatMaps.GetByIdWithDetailsAsync(templateMeta.Id)
             ?? throw new NotFoundException($"Template {templateMeta.Id} not found");
 
+        var clone = BuildClone(template, sessionId);
+        await _uow.SeatMaps.AddAsync(clone);
+        await _uow.SaveChangesAsync();
+        return _mapper.Map<SeatMapResponse>(clone);
+    }
+
+    private static Domain.Entity.SeatMap BuildClone(Domain.Entity.SeatMap template, Guid sessionId)
+    {
         var clone = new Domain.Entity.SeatMap
         {
             Id = Guid.NewGuid(),
@@ -224,9 +255,7 @@ public class SeatMapService : ISeatMapService
                 CreatedAt = DateTime.UtcNow
             });
 
-        await _uow.SeatMaps.AddAsync(clone);
-        await _uow.SaveChangesAsync();
-        return _mapper.Map<SeatMapResponse>(clone);
+        return clone;
     }
 
     public async Task<SeatMapStatsResponse> GetStatsAsync(Guid seatMapId)

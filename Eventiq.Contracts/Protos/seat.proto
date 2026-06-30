@@ -9,6 +9,7 @@ service SeatInternal {
   rpc MarkSold (MarkSoldRequest) returns (MarkSoldResponse);
   rpc CheckSeatMapPublished (CheckSeatMapPublishedRequest) returns (CheckSeatMapPublishedResponse);
   rpc CheckSeatMapDesign (CheckSeatMapDesignRequest) returns (CheckSeatMapDesignResponse);
+  rpc InitSessionSeatMap (InitSessionSeatMapRequest) returns (InitSessionSeatMapResponse);
 }
 
 message GetSeatsRequest {
@@ -53,4 +54,15 @@ message CheckSeatMapDesignRequest {
 
 message CheckSeatMapDesignResponse {
   bool has_design = 1;
+}
+
+message InitSessionSeatMapRequest {
+  string session_id = 1;
+  string chart_id = 2;
+  string event_id = 3;
+}
+
+message InitSessionSeatMapResponse {
+  bool success = 1;
+  string seat_map_id = 2;
 }

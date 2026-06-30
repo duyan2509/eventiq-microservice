@@ -14,33 +14,22 @@ public class SeatServiceClient : ISeatServiceClient
         _logger = logger;
     }
 
-    public async Task<bool> HasPublishedSeatMapAsync(Guid eventId)
+    public async Task<Guid?> InitSessionSeatMapAsync(Guid sessionId, Guid chartId, Guid eventId)
     {
         try
         {
-            var response = await _grpcClient.CheckSeatMapPublishedAsync(
-                new CheckSeatMapPublishedRequest { EventId = eventId.ToString() });
-            return response.IsPublished;
+            var response = await _grpcClient.InitSessionSeatMapAsync(new InitSessionSeatMapRequest
+            {
+                SessionId = sessionId.ToString(),
+                ChartId = chartId.ToString(),
+                EventId = eventId.ToString()
+            });
+            return response.Success && Guid.TryParse(response.SeatMapId, out var id) ? id : null;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to check published seat map for event {EventId}", eventId);
-            return false;
-        }
-    }
-
-    public async Task<bool> HasSeatMapDesignAsync(Guid eventId)
-    {
-        try
-        {
-            var response = await _grpcClient.CheckSeatMapDesignAsync(
-                new CheckSeatMapDesignRequest { EventId = eventId.ToString() });
-            return response.HasDesign;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to check seat map design for event {EventId}", eventId);
-            return false;
+            _logger.LogWarning(ex, "Failed to init seatmap for session {SessionId}", sessionId);
+            return null;
         }
     }
 }

@@ -1,8 +1,8 @@
 # Spider Benchmark Evaluation Report
 
 **Date:** 2026-06-25 20:00  
-**Model:** `meta-llama/Llama-3.3-70B-Instruct-Turbo`  
-**Pipeline:** Entity Extraction (LLM) + Schema Linking + SQL Generation
+**Model:** `Qwen/Qwen2.5-Coder-32B-Instruct`  
+**Pipeline:** Entity Extraction (LLM) + Schema Linking + SQL Generation  
 **Dataset:** Spider dev set (1034 questions)  
 **Runtime:** 79.5 minutes  
 
@@ -16,6 +16,10 @@
 
 | Difficulty | Correct | Total | EX% |
 |------------|---------|-------|-----|
+| Easy | 225 | 252 | 89.3% |
+| Medium | 349 | 469 | 74.4% |
+| Hard | 104 | 153 | 68.0% |
+| Extra | 90 | 160 | 56.2% |
 
 ## Schema Linking Method
 

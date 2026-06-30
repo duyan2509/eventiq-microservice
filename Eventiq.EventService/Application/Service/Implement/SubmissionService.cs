@@ -15,7 +15,6 @@ public class SubmissionService : ISubmissionService
     private readonly IMapper _mapper;
     private readonly IUnitOfWork _uow;
     private readonly IOrgPaymentRepository _orgPayment;
-    private readonly ISeatServiceClient _seatServiceClient;
     private readonly IPublishEndpoint _publishEndpoint;
     private readonly EvtEventDbContext _dbContext;
 
@@ -23,14 +22,12 @@ public class SubmissionService : ISubmissionService
         IMapper mapper,
         IUnitOfWork uow,
         IOrgPaymentRepository orgPayment,
-        ISeatServiceClient seatServiceClient,
         IPublishEndpoint publishEndpoint,
         EvtEventDbContext dbContext)
     {
         _mapper = mapper;
         _uow = uow;
         _orgPayment = orgPayment;
-        _seatServiceClient = seatServiceClient;
         _publishEndpoint = publishEndpoint;
         _dbContext = dbContext;
     }
@@ -54,11 +51,6 @@ public class SubmissionService : ISubmissionService
         if (!hasPayment)
             throw new BusinessException(
                 "Organization has no active payment account. Please connect Stripe before submitting the event.");
-
-        var hasSeatMap = await _seatServiceClient.HasSeatMapDesignAsync(eventId);
-        if (!hasSeatMap)
-            throw new BusinessException(
-                "Event has no seat map design. Please design a seat map before submitting.");
 
         try
         {
@@ -89,9 +81,6 @@ public class SubmissionService : ISubmissionService
 
     public async Task<SubmissionResponse> AcceptEventAsync(Guid userId, string adminEmail, Guid eventId, UpdateSubmissioDto dto)
     {
-        // Read sessions before opening the write transaction
-        var sessions = await _uow.Sessions.GetAllByEventIdAsync(eventId);
-
         SubmissionResponse result;
         try
         {
@@ -122,14 +111,8 @@ public class SubmissionService : ISubmissionService
         await _publishEndpoint.Publish(new EventApproved
         {
             EventId = eventId,
-            Sessions = sessions
-                .Select(s => new SessionChartPair(s.Id, s.ChartId))
-                .ToArray(),
             ApprovedAt = DateTime.UtcNow
         });
-        // EventService uses Dapper for business logic so EF Core SaveChanges is never called
-        // in the request pipeline. Calling it here flushes the outbox message to the DB
-        // immediately so the background delivery job picks it up in ~1s instead of minutes.
         await _dbContext.SaveChangesAsync();
 
         return result;

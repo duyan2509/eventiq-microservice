@@ -108,8 +108,6 @@ public static class ServiceExtensions
         builder.Services.AddMassTransit(x =>
         {
             x.AddConsumer<ChartDeletedConsumer>();
-            x.AddConsumer<EventApprovedConsumer>();
-            x.AddConsumer<SessionSeatMapCloneConsumer>();
             // Distinct endpoints: UserService also consumes StaffRemoved / StaffRoleChanged.
             // Without unique queue names both services bind the default "staff-removed" /
             // "staff-role-changed" queue and COMPETE — only one service receives each event,
