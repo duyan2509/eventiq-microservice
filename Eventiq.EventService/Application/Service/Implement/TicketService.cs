@@ -1,3 +1,4 @@
+using Eventiq.EventService.Application.Dto;
 using Eventiq.EventService.Application.Service.Interface;
 using Eventiq.EventService.Application.Utility;
 using Eventiq.EventService;
@@ -64,6 +65,27 @@ public class TicketService : ITicketService
                         t.Price,
                         s.Name,
                         s.StartTime,
+                        t.CheckedInAt!.Value);
+
+        return await query.ToListAsync();
+    }
+
+    public async Task<List<OrgCheckInItem>> GetCheckedInByOrgAsync(Guid orgId)
+    {
+        var query = from t in _dbContext.Tickets
+                    join s in _dbContext.Sessions on t.SessionId equals s.Id
+                    join e in _dbContext.Events on s.EventId equals e.Id
+                    where e.OrganizationId == orgId && t.IsCheckedIn
+                    orderby t.CheckedInAt descending
+                    select new OrgCheckInItem(
+                        t.Id,
+                        t.SeatLabel,
+                        t.LegendName,
+                        t.Price,
+                        s.Name,
+                        s.StartTime,
+                        e.Name,
+                        e.Id,
                         t.CheckedInAt!.Value);
 
         return await query.ToListAsync();

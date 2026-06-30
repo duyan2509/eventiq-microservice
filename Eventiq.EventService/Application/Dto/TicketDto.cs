@@ -18,3 +18,14 @@ public record TicketResponse(
         t.Id, t.OrderId, t.SessionId, t.SeatLabel, t.LegendName,
         t.Price, t.QRCode, t.IsCheckedIn, t.CheckedInAt, t.IssuedAt);
 }
+
+public record OrgCheckInItem(
+    Guid TicketId,
+    string SeatLabel,
+    string LegendName,
+    decimal Price,
+    string SessionName,
+    DateTime SessionStart,
+    string EventName,
+    Guid EventId,
+    DateTime CheckedInAt);

@@ -32,6 +32,17 @@ public class TicketController : ControllerBase
         return Ok(items);
     }
 
+    [HttpGet("org/checkins")]
+    [Authorize(Roles = "Staff,Organization")]
+    public async Task<IActionResult> GetOrgCheckIns()
+    {
+        var orgIdStr = User.FindFirst("orgId")?.Value;
+        if (!Guid.TryParse(orgIdStr, out var orgId))
+            return Forbid();
+        var items = await _ticketService.GetCheckedInByOrgAsync(orgId);
+        return Ok(items);
+    }
+
     [HttpPost("checkin")]
     [Authorize(Roles = "Staff,Organization")]
     public async Task<IActionResult> CheckIn([FromBody] CheckInRequest req)
