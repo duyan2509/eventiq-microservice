@@ -133,4 +133,23 @@ public class SeatInternalGrpcService : SeatInternal.SeatInternalBase
         var exists = await _seatMapRepository.GetByChartIdAsync(chartId) != null;
         return new CheckSeatMapForChartResponse { HasSeatMap = exists };
     }
+
+    public override async Task<ExtendHoldResponse> ExtendHold(ExtendHoldRequest request, ServerCallContext context)
+    {
+        if (!Guid.TryParse(request.UserId, out var userId))
+            throw new RpcException(new Status(StatusCode.InvalidArgument, "Invalid user_id"));
+
+        var ids = request.SeatIds
+            .Select(s => Guid.TryParse(s, out var g) ? g : Guid.Empty)
+            .Where(g => g != Guid.Empty)
+            .ToList();
+
+        var result = await _reservation.ExtendHoldAsync(ids, userId, TimeSpan.FromSeconds(request.DurationSeconds));
+        return new ExtendHoldResponse
+        {
+            Success = result.Success,
+            Message = result.Error ?? string.Empty,
+            HeldUntil = result.HeldUntil?.ToString("O") ?? string.Empty
+        };
+    }
 }

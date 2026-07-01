@@ -13,6 +13,10 @@ namespace Eventiq.PaymentService.Application.Service.Implement;
 
 public class CheckoutService : ICheckoutService
 {
+    // Stripe requires expires_at >= 30 min from session creation; the extra 2 min
+    // covers gRPC latency and clock drift between PaymentService and SeatService.
+    private static readonly TimeSpan CheckoutHoldExtension = TimeSpan.FromMinutes(32);
+
     private readonly PaymentDbContext _dbContext;
     private readonly EventInternal.EventInternalClient _eventClient;
     private readonly SeatInternal.SeatInternalClient _seatClient;
@@ -131,7 +135,22 @@ public class CheckoutService : ICheckoutService
             Items = items
         };
 
-        // 8. Create Stripe Checkout Session
+        // 8. Extend the seat hold to cover the Stripe checkout window before creating
+        //    a new session, so the hold never expires while the session is still open.
+        var extendRequest = new ExtendHoldRequest
+        {
+            UserId = userId.ToString(),
+            DurationSeconds = (int)CheckoutHoldExtension.TotalSeconds
+        };
+        extendRequest.SeatIds.AddRange(seatIds.Select(id => id.ToString()));
+        var extendResponse = await _seatClient.ExtendHoldAsync(extendRequest);
+        if (!extendResponse.Success)
+            throw new BusinessException(extendResponse.Message);
+
+        var expiresAt = DateTime.Parse(extendResponse.HeldUntil, null,
+            System.Globalization.DateTimeStyles.AdjustToUniversal | System.Globalization.DateTimeStyles.AssumeUniversal);
+
+        // 9. Create Stripe Checkout Session
         StripeConfiguration.ApiKey = _config["Stripe:SecretKey"];
         var frontendBase = _config["Frontend:BaseUrl"] ?? "http://localhost:5173";
         // Per-Order idempotency: same Order retry returns same Stripe session;
@@ -140,6 +159,7 @@ public class CheckoutService : ICheckoutService
 
         var options = new SessionCreateOptions
         {
+            ExpiresAt = expiresAt,
             PaymentMethodTypes = ["card"],
             LineItems = items.Select(item => new SessionLineItemOptions
             {

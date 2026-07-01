@@ -131,6 +131,32 @@ public class SeatReservationService : ISeatReservationService
         return new HoldStatusResult(true, HeldUntil: heldUntil, Seats: info);
     }
 
+    public async Task<ExtendHoldResult> ExtendHoldAsync(IReadOnlyList<Guid> seatIds, Guid userId, TimeSpan duration)
+    {
+        if (seatIds.Count == 0)
+            return new ExtendHoldResult(false, "No seats specified.");
+
+        var seats = await _seats.GetByIdsAsync(seatIds);
+        if (seats.Count != seatIds.Count)
+            return new ExtendHoldResult(false, "Some seats not found.");
+
+        foreach (var seat in seats)
+        {
+            if (seat.Status != SeatStatus.Holding || seat.HeldBy != userId)
+                return new ExtendHoldResult(false, $"Seat {seat.Label} is no longer held by this user.");
+        }
+
+        // Seats are already owned by this user (validated above) — unlike HoldSeatsAsync,
+        // there's no contention with other users, so no Redlock needed here.
+        foreach (var seat in seats)
+            seat.Hold(userId, duration);
+
+        await _seats.UpdateRangeAsync(seats);
+        await _uow.SaveChangesAsync();
+
+        return new ExtendHoldResult(true, HeldUntil: seats.Min(s => s.HeldUntil!.Value));
+    }
+
     public async Task<MarkSoldResult> MarkSoldAsync(IReadOnlyList<Guid> seatIds, Guid userId)
     {
         if (seatIds.Count == 0)

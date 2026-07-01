@@ -12,6 +12,7 @@ service SeatInternal {
   rpc InitSessionSeatMap (InitSessionSeatMapRequest) returns (InitSessionSeatMapResponse);
   rpc IsLegendUsedInTemplate (IsLegendUsedInTemplateRequest) returns (IsLegendUsedInTemplateResponse);
   rpc CheckSeatMapForChart (CheckSeatMapForChartRequest) returns (CheckSeatMapForChartResponse);
+  rpc ExtendHold (ExtendHoldRequest) returns (ExtendHoldResponse);
 }
 
 message GetSeatsRequest {
@@ -83,4 +84,16 @@ message CheckSeatMapForChartRequest {
 
 message CheckSeatMapForChartResponse {
   bool has_seat_map = 1;
+}
+
+message ExtendHoldRequest {
+  repeated string seat_ids = 1;
+  string user_id = 2;
+  int32 duration_seconds = 3;
+}
+
+message ExtendHoldResponse {
+  bool success = 1;
+  string message = 2;
+  string held_until = 3; // ISO 8601 UTC, empty when success = false
 }
