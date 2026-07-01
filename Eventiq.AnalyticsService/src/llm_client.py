@@ -158,6 +158,12 @@ async def async_call(
     if response_format:
         request_kwargs["response_format"] = response_format
 
+    if _LLM_BASE_URL:
+        # Run the sync httpx call in a thread so the event loop isn't blocked.
+        return await asyncio.get_event_loop().run_in_executor(
+            None, lambda: _post_openai(request_kwargs)
+        )
+
     try:
         resp = await _get_async_client().chat.completions.create(**request_kwargs)
     except RateLimitError:
