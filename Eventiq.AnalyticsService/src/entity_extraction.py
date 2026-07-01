@@ -20,11 +20,11 @@ CONFIDENCE_THRESHOLD = 0.7
 
 # Tables exposed to the LLM, grouped for readability in the prompt.
 _PROMPT_TABLE_LIST = """\
-# user_service (PascalCase — luôn để trong dấu nháy kép)
+# user_service (PascalCase — always double-quoted)
 user_service."Users", user_service."Roles", user_service."UserRoles",
 user_service."BanHistories", user_service."RefreshTokens", user_service."PasswordResetTokens"
 
-# org_service (PascalCase)
+# org_service (PascalCase — always double-quoted)
 org_service."Organizations", org_service."Members", org_service."Permissions",
 org_service."Invitations", org_service."PlatformConfigs", org_service."PayoutLogs"
 
@@ -41,23 +41,23 @@ payment_service.orders, payment_service.order_items"""
 
 
 _PROMPT_TEMPLATE = """\
-Bạn là chuyên gia phân tích câu hỏi nghiệp vụ → ánh xạ về bảng SQL.
+You are an expert at analyzing business questions and mapping them to SQL tables.
 
-Danh sách bảng (fully-qualified, GIỮ NGUYÊN case và dấu nháy kép):
+Table list (fully-qualified; preserve case and double-quotes exactly):
 
 {tables}
 
-Câu hỏi: "{question}"
+Question: "{question}"
 
-Trả về JSON DUY NHẤT (không markdown, không giải thích, không text thừa):
+Return ONLY a single JSON object (no markdown, no explanations, no extra text):
 {{
-  "tables": ["tên bảng liên quan, GIỮ NGUYÊN format trên"],
-  "filters": ["giá trị filter nếu có (status='Paid', date range, ...)"],
+  "tables": ["relevant table names, keeping the exact format above"],
+  "filters": ["filter values if any (status='Paid', date range, ...)"],
   "aggregation": "SUM|COUNT|AVG|MAX|MIN|null",
   "confidence": 0.0-1.0
 }}
 
-Quy tắc ánh xạ từ vựng:
+Vocabulary mapping rules:
 - "users", "khách hàng", "customer" → user_service."Users"
 - "organization", "org", "tổ chức" → org_service."Organizations"
 - "event", "sự kiện" → event_service.events
@@ -67,7 +67,7 @@ Quy tắc ánh xạ từ vựng:
 - "seat", "ghế" → seat_service.seats
 - "legend", "loại vé", "hạng vé" → event_service.legends
 
-Trả lời confidence thấp (< 0.7) nếu câu hỏi mơ hồ hoặc không khớp bảng nào rõ ràng.
+Report low confidence (< 0.7) if the question is ambiguous or doesn't clearly map to any table.
 """
 
 

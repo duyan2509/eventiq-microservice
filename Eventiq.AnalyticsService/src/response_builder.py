@@ -30,7 +30,7 @@ def _render_rows(columns: list[str], rows: list[dict]) -> str:
     for r in rows[:_ANSWER_MAX_ROWS]:
         lines.append(" | ".join(str(r.get(c, "")) for c in columns))
     if len(rows) > _ANSWER_MAX_ROWS:
-        lines.append(f"... (+{len(rows) - _ANSWER_MAX_ROWS} dòng nữa)")
+        lines.append(f"... (+{len(rows) - _ANSWER_MAX_ROWS} more rows)")
     return "\n".join(lines)
 
 
@@ -42,22 +42,23 @@ def generate_answer(
     *,
     max_tokens: int = 400,
 ) -> str:
-    """A short Vietnamese answer grounded in the result rows.
+    """A short answer grounded in the result rows, in the user's language.
 
     Returns a canned message for the error / no-rows cases (no LLM call), so the
     model is only asked to summarise when there is actually data to summarise.
     """
     if error:
-        return f"Truy vấn gặp lỗi nên chưa trả lời được: {error}"
+        return f"Query failed: {error}"
     if not rows:
-        return "Không tìm thấy dữ liệu phù hợp với câu hỏi."
+        return "No data found for this question."
 
     prompt = (
-        "Bạn là trợ lý phân tích dữ liệu. Dựa CHỈ trên bảng kết quả dưới đây, "
-        "trả lời câu hỏi bằng tiếng Việt, ngắn gọn (1-3 câu), nêu số liệu cụ thể. "
-        "TUYỆT ĐỐI không bịa số liệu không có trong dữ liệu. Không nhắc đến SQL hay cơ sở dữ liệu.\n\n"
-        f"Câu hỏi: {question}\n\n"
-        f"Kết quả ({len(rows)} dòng):\n{_render_rows(columns, rows)}\n\n"
-        "Trả lời:"
+        "You are a data analysis assistant. Based ONLY on the result table below, "
+        "answer the question in the same language as the question, concisely (1-3 sentences), "
+        "citing specific numbers. NEVER fabricate numbers not present in the data. "
+        "Do NOT mention SQL or databases.\n\n"
+        f"Question: {question}\n\n"
+        f"Result ({len(rows)} rows):\n{_render_rows(columns, rows)}\n\n"
+        "Answer:"
     )
     return llm_client.call(prompt, max_tokens=max_tokens, temperature=0.2).strip()

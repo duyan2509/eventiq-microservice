@@ -90,7 +90,7 @@ async def run_pipeline_stream(
     schema: dict[str, str],
 ):
     """Async generator — yields {stage, message} progress events then {stage: 'done', result: ...}."""
-    yield {"stage": "extracting", "message": "Đang phân tích câu hỏi..."}
+    yield {"stage": "extracting", "message": "Analyzing question..."}
     entity = await async_extract_and_normalize(question)
     link = schema_link(question, entity, g, schema)
 
@@ -99,10 +99,10 @@ async def run_pipeline_stream(
     val = link_values(question, link)
     values = val["values"] if val["covered"] else None
 
-    yield {"stage": "generating_sql", "message": "Đang tạo truy vấn SQL..."}
+    yield {"stage": "generating_sql", "message": "Generating SQL query..."}
     sql = await async_generate_sql(question, link, schema, columns=columns, values=values)
 
-    yield {"stage": "executing", "message": "Đang truy vấn dữ liệu..."}
+    yield {"stage": "executing", "message": "Querying database..."}
     rows, error, retries, final_sql = await async_execute_with_retry(sql, link, schema)
     chart_config = pick_chart(rows, question)
 
@@ -142,10 +142,10 @@ async def run_pipeline_org_stream(
         "method": "org_scope",
     }
 
-    yield {"stage": "generating_sql", "message": "Đang tạo truy vấn SQL..."}
+    yield {"stage": "generating_sql", "message": "Generating SQL query..."}
     sql = await async_generate_sql(question, link, ORG_SCHEMA, org_mode=True)
 
-    yield {"stage": "executing", "message": "Đang truy vấn dữ liệu..."}
+    yield {"stage": "executing", "message": "Querying database..."}
     rows, error, retries, final_sql = await async_execute_with_retry(
         sql, link, ORG_SCHEMA, scope="org", org_id=org_id, org_mode=True
     )

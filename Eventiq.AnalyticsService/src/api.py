@@ -233,7 +233,13 @@ async def query_stream(req: QueryRequest, authorization: str | None = Header(def
     async def event_generator():
         try:
             async for event in pipeline_gen:
-                yield _sse(event)
+                if event.get("stage") == "done":
+                    # Normalize to the same camelCase shape as the REST endpoint so
+                    # the frontend can use one Text2SqlResponse type for both paths.
+                    response = _to_response(req.question, event["result"])
+                    yield _sse({"stage": "done", "result": response.model_dump()})
+                else:
+                    yield _sse(event)
         except Exception as e:
             logger.exception("Stream pipeline crashed for: %s", req.question)
             yield _sse({"stage": "error", "message": str(e)})
