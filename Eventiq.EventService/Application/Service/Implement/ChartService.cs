@@ -93,6 +93,10 @@ public class ChartService : IChartService
 
     public async Task DeleteChartAsync(Guid eventId, Guid orgId, Guid chartId)
     {
+        var isUsed = await _uow.Charts.IsUsedBySessionAsync(chartId);
+        if (isUsed)
+            throw new BusinessException("Cannot delete chart: it is assigned to one or more sessions.");
+
         try
         {
             await _uow.BeginTransactionAsync();
@@ -114,7 +118,6 @@ public class ChartService : IChartService
             await _uow.RollbackAsync();
             throw;
         }
-        
     }
 }
 

@@ -24,6 +24,14 @@ public class TicketService : ITicketService
         Guid sessionId,
         List<(Guid SeatId, string SeatLabel, string LegendName, decimal Price)> seats)
     {
+        // Idempotency: IssueTicketsConsumer retries up to 5× on transient failures.
+        // If tickets were already committed on a prior attempt, return them instead of inserting duplicates.
+        var existing = await _dbContext.Tickets
+            .Where(t => t.OrderId == orderId)
+            .ToListAsync();
+        if (existing.Count > 0)
+            return existing;
+
         var tickets = seats.Select(s =>
         {
             var ticket = new Ticket

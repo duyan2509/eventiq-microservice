@@ -22,4 +22,5 @@ public interface ISeatMapRepository
     Task<bool> DeleteAsync(Guid id);
     Task<int> IncrementAndGetNextSeatNumberAsync(Guid seatMapId);
     Task<int> IncrementAndGetNextSeatNumberByAsync(Guid seatMapId, int count);
+    Task<bool> HasSessionCloneForEventAsync(Guid eventId);
 }

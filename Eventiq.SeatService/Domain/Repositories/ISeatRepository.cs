@@ -15,6 +15,7 @@ public interface ISeatRepository
     Task<bool> DeleteAsync(Guid id);
     Task DeleteRangeAsync(IEnumerable<Guid> ids);
     Task<List<Seat>> GetExpiredHoldingAsync(DateTime cutoff);
+    Task<bool> IsLegendUsedInTemplateAsync(Guid legendId);
 }
 
 /// <summary>Aggregate bounds of a seat map's seats (in canvas coordinates) plus seat count.</summary>

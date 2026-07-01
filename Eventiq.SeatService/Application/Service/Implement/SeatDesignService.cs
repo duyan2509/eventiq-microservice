@@ -282,7 +282,6 @@ public class SeatDesignService : ISeatDesignService
         var seatMap = await _uow.SeatMaps.GetByIdAsync(seatMapId);
         SeatMapGuards.EnsureExists(seatMap);
         SeatMapGuards.EnsureOwner(seatMap!, orgId);
-        SeatMapGuards.EnsureDraft(seatMap!);
         return seatMap!;
     }
 }

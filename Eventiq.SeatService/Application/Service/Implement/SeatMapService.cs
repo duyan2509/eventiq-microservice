@@ -97,7 +97,6 @@ public class SeatMapService : ISeatMapService
         var seatMap = await _uow.SeatMaps.GetByIdAsync(seatMapId);
         SeatMapGuards.EnsureExists(seatMap);
         SeatMapGuards.EnsureOwner(seatMap!, orgId);
-        SeatMapGuards.EnsureDraft(seatMap!);
 
         if (!string.IsNullOrWhiteSpace(dto.Name))
             seatMap!.Name = dto.Name;
@@ -116,6 +115,13 @@ public class SeatMapService : ISeatMapService
         var seatMap = await _uow.SeatMaps.GetByIdAsync(seatMapId);
         SeatMapGuards.EnsureExists(seatMap);
         SeatMapGuards.EnsureOwner(seatMap!, orgId);
+
+        if (seatMap!.SessionId == null)
+        {
+            var hasSessionClone = await _uow.SeatMaps.HasSessionCloneForEventAsync(seatMap.EventId);
+            if (hasSessionClone)
+                throw new BusinessException("Cannot delete seat map template: it is already used in one or more sessions.");
+        }
 
         var deleted = await _uow.SeatMaps.DeleteAsync(seatMapId);
         if (!deleted)
@@ -164,14 +170,6 @@ public class SeatMapService : ISeatMapService
             return _mapper.Map<SeatMapResponse>(existing);
 
         var template = await _uow.SeatMaps.GetTemplateByChartIdWithDetailsAsync(chartId);
-        if (template == null)
-        {
-            var eventMaps = await _uow.SeatMaps.GetByEventIdAsync(eventId);
-            var fallback = eventMaps.FirstOrDefault(m => m.SessionId == null);
-            if (fallback != null)
-                template = await _uow.SeatMaps.GetByIdWithDetailsAsync(fallback.Id);
-        }
-
         if (template == null)
             return null;
 

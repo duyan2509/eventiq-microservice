@@ -113,4 +113,24 @@ public class SeatInternalGrpcService : SeatInternal.SeatInternalBase
             SeatMapId = result?.Id.ToString() ?? string.Empty
         };
     }
+
+    public override async Task<IsLegendUsedInTemplateResponse> IsLegendUsedInTemplate(
+        IsLegendUsedInTemplateRequest request, ServerCallContext context)
+    {
+        if (!Guid.TryParse(request.LegendId, out var legendId))
+            throw new RpcException(new Status(StatusCode.InvalidArgument, "Invalid legend_id"));
+
+        var inUse = await _seatRepository.IsLegendUsedInTemplateAsync(legendId);
+        return new IsLegendUsedInTemplateResponse { InUse = inUse };
+    }
+
+    public override async Task<CheckSeatMapForChartResponse> CheckSeatMapForChart(
+        CheckSeatMapForChartRequest request, ServerCallContext context)
+    {
+        if (!Guid.TryParse(request.ChartId, out var chartId))
+            throw new RpcException(new Status(StatusCode.InvalidArgument, "Invalid chart_id"));
+
+        var exists = await _seatMapRepository.GetByChartIdAsync(chartId) != null;
+        return new CheckSeatMapForChartResponse { HasSeatMap = exists };
+    }
 }

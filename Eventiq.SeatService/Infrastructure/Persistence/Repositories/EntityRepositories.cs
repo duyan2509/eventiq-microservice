@@ -90,6 +90,10 @@ public class SeatRepository : ISeatRepository
         => await _ctx.Seats
             .Where(s => s.Status == Domain.Enum.SeatStatus.Holding && s.HeldUntil < cutoff)
             .ToListAsync();
+
+    public async Task<bool> IsLegendUsedInTemplateAsync(Guid legendId)
+        => await _ctx.Seats
+            .AnyAsync(s => s.LegendId == legendId && s.SeatMap.SessionId == null);
 }
 
 public class SeatObjectRepository : ISeatObjectRepository

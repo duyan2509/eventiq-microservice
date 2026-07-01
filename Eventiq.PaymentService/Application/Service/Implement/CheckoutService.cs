@@ -174,8 +174,9 @@ public class CheckoutService : ICheckoutService
 
         order.StripeSessionId = session.Id;
         _dbContext.Orders.Add(order);
-        await _dbContext.SaveChangesAsync();
 
+        // Publish before SaveChangesAsync so the outbox message is saved atomically with the Order.
+        // Calling SaveChangesAsync first and Publish second loses the message (EF outbox never persisted).
         await _publishEndpoint.Publish(new BookingInitiated
         {
             OrderId = order.Id,
@@ -183,6 +184,7 @@ public class CheckoutService : ICheckoutService
             SessionId = sessionId,
             SeatIds = seatIds
         });
+        await _dbContext.SaveChangesAsync();
 
         return session.Url;
     }

@@ -154,6 +154,8 @@ public class WebhookService : IWebhookService
         // Saga receives this and orchestrates seat release via ReleaseSeatsCommand.
         // The saga already holds SeatIds from BookingInitiated — no need to re-fetch them here.
         await _publishEndpoint.Publish(new CheckoutSessionExpired { OrderId = order.Id });
+        // Must save before returning: MarkAsync clears the tracker, losing the outbox message.
+        await _dbContext.SaveChangesAsync();
     }
 
     // Update the audit row on a clean tracker so a failed business SaveChanges above

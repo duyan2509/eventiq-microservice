@@ -151,4 +151,15 @@ public class ChartRepository : BaseRepository, IChartRepository
         },
             transaction: _transaction);
     }
+
+    public async Task<bool> IsUsedBySessionAsync(Guid chartId)
+    {
+        const string sql = @"
+            SELECT EXISTS (
+                SELECT 1 FROM sessions
+                WHERE chart_id = @ChartId
+                  AND is_deleted = false
+            );";
+        return await _connection.ExecuteScalarAsync<bool>(sql, new { ChartId = chartId }, _transaction);
+    }
 }

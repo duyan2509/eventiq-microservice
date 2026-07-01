@@ -32,4 +32,38 @@ public class SeatServiceClient : ISeatServiceClient
             return null;
         }
     }
+
+    public async Task<bool> IsLegendUsedInTemplateAsync(Guid legendId)
+    {
+        try
+        {
+            var response = await _grpcClient.IsLegendUsedInTemplateAsync(new IsLegendUsedInTemplateRequest
+            {
+                LegendId = legendId.ToString()
+            });
+            return response.InUse;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to check legend usage for {LegendId}", legendId);
+            return false;
+        }
+    }
+
+    public async Task<bool> HasSeatMapForChartAsync(Guid chartId)
+    {
+        try
+        {
+            var response = await _grpcClient.CheckSeatMapForChartAsync(new CheckSeatMapForChartRequest
+            {
+                ChartId = chartId.ToString()
+            });
+            return response.HasSeatMap;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to check seat map for chart {ChartId}", chartId);
+            return true; // fail open: không block tạo session nếu check lỗi
+        }
+    }
 }

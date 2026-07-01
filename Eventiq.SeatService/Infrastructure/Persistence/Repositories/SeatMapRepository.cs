@@ -128,4 +128,7 @@ public class SeatMapRepository : ISeatMapRepository
             .ToListAsync();
         return result[0];
     }
+
+    public async Task<bool> HasSessionCloneForEventAsync(Guid eventId)
+        => await _ctx.SeatMaps.AnyAsync(m => m.EventId == eventId && m.SessionId != null);
 }

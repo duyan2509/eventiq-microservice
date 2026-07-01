@@ -44,6 +44,9 @@ public class SessionService : ISessionService
             EventGuards.EnsureOwner(evt, orgId);
             var chart = await _uow.Charts.GetChartByIdEventIdAsync(eventId,dto.ChartId);
             ChartGuard.EnsureExist(chart);
+            var hasSeatMap = await _seatServiceClient.HasSeatMapForChartAsync(dto.ChartId);
+            if (!hasSeatMap)
+                throw new BusinessException("This chart has not been designed yet. Please open the seat designer before creating a session.");
             var session = _mapper.Map<Session>(dto);
             session.ValidateSessionTime();
             var hasOverlap = await _uow.Sessions.CheckOverlappedAsync(eventId, session.Id,session.StartTime, session.EndTime);

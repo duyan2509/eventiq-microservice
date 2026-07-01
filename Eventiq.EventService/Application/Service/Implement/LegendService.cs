@@ -9,11 +9,13 @@ namespace Eventiq.EventService.Application.Service;
 public class LegendService : ILegendService
 {
     private readonly IUnitOfWork _uow;
+    private readonly ISeatServiceClient _seatServiceClient;
 
-    public LegendService(IUnitOfWork uow, IMapper mapper)
+    public LegendService(IUnitOfWork uow, IMapper mapper, ISeatServiceClient seatServiceClient)
     {
         _uow = uow;
         _mapper = mapper;
+        _seatServiceClient = seatServiceClient;
     }
 
     private readonly IMapper _mapper;
@@ -91,6 +93,10 @@ public class LegendService : ILegendService
 
     public async Task DeleteLegendAsync(Guid eventId, Guid orgId, Guid legendId)
     {
+        var isUsed = await _seatServiceClient.IsLegendUsedInTemplateAsync(legendId);
+        if (isUsed)
+            throw new BusinessException("Cannot delete legend: it is assigned to seats in a seat map template.");
+
         try
         {
             await _uow.BeginTransactionAsync();
@@ -112,6 +118,5 @@ public class LegendService : ILegendService
             await _uow.RollbackAsync();
             throw;
         }
-        
     }
 }

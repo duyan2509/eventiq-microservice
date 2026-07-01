@@ -11,5 +11,6 @@ public interface IChartRepository
     Task<int> AddAsync(Guid EventId, Chart chart);
     Task<ChartModel?> UpdatePartialAsync(Guid chartId, Guid eventId, UpdateChartDto dto);
     Task<ChartModel?> GetChartByIdEventIdAsync(Guid eventId, Guid? dtoChartId);
+    Task<bool> IsUsedBySessionAsync(Guid chartId);
 }
 

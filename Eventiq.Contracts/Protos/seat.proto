@@ -10,6 +10,8 @@ service SeatInternal {
   rpc CheckSeatMapPublished (CheckSeatMapPublishedRequest) returns (CheckSeatMapPublishedResponse);
   rpc CheckSeatMapDesign (CheckSeatMapDesignRequest) returns (CheckSeatMapDesignResponse);
   rpc InitSessionSeatMap (InitSessionSeatMapRequest) returns (InitSessionSeatMapResponse);
+  rpc IsLegendUsedInTemplate (IsLegendUsedInTemplateRequest) returns (IsLegendUsedInTemplateResponse);
+  rpc CheckSeatMapForChart (CheckSeatMapForChartRequest) returns (CheckSeatMapForChartResponse);
 }
 
 message GetSeatsRequest {
@@ -65,4 +67,20 @@ message InitSessionSeatMapRequest {
 message InitSessionSeatMapResponse {
   bool success = 1;
   string seat_map_id = 2;
+}
+
+message IsLegendUsedInTemplateRequest {
+  string legend_id = 1;
+}
+
+message IsLegendUsedInTemplateResponse {
+  bool in_use = 1;
+}
+
+message CheckSeatMapForChartRequest {
+  string chart_id = 1;
+}
+
+message CheckSeatMapForChartResponse {
+  bool has_seat_map = 1;
 }
