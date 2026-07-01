@@ -43,13 +43,14 @@ def generate_sql(
     max_tokens: int = 600,
     temperature: float = 0.0,
     org_mode: bool = False,
+    context: dict | None = None,
 ) -> str:
     """Build the prompt, call the LLM, return cleaned SQL."""
     if org_mode:
-        prompt = build_org_prompt(question, subgraph, schema)
+        prompt = build_org_prompt(question, subgraph, schema, context=context)
     else:
         prompt = build_prompt(question, subgraph, schema, columns=columns,
-                              values=values, enrich=enrich)
+                              values=values, enrich=enrich, context=context)
     raw = llm_client.call(
         prompt,
         max_tokens=max_tokens,
@@ -69,12 +70,13 @@ async def async_generate_sql(
     max_tokens: int = 600,
     temperature: float = 0.0,
     org_mode: bool = False,
+    context: dict | None = None,
 ) -> str:
     if org_mode:
-        prompt = build_org_prompt(question, subgraph, schema)
+        prompt = build_org_prompt(question, subgraph, schema, context=context)
     else:
         prompt = build_prompt(question, subgraph, schema, columns=columns,
-                              values=values, enrich=enrich)
+                              values=values, enrich=enrich, context=context)
     raw = await llm_client.async_call(prompt, max_tokens=max_tokens, temperature=temperature)
     return clean_sql(raw)
 

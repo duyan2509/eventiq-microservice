@@ -73,4 +73,5 @@ def principal_from_header(authorization: str | None) -> dict:
         "user_id": claims.get("sub"),
         "role": claims.get(_ROLE_URI) or claims.get("role"),
         "org_id": claims.get("orgId"),
+        "email": claims.get("email"),
     }

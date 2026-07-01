@@ -92,6 +92,20 @@ def health() -> dict[str, str]:
     return {"status": "ok", "graphLoaded": "yes" if _state["graph"] is not None else "no"}
 
 
+def _build_context(principal: dict) -> dict:
+    """Build the caller context dict injected into every SQL-generation prompt."""
+    now = datetime.now()
+    return {
+        "date": now.strftime("%Y-%m-%d"),
+        "day_of_week": now.strftime("%A"),
+        "month": now.strftime("%B %Y"),
+        "year": str(now.year),
+        "role": principal.get("role"),
+        "org_id": principal.get("org_id"),
+        "email": principal.get("email"),
+    }
+
+
 def _run_for_principal(principal: dict, question: str) -> dict:
     """Run the right pipeline for the caller's role. Raises HTTPException on
     missing graph / missing org context / disallowed role."""
@@ -99,14 +113,15 @@ def _run_for_principal(principal: dict, question: str) -> dict:
     if g is None:
         raise HTTPException(status_code=503, detail="Schema graph not loaded yet")
 
+    context = _build_context(principal)
     role = principal["role"]
     org_id = principal["org_id"]
     if role == auth.ADMIN:
-        return run_pipeline(question, g, SCHEMA)            # full Text2SQL
+        return run_pipeline(question, g, SCHEMA, context=context)
     if role in (auth.ORGANIZATION, auth.STAFF):
         if not org_id:
             raise HTTPException(status_code=403, detail="No organization context in token")
-        return run_pipeline_org(question, _state["org_graph"], org_id)  # DB-scoped
+        return run_pipeline_org(question, _state["org_graph"], org_id, context=context)
     raise HTTPException(status_code=403, detail="Analytics not available for this role")
 
 
@@ -218,15 +233,16 @@ async def query_stream(req: QueryRequest, authorization: str | None = Header(def
     if g is None:
         raise HTTPException(status_code=503, detail="Schema graph not loaded yet")
 
+    context = _build_context(principal)
     role = principal["role"]
     org_id = principal["org_id"]
 
     if role == auth.ADMIN:
-        pipeline_gen = run_pipeline_stream(req.question, g, SCHEMA)
+        pipeline_gen = run_pipeline_stream(req.question, g, SCHEMA, context=context)
     elif role in (auth.ORGANIZATION, auth.STAFF):
         if not org_id:
             raise HTTPException(status_code=403, detail="No organization context in token")
-        pipeline_gen = run_pipeline_org_stream(req.question, _state["org_graph"], org_id)
+        pipeline_gen = run_pipeline_org_stream(req.question, _state["org_graph"], org_id, context=context)
     else:
         raise HTTPException(status_code=403, detail="Analytics not available for this role")
 

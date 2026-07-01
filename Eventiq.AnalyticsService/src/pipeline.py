@@ -45,6 +45,7 @@ def run_pipeline(
     use_column_linking: bool = True,
     use_value_linking: bool = True,
     enrich_prompt: bool = False,
+    context: dict | None = None,
 ) -> dict[str, Any]:
     entity = extract_and_normalize(question)
     link = schema_link(question, entity, g, schema)
@@ -61,7 +62,7 @@ def run_pipeline(
         values = val["values"] if val["covered"] else None
 
     sql = generate_sql(question, link, schema, columns=columns, values=values,
-                       enrich=enrich_prompt)
+                       enrich=enrich_prompt, context=context)
     rows, error, retries, final_sql = execute_with_retry(sql, link, schema)
     chart_config = pick_chart(rows, question)
 
@@ -88,6 +89,7 @@ async def run_pipeline_stream(
     question: str,
     g: nx.Graph,
     schema: dict[str, str],
+    context: dict | None = None,
 ):
     """Async generator — yields {stage, message} progress events then {stage: 'done', result: ...}."""
     yield {"stage": "extracting", "message": "Analyzing question..."}
@@ -100,7 +102,8 @@ async def run_pipeline_stream(
     values = val["values"] if val["covered"] else None
 
     yield {"stage": "generating_sql", "message": "Generating SQL query..."}
-    sql = await async_generate_sql(question, link, schema, columns=columns, values=values)
+    sql = await async_generate_sql(question, link, schema, columns=columns,
+                                   values=values, context=context)
 
     yield {"stage": "executing", "message": "Querying database..."}
     rows, error, retries, final_sql = await async_execute_with_retry(sql, link, schema)
@@ -132,6 +135,7 @@ async def run_pipeline_org_stream(
     question: str,
     org_graph: nx.Graph,
     org_id: str,
+    context: dict | None = None,
 ):
     """Async generator — org-scoped variant of `run_pipeline_stream`."""
     link = keyword_matching(question, ORG_SCHEMA)
@@ -143,7 +147,7 @@ async def run_pipeline_org_stream(
     }
 
     yield {"stage": "generating_sql", "message": "Generating SQL query..."}
-    sql = await async_generate_sql(question, link, ORG_SCHEMA, org_mode=True)
+    sql = await async_generate_sql(question, link, ORG_SCHEMA, org_mode=True, context=context)
 
     yield {"stage": "executing", "message": "Querying database..."}
     rows, error, retries, final_sql = await async_execute_with_retry(
@@ -176,6 +180,7 @@ def run_pipeline_org(
     question: str,
     org_graph: nx.Graph,
     org_id: str,
+    context: dict | None = None,
 ) -> dict[str, Any]:
     """Org-scoped variant: the LLM only sees the `org_analytics` views and the
     query runs as the restricted role with `app.current_org` set to `org_id`.
@@ -191,7 +196,7 @@ def run_pipeline_org(
         "join_hints": hints["join_hints"],
         "method": "org_scope",
     }
-    sql = generate_sql(question, link, ORG_SCHEMA, org_mode=True)
+    sql = generate_sql(question, link, ORG_SCHEMA, org_mode=True, context=context)
     rows, error, retries, final_sql = execute_with_retry(
         sql, link, ORG_SCHEMA, scope="org", org_id=org_id, org_mode=True
     )

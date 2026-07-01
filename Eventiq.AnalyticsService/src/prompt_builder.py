@@ -199,6 +199,35 @@ ORDER BY total DESC;
 """
 
 
+def _context_section(context: dict | None) -> str:
+    """Format caller context (date + identity) for injection into the prompt."""
+    if not context:
+        return ""
+    lines: list[str] = []
+    date = context.get("date")
+    if date:
+        lines.append(f"- Today's date: {date} ({context.get('day_of_week', '')})")
+        lines.append(f"- Current month: {context.get('month', '')}")
+        lines.append(f"- Current year: {context.get('year', '')}")
+    role = context.get("role")
+    if role:
+        lines.append(f"- Caller role: {role}")
+    org_id = context.get("org_id")
+    if org_id:
+        lines.append(f"- Caller org_id: {org_id}")
+    email = context.get("email")
+    if email:
+        lines.append(f"- Caller email: {email}")
+    if not lines:
+        return ""
+    body = "\n".join(lines)
+    return (
+        "REQUEST CONTEXT — use this to resolve relative time ('today', 'this month', "
+        "'this year') and references to 'my' / 'current' org or user:\n"
+        f"{body}\n\n"
+    )
+
+
 def _ddl_section(tables: Iterable[str], schema: dict[str, str]) -> str:
     blocks = []
     for fq in tables:
@@ -250,6 +279,7 @@ def build_prompt(
     columns=None,
     values=None,
     enrich: bool = False,
+    context: dict | None = None,
 ) -> str:
     """Render the full prompt for SQL generation.
 
@@ -258,6 +288,8 @@ def build_prompt(
     `columns` (optional) is the validated `table.col` list from
     `column_linking.link_columns`; when present the model is told to
     restrict SELECT/WHERE to those columns.
+    `context` carries caller identity + current date for resolving relative
+    time expressions and "my org / my data" references.
     """
     ddl_block = _ddl_section(subgraph.get("tables", []), schema)
     join_block = _join_section(subgraph.get("join_hints", []))
@@ -271,6 +303,7 @@ def build_prompt(
         f"{_SOFT_DELETE}\n"
         f"{_ALIAS_RULES}\n"
         f"{rules_block}"
+        f"{_context_section(context)}"
         f"Schema (use ONLY the tables/columns listed below):\n{ddl_block}\n\n"
         f"JOIN relationships (prefer these exact conditions):\n{join_block}\n\n"
         f"{_column_section(columns)}"
@@ -285,12 +318,14 @@ def build_org_prompt(
     question: str,
     subgraph: dict,
     schema: dict[str, str],
+    context: dict | None = None,
 ) -> str:
     """Render the SQL-generation prompt for ORG mode (org_analytics views).
 
     Same structure as `build_prompt` but with the org system instruction,
     org-only naming rules, org enums and org few-shot. Org scoping is enforced
     in the DB, so the model is told NOT to add any org filter.
+    `context` carries caller identity + current date for relative time resolution.
     """
     ddl_block = _ddl_section(subgraph.get("tables", []), schema)
     join_block = _join_section(subgraph.get("join_hints", []))
@@ -300,6 +335,7 @@ def build_org_prompt(
         f"{_ORG_RULES}\n"
         f"{_ORG_ENUMS}\n"
         f"{_ALIAS_RULES}\n"
+        f"{_context_section(context)}"
         f"Available views (use ONLY the views listed below):\n{ddl_block}\n\n"
         f"JOIN relationships (prefer these exact conditions):\n{join_block}\n\n"
         f"{_ORG_FEW_SHOT}\n"
